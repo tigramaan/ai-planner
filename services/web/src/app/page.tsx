@@ -1,0 +1,2 @@
+import { Chat } from "@/components/Chat"; import { Shell } from "@/components/Shell";
+export default function Home(){return <Shell><header className="pageHead"><div><h1>Командный центр</h1><p className="muted">Календарь, письма и задачи в одном диалоге.</p></div></header><div className="grid"><Chat/><aside className="panel stack"><h2>Примеры команд</h2>{["Покажи планы на сегодня","Найди свободный час завтра","Поставь таймер на 25 минут","Покажи непрочитанные письма"].map(x=><div className="integration" key={x}>{x}</div>)}</aside></div></Shell>}

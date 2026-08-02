@@ -5,7 +5,7 @@ import path from "node:path";
 const root = process.cwd();
 const maxLines = Number(process.env.MAX_SOURCE_FILE_LINES || 500);
 const excludedDirs = new Set([
-  ".git", "node_modules", "dist", "build", "coverage", ".next", ".cache", ".artifacts",
+  ".git", ".venv", "node_modules", "dist", "build", "coverage", ".next", ".cache", ".artifacts",
   "test-results", "playwright-report", "vendor", "generated",
 ]);
 const excludedFiles = new Set(["package-lock.json", "pnpm-lock.yaml", "yarn.lock"]);

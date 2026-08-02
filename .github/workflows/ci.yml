@@ -1,0 +1,26 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24, cache: npm}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.13"}
+      - run: npm ci
+      - run: npm run guards
+      - run: npm run web:test
+      - run: npm run web:build
+      - run: pip install -e 'services/api[dev]'
+      - run: pip install -r services/worker/requirements.txt
+      - run: ruff check services/api
+      - run: pytest services/api --cov=services/api/app
+        env:
+          OWNER_EMAIL: tigramaan@gmail.com
+          OWNER_INITIAL_PASSWORD: correct-horse-battery-staple
+          JWT_SECRET: test-jwt-secret-that-is-at-least-thirty-two-bytes
+          SECRET_MASTER_KEY: eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHg=
+          DATABASE_URL: sqlite:///./ci.db
+      - run: PYTHONPATH=services/worker pytest services/worker/tests

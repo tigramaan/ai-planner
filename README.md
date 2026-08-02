@@ -1,14 +1,22 @@
-# aiplanner
+# UMEC AI Planner
 
-Domain: https://planner.umec.space
-Git: tigramaan/ai-planner
+Self-hosted family command center for calendars, mail, tasks, timers and AI-assisted text/voice commands. Every family member has an isolated account, integrations, encrypted secrets, messages and audit history.
 
-This project was provisioned as a Spec-Driven microservice project.
+## Local verification
 
-Start here:
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -e 'services/api[dev]'
+npm install
+.venv/bin/ruff check services/api
+.venv/bin/pytest services/api
+npm run web:test
+npm run web:build
+node tools/guards/check-file-lines.mjs
+```
 
-1. Read AGENTS.md.
-2. Update specs/SYSTEM_SPEC.md.
-3. Add service contracts under contracts/.
-4. Implement services under services/*.
-5. Run node tools/guards/check-file-lines.mjs.
+## Deployment
+
+Copy `.env.example` to a protected runtime `.env`, replace every placeholder, register provider callback URLs described in `specs/INTEGRATION_HANDOVER.md`, then run `docker compose up -d --build`. Never commit `.env`.
+
+Public domain: `https://planner.umec.space`.

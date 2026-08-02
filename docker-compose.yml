@@ -1,0 +1,62 @@
+services:
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment: ["PLANNER_DOMAIN=${PLANNER_DOMAIN:-planner.umec.space}"]
+    volumes: ["./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro", "caddy_data:/data", "caddy_config:/config"]
+    depends_on: [web]
+    profiles: ["caddy"]
+  web:
+    build: ./services/web
+    restart: unless-stopped
+    environment: ["API_INTERNAL_URL=http://api:8000", "HOSTNAME=0.0.0.0", "PORT=3000"]
+    ports: ["127.0.0.1:18092:3000"]
+    depends_on: {api: {condition: service_healthy}}
+    healthcheck: {test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health/ready').then(r=>{if(!r.ok)process.exit(1)})"], interval: 15s, timeout: 5s, retries: 5}
+  api:
+    build: ./services/api
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment: ["DATABASE_URL=postgresql+psycopg://planner:${POSTGRES_PASSWORD}@postgres:5432/planner", "REDIS_URL=redis://redis:6379/0"]
+    depends_on: {postgres: {condition: service_healthy}, redis: {condition: service_healthy}}
+    healthcheck: {test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready')"], interval: 15s, timeout: 5s, retries: 5}
+  worker:
+    build: ./services/worker
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: true
+    environment: ["REDIS_URL=redis://redis:6379/0", "API_INTERNAL_URL=http://api:8000", "VAPID_PRIVATE_KEY_PATH=/run/secrets/vapid_private.pem"]
+    secrets:
+      - source: vapid_private
+        target: vapid_private.pem
+    depends_on: {redis: {condition: service_healthy}, api: {condition: service_healthy}}
+    healthcheck: {test: ["CMD", "python", "-c", "import os,time,redis; v=redis.from_url(os.environ['REDIS_URL']).get('worker:heartbeat'); assert v and time.time()-float(v)<60"], interval: 30s, timeout: 5s, retries: 3}
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      ["PGHOST=postgres", "PGDATABASE=planner", "PGUSER=planner", "PGPASSWORD=${POSTGRES_PASSWORD}", "BACKUP_INTERVAL_SECONDS=86400", "BACKUP_RETENTION_DAYS=14"]
+    volumes: ["./infra/backup:/opt/backup:ro", "./backups:/backups"]
+    command: ["/opt/backup/backup-loop.sh"]
+    depends_on: {postgres: {condition: service_healthy}}
+    healthcheck: {test: ["CMD-SHELL", "test -f /backups/latest.ok && test $$(find /backups/latest.ok -mmin -1500 | wc -l) -eq 1"], interval: 30s, timeout: 5s, retries: 3}
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment: ["POSTGRES_DB=planner", "POSTGRES_USER=planner", "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"]
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+    healthcheck: {test: ["CMD-SHELL", "pg_isready -U planner"], interval: 10s, timeout: 5s, retries: 5}
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: ["redis_data:/data"]
+    healthcheck: {test: ["CMD", "redis-cli", "ping"], interval: 10s, timeout: 5s, retries: 5}
+volumes: {postgres_data: {}, redis_data: {}, caddy_data: {}, caddy_config: {}}
+secrets:
+  vapid_private:
+    file: ./.secrets/vapid_private.pem
