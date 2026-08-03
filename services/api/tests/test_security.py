@@ -57,3 +57,8 @@ def test_redaction_is_recursive():
         "api_key": "[redacted]",
         "nested": [{"refresh_token": "[redacted]", "safe": 1}],
     }
+
+
+def test_untrusted_host_is_rejected(client):
+    response = client.get("/health/live", headers={"Host": "attacker.example"})
+    assert response.status_code == 400

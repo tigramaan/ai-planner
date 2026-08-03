@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     public_base_url: str = "http://localhost:3000"
     cookie_secure: bool = False
     cors_origins: str = "http://localhost:3000"
+    allowed_hosts: str = "planner.umec.space,localhost,127.0.0.1,testserver,api"
     access_token_minutes: int = Field(15, ge=5, le=60)
     refresh_token_days: int = Field(30, ge=1, le=90)
     openai_api_key: str = ""
@@ -62,6 +63,10 @@ class Settings(BaseSettings):
     @property
     def allowed_origins(self) -> list[str]:
         return [value.strip() for value in self.cors_origins.split(",") if value.strip()]
+
+    @property
+    def trusted_hosts(self) -> list[str]:
+        return [value.strip() for value in self.allowed_hosts.split(",") if value.strip()]
 
 
 @lru_cache

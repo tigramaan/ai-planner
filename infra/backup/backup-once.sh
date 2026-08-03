@@ -1,5 +1,6 @@
 #!/bin/sh
 set -eu
+umask 077
 
 backup_dir=${BACKUP_DIR:-/backups}
 retention_days=${BACKUP_RETENTION_DAYS:-14}
