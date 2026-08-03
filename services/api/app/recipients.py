@@ -7,6 +7,7 @@ from .adapters import ProviderError, search_contacts, search_email
 from .config import Settings
 from .integrations import valid_access_token
 from .models import User
+from .recipient_aliases import find_recipient_alias
 
 
 @dataclass
@@ -49,6 +50,10 @@ async def resolve_recipients(
     for value in values:
         if is_email(value):
             result.recipients.append(parseaddr(value)[1].casefold())
+            continue
+        remembered = find_recipient_alias(db, settings, user, value) if db is not None else None
+        if remembered:
+            result.recipients.append(remembered)
             continue
         addresses: list[str] = []
         for provider in providers:

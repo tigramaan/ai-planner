@@ -125,6 +125,19 @@ class PushSubscription(Base):
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class RecipientAlias(Base):
+    __tablename__ = "recipient_aliases"
+    __table_args__ = (UniqueConstraint("user_id", "normalized_name"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    normalized_name: Mapped[str] = mapped_column(String(300))
+    display_name: Mapped[str] = mapped_column(String(300))
+    encrypted_email: Mapped[str] = mapped_column(Text)
+    email_hash: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
 class PendingAction(Base):
     __tablename__ = "pending_actions"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4)

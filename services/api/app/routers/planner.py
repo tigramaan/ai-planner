@@ -291,38 +291,59 @@ async def confirm(
         settings, action.payload_encrypted, f"pending:{action.id}:{action.payload_hash}"
     )
     action.confirmed_at = datetime.now(UTC)
-    if action.action_type == "create_meeting":
-        provider = payload.get("provider", "google")
-        token = await valid_access_token(db, settings, user, provider)
-        payload["idempotency_key"] = action.idempotency_key
-        if provider == "google" and payload.get("conference") == "microsoft_teams":
-            teams_token = await valid_access_token(db, settings, user, "microsoft")
-            teams = await create_teams_online_meeting(teams_token, payload)
-            payload["external_join_url"] = teams.get("joinWebUrl")
-            if not payload["external_join_url"]:
-                raise ProviderError("Microsoft returned no Teams join URL")
-            try:
+    try:
+        if action.action_type == "create_meeting":
+            provider = payload.get("provider", "google")
+            token = await valid_access_token(db, settings, user, provider)
+            payload["idempotency_key"] = action.idempotency_key
+            if provider == "google" and payload.get("conference") == "microsoft_teams":
+                teams_token = await valid_access_token(db, settings, user, "microsoft")
+                teams = await create_teams_online_meeting(teams_token, payload)
+                payload["external_join_url"] = teams.get("joinWebUrl")
+                if not payload["external_join_url"]:
+                    raise ProviderError("Microsoft returned no Teams join URL")
+                try:
+                    result = await create_calendar_event(provider, token, payload)
+                except Exception:
+                    await delete_teams_online_meeting(teams_token, teams["id"])
+                    raise
+                result["onlineMeeting"] = {"joinUrl": payload["external_join_url"]}
+            else:
                 result = await create_calendar_event(provider, token, payload)
-            except Exception:
-                await delete_teams_online_meeting(teams_token, teams["id"])
-                raise
-            result["onlineMeeting"] = {"joinUrl": payload["external_join_url"]}
+        elif action.action_type in {"update_event", "add_event_participants"}:
+            provider = payload.get("provider", "google")
+            token = await valid_access_token(db, settings, user, provider)
+            result = await update_calendar_event(provider, token, payload)
+        elif action.action_type == "cancel_event":
+            provider = payload.get("provider", "google")
+            token = await valid_access_token(db, settings, user, provider)
+            result = await cancel_calendar_event(provider, token, payload["event_id"])
+        elif action.action_type == "send_email":
+            provider = payload.get("provider", "google")
+            token = await valid_access_token(db, settings, user, provider)
+            result = await send_email(provider, token, payload)
         else:
-            result = await create_calendar_event(provider, token, payload)
-    elif action.action_type in {"update_event", "add_event_participants"}:
-        provider = payload.get("provider", "google")
-        token = await valid_access_token(db, settings, user, provider)
-        result = await update_calendar_event(provider, token, payload)
-    elif action.action_type == "cancel_event":
-        provider = payload.get("provider", "google")
-        token = await valid_access_token(db, settings, user, provider)
-        result = await cancel_calendar_event(provider, token, payload["event_id"])
-    elif action.action_type == "send_email":
-        provider = payload.get("provider", "google")
-        token = await valid_access_token(db, settings, user, provider)
-        result = await send_email(provider, token, payload)
-    else:
-        raise HTTPException(status.HTTP_501_NOT_IMPLEMENTED, "Confirmed tool is not implemented")
+            raise HTTPException(
+                status.HTTP_501_NOT_IMPLEMENTED, "Confirmed tool is not implemented"
+            )
+    except LookupError as exc:
+        ru = request.headers.get("accept-language", "").lower().startswith("ru")
+        message = (
+            "Нужная интеграция не подключена. Откройте настройки и авторизуйте её."
+            if ru
+            else "Required integration is not connected. Authorize it in Settings."
+        )
+        raise HTTPException(status.HTTP_409_CONFLICT, message) from exc
+    except ProviderError as exc:
+        ru = request.headers.get("accept-language", "").lower().startswith("ru")
+        message = (
+            "Microsoft Teams не создал встречу. Нужен рабочий или учебный аккаунт "
+            "с лицензией Teams и разрешением OnlineMeetings.ReadWrite."
+            if ru
+            else "Microsoft Teams could not create the meeting. Use a work or school account "
+            "with Teams and OnlineMeetings.ReadWrite permission."
+        )
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, message) from exc
     action.result_json = {
         "id": result.get("id"),
         "link": (result.get("onlineMeeting") or {}).get("joinUrl") or result.get("htmlLink"),

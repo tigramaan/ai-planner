@@ -44,6 +44,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-037: The agent resolves concise follow-up answers against recent conversation context without reviving completed actions.
 - REQ-038: Every pending external action presents a localized human-readable summary; corrections replace the draft and an explicit affirmative chat reply executes only the latest version.
 - REQ-039: An explicitly referenced cancelled, unexecuted draft can be corrected into a new draft; Google Calendar meetings may use a Microsoft Teams conference link when both integrations are authorized.
+- REQ-040: An explicitly requested name-to-email mapping is stored per user with authenticated encryption and reused for later recipient resolution; provider failures return actionable API errors without an internal-server-error leak.
 
 ## Constraints
 

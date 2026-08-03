@@ -16,6 +16,7 @@ from ..dependencies import current_user
 from ..integrations import valid_access_token
 from ..models import AgentMessage, LocalTask, PendingAction, Reminder, Timer, User
 from ..policy import action_status, create_pending_action
+from ..recipient_aliases import remembered_recipient_request, save_recipient_alias
 from ..recipients import resolve_recipients
 from ..schemas import ChatRequest
 from ..security import decrypt_json
@@ -163,6 +164,7 @@ async def chat(
         .order_by(AgentMessage.created_at.desc())
         .limit(8)
     ).all()
+    remembered = remembered_recipient_request(body.text, recent)
     history = [
         {"role": row.role, "text": row.text[:2000]}
         for row in reversed(recent)
@@ -185,6 +187,8 @@ async def chat(
         user_id=user.id, role="user", text=body.text, structured_intent_json=intent.model_dump()
     )
     db.add(user_message)
+    if remembered:
+        save_recipient_alias(db, settings, user, *remembered)
     pending = None
     intent.timezone = intent.timezone or user.timezone
     if intent.intent == "create_meeting" and not intent.title:
@@ -351,6 +355,15 @@ async def chat(
             else "I understood the command, but no safe tool is available for this action yet."
         )
     assistant = AgentMessage(user_id=user.id, role="assistant", text=answer)
+    if remembered:
+        name, email = remembered
+        notice = (
+            f"\nКонтакт «{name}» сохранён для будущих запросов: {email}."
+            if ru
+            else f"\nSaved {name} for future requests: {email}."
+        )
+        answer += notice
+        assistant.text = answer
     db.add(assistant)
     audit(
         db,

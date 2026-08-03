@@ -120,3 +120,37 @@ def test_confirm_creates_teams_link_inside_google_event(logged_in, monkeypatch):
         ("teams", "microsoft-token"),
         ("calendar", "google", "google-token", "https://teams.example/join"),
     ]
+
+
+def test_confirm_returns_guarded_error_when_teams_rejects_request(logged_in, monkeypatch):
+    async def token(db, settings, user, provider):
+        return f"{provider}-token"
+
+    async def teams(token_value, payload):
+        raise adapters.ProviderError("Provider request failed (400)", 400)
+
+    monkeypatch.setattr(planner, "valid_access_token", token)
+    monkeypatch.setattr(planner, "create_teams_online_meeting", teams)
+    with SessionLocal() as db:
+        user = db.scalar(select(User))
+        action = create_pending_action(
+            db,
+            get_settings(),
+            user,
+            "create_meeting",
+            "Google Calendar + Teams",
+            {
+                "provider": "google",
+                "conference": "microsoft_teams",
+                "title": "Meeting",
+                "start_iso": "2026-08-03T09:30:00+00:00",
+                "end_iso": "2026-08-03T10:00:00+00:00",
+                "timezone": "Europe/Moscow",
+                "attendees": ["guest@example.com"],
+            },
+        )
+        db.commit()
+        action_id = action.id
+    response = logged_in.post(f"/api/v1/pending-actions/{action_id}/confirm")
+    assert response.status_code == 502
+    assert "OnlineMeetings.ReadWrite" in response.json()["detail"]
