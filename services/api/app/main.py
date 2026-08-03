@@ -9,7 +9,7 @@ from sqlalchemy import text
 from .bootstrap import ensure_owner
 from .config import get_settings
 from .database import Base, SessionLocal, engine
-from .routers import auth, chat, integrations, internal, local_items, planner
+from .routers import auth, chat, family, integrations, internal, local_items, planner
 
 logger = structlog.get_logger()
 
@@ -33,6 +33,7 @@ app.add_middleware(
 )
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.trusted_hosts)
 app.include_router(auth.router)
+app.include_router(family.router)
 app.include_router(chat.router)
 app.include_router(integrations.router)
 app.include_router(planner.router)

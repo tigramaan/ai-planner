@@ -29,6 +29,8 @@ Adaptive logo acceptance (2026-08-03): navigation shows the supplied black UMEC 
 
 Gmail OAuth callback acceptance (2026-08-03): Google denial, omitted Gmail permissions and a failed Gmail profile capability check redirect back to Settings with localized recovery instructions. The integration is persisted as connected only after the token's granted scopes cover the request and the Gmail API accepts the access token; a rejected callback never leaves a false connected record.
 
+Family invitation and logout acceptance (2026-08-03): navigation provides an explicit logout action that revokes the current refresh session before returning to login. An administrator can create and copy a high-entropy invitation URL from Settings; the raw token is never stored, expires after seven days and can register exactly one isolated non-admin account. Non-admin invite creation and invite replay return forbidden.
+
 Additional UI acceptance (2026-08-03): Today/Week show start/end, timer trigger, attendees, reminders, safe meeting links, provider edit links, task completion/deletion, timer restart/deletion and calendar change/cancel drafts. PWA installation supports the browser prompt plus iOS/Android fallback instructions, with UMEC-branded manifest and Apple icons. Tasks support description, Moscow due date, priority, search, status/date filters, completion/reopening, inline editing, collapsed completed work and confirmed deletion; mutation endpoints enforce per-user ownership. Chat/voice support detailed task creation, update, completion, reopening and deletion plus timer restart/deletion. Command examples cover these mutations and open as chat drafts. Explicit Telemost selection overrides stale video context for both new and updated events, and a configured permanent room is written into the calendar event.
 
 ## Migration drill
@@ -43,7 +45,7 @@ The `backup` service creates a custom-format `pg_dump`, validates its catalog, w
 
 Use sandbox contacts only. For each family member:
 
-1. Register with the family code and verify another member's tasks/integrations are absent.
+1. Create an administrator invite link, register through it, verify it cannot be reused, and verify another member's tasks/integrations are absent.
 2. Create a task with a due date and priority; edit, complete, reopen and delete it, then verify a second user cannot mutate it.
 3. Save an OpenAI key, transcribe a voice sample, and verify no key appears in API/log/audit output.
 4. Authorize Google Calendar/Contacts, then Gmail read/compose/send incrementally.

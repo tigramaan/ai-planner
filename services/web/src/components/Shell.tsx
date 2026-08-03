@@ -1,7 +1,8 @@
 "use client";
-import { CalendarBlank, CalendarDots, ChatCircleDots, Gear, ListChecks } from "@phosphor-icons/react";
+import { CalendarBlank, CalendarDots, ChatCircleDots, Gear, ListChecks, SignOut } from "@phosphor-icons/react";
 import { useI18n } from "@/lib/i18n";
 import { InstallApp } from "@/components/InstallApp";
+import { api } from "@/lib/api";
 
 const links = [
   ["/", "Чат", "Chat", ChatCircleDots], ["/today", "Сегодня", "Today", CalendarBlank],
@@ -11,5 +12,6 @@ const links = [
 
 export function Shell({children}:{children:React.ReactNode}) {
   const { locale, t } = useI18n();
-  return <div className="shell"><nav className="nav" aria-label={t("Основная навигация", "Main navigation")}><a className="brand" href="/" aria-label="UMEC"><img className="brandLogo" src="/umec-space-logo.png" alt="UMEC"/></a><div className="navlinks">{links.map(([href,ru,en,Icon])=><a className="navlink" href={href} key={href}><Icon size={22} weight="duotone"/><span>{locale === "ru" ? ru : en}</span></a>)}<InstallApp compact/></div></nav><main className="content">{children}</main></div>;
+  async function logout() { await api("/auth/logout", {method:"POST"}).catch(() => undefined); location.href="/login"; }
+  return <div className="shell"><nav className="nav" aria-label={t("Основная навигация", "Main navigation")}><a className="brand" href="/" aria-label="UMEC"><img className="brandLogo" src="/umec-space-logo.png" alt="UMEC"/></a><div className="navlinks">{links.map(([href,ru,en,Icon])=><a className="navlink" href={href} key={href}><Icon size={22} weight="duotone"/><span>{locale === "ru" ? ru : en}</span></a>)}<InstallApp compact/><button className="navlink installNav" type="button" onClick={logout}><SignOut size={22} weight="duotone"/><span>{t("Выйти", "Sign out")}</span></button></div></nav><main className="content">{children}</main></div>;
 }

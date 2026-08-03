@@ -9,7 +9,7 @@ from ..audit import audit
 from ..config import Settings, get_settings
 from ..database import get_db
 from ..dependencies import current_user
-from ..models import User, UserSession
+from ..models import FamilyInvite, User, UserSession
 from ..schemas import (
     ChangePasswordRequest,
     InitialSetupRequest,
@@ -123,9 +123,23 @@ def register(
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ):
-    if not settings.family_registration_code or not secrets.compare_digest(
-        body.registration_code, settings.family_registration_code
-    ):
+    invite = None
+    if body.invite_token:
+        invite = db.scalar(
+            select(FamilyInvite)
+            .where(FamilyInvite.token_hash == token_hash(body.invite_token))
+            .with_for_update()
+        )
+    now = datetime.now(UTC)
+    valid_invite = bool(
+        invite and invite.used_at is None and invite.expires_at.replace(tzinfo=UTC) > now
+    )
+    valid_legacy_code = bool(
+        body.registration_code
+        and settings.family_registration_code
+        and secrets.compare_digest(body.registration_code, settings.family_registration_code)
+    )
+    if not valid_invite and not valid_legacy_code:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Registration is invitation-only")
     email = str(body.email).casefold()
     if db.scalar(select(User).where(User.email == email)):
@@ -142,6 +156,8 @@ def register(
         expires_at=datetime.now(UTC) + timedelta(days=settings.refresh_token_days),
     )
     db.add(session)
+    if invite:
+        invite.used_at = now
     audit(db, user, request, "auth.register", "user", user.id)
     db.commit()
     set_auth_cookies(

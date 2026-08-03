@@ -14,8 +14,14 @@ class LoginRequest(BaseModel):
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=12, max_length=256)
-    registration_code: str = Field(min_length=1, max_length=256)
+    registration_code: str | None = Field(default=None, min_length=1, max_length=256)
+    invite_token: str | None = Field(default=None, min_length=20, max_length=256)
     device_name: str = Field(default="browser", max_length=160)
+
+
+class FamilyInviteView(BaseModel):
+    invite_url: str
+    expires_at: datetime
 
 
 class ChangePasswordRequest(BaseModel):

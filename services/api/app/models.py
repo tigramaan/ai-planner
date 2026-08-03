@@ -44,6 +44,18 @@ class UserSession(Base):
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class FamilyInvite(Base):
+    __tablename__ = "family_invites"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4)
+    created_by_user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
 class Integration(Base):
     __tablename__ = "integrations"
     __table_args__ = (UniqueConstraint("user_id", "provider"),)
