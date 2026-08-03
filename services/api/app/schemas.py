@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any, Literal
+from urllib.parse import urlparse
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -81,6 +82,24 @@ class UserPreferences(BaseModel):
     default_calendar: Literal["google", "microsoft", "yandex", "local"]
     default_mail: Literal["google", "microsoft", "yandex"]
     default_conference: Literal["none", "google", "microsoft", "yandex", "zoom"]
+    fallback_teams_url: str = Field(default="", max_length=2000)
+    fallback_telemost_url: str = Field(default="", max_length=2000)
+
+    @field_validator("fallback_teams_url", "fallback_telemost_url")
+    @classmethod
+    def safe_fallback_url(cls, value: str, info) -> str:
+        value = value.strip()
+        if not value:
+            return ""
+        parsed = urlparse(value)
+        allowed = (
+            {"teams.microsoft.com", "teams.live.com"}
+            if info.field_name == "fallback_teams_url"
+            else {"telemost.yandex.ru"}
+        )
+        if parsed.scheme != "https" or parsed.hostname not in allowed:
+            raise ValueError("Fallback URL must be an HTTPS Teams or Yandex Telemost link")
+        return value
 
 
 class Intent(BaseModel):

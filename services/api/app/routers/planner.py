@@ -19,6 +19,7 @@ from ..adapters import (
     update_calendar_event,
 )
 from ..audit import audit
+from ..conference_fallbacks import read_fallback_url, store_fallback_url
 from ..config import Settings, get_settings
 from ..database import get_db
 from ..dependencies import current_user
@@ -46,13 +47,13 @@ from ..security import decrypt_json, encrypt_json
 
 router = APIRouter(prefix="/api/v1", tags=["planner"])
 
-
 @router.get("/preferences", response_model=UserPreferences)
-def preferences(user: User = Depends(current_user)):
+def preferences(user: User = Depends(current_user), settings: Settings = Depends(get_settings)):
     return UserPreferences(
-        default_calendar=user.default_calendar,
-        default_mail=user.default_mail,
+        default_calendar=user.default_calendar, default_mail=user.default_mail,
         default_conference=user.default_conference,
+        fallback_teams_url=read_fallback_url(settings, user, "microsoft_teams"),
+        fallback_telemost_url=read_fallback_url(settings, user, "yandex_telemost"),
     )
 
 
@@ -62,10 +63,24 @@ def update_preferences(
     request: Request,
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
 ):
-    for key, value in body.model_dump().items():
-        setattr(user, key, value)
-    audit(db, user, request, "preferences.updated", "user", user.id, body.model_dump())
+    user.default_calendar, user.default_mail = body.default_calendar, body.default_mail
+    user.default_conference = body.default_conference
+    user.fallback_teams_url_encrypted = store_fallback_url(settings, user, "microsoft_teams", body.fallback_teams_url)
+    user.fallback_telemost_url_encrypted = store_fallback_url(settings, user, "yandex_telemost", body.fallback_telemost_url)
+    audit(
+        db,
+        user,
+        request,
+        "preferences.updated",
+        "user",
+        user.id,
+        {"default_calendar": body.default_calendar, "default_mail": body.default_mail,
+         "default_conference": body.default_conference,
+         "fallback_teams_configured": bool(body.fallback_teams_url),
+         "fallback_telemost_configured": bool(body.fallback_telemost_url)},
+    )
     db.commit()
     return body
 
@@ -330,9 +345,17 @@ async def confirm(
                     if not payload["external_join_url"]:
                         raise ProviderError("Microsoft returned no Teams join URL")
                 except (LookupError, ProviderError):
+                    fallback_url = read_fallback_url(settings, user, "microsoft_teams")
                     payload["conference"] = "none"
-                    warnings.append("Microsoft Teams meeting was not created")
+                    payload["external_join_url"] = fallback_url or None
+                    warnings.append(
+                        "Microsoft Teams API failed; permanent fallback room used"
+                        if fallback_url
+                        else "Microsoft Teams meeting was not created"
+                    )
                     result = await create_calendar_event(provider, token, payload)
+                    if fallback_url:
+                        result["onlineMeeting"] = {"joinUrl": fallback_url}
                 else:
                     try:
                         result = await create_calendar_event(provider, token, payload)
@@ -354,15 +377,36 @@ async def confirm(
                 else:
                     result = await create_calendar_event(provider, token, payload)
                     result["onlineMeeting"] = {"joinUrl": payload["external_join_url"]}
+            elif provider == "google" and payload.get("conference") == "yandex_telemost":
+                fallback_url = read_fallback_url(settings, user, "yandex_telemost")
+                payload["conference"] = "none"
+                payload["external_join_url"] = fallback_url or None
+                warnings.append(
+                    "Permanent Yandex Telemost room used"
+                    if fallback_url
+                    else "Yandex Telemost room is not configured"
+                )
+                result = await create_calendar_event(provider, token, payload)
+                if fallback_url:
+                    result["onlineMeeting"] = {"joinUrl": fallback_url}
             else:
                 try:
                     result = await create_calendar_event(provider, token, payload)
                 except ProviderError:
                     if payload.get("conference") == "none":
                         raise
+                    requested_conference = payload.get("conference")
+                    fallback_url = read_fallback_url(settings, user, requested_conference)
                     payload["conference"] = "none"
-                    warnings.append("Video meeting was not created")
+                    payload["external_join_url"] = fallback_url or None
+                    warnings.append(
+                        "Video API failed; permanent fallback room used"
+                        if fallback_url
+                        else "Video meeting was not created"
+                    )
                     result = await create_calendar_event(provider, token, payload)
+                    if fallback_url:
+                        result["onlineMeeting"] = {"joinUrl": fallback_url}
         elif action.action_type in {"update_event", "add_event_participants"}:
             provider = payload.get("provider", "google")
             token = await valid_access_token(db, settings, user, provider)

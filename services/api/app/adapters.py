@@ -194,6 +194,12 @@ async def create_calendar_event(provider: str, token: str, payload: dict[str, An
         "onlineMeetingProvider": "teamsForBusiness",
         "transactionId": payload["idempotency_key"],
     }
+    if payload.get("external_join_url"):
+        body["location"] = {"displayName": payload["external_join_url"]}
+        body["body"] = {
+            "contentType": "text",
+            "content": f"Join online: {payload['external_join_url']}",
+        }
     created = await provider_request(
         "POST", "https://graph.microsoft.com/v1.0/me/events", token, json=body
     )

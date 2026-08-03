@@ -1,0 +1,59 @@
+{
+  "display_information": {
+    "display_name": "UMEC AI Planner",
+    "description": "Creates Zoom meetings requested and confirmed by the user in UMEC AI Planner.",
+    "long_description": "UMEC AI Planner connects to an individual user's Zoom account through OAuth. It creates a Zoom meeting only when the user explicitly requests video conferencing and confirms the action. The resulting join link can then be added to the user's selected calendar event.",
+    "company_name": "UMEC",
+    "discover_type": "UNLISTED",
+    "install_type": "APP_DIRECTORY",
+    "marketplace_categories": [
+      "productivity",
+      "workflow-automation"
+    ],
+    "industry_vertical": "other",
+    "market_segments": [
+      "consumer"
+    ],
+    "business_lines": [
+      "other"
+    ],
+    "config_url": "https://planner.umec.space/settings"
+  },
+  "oauth_information": {
+    "usage": "USER_OPERATION",
+    "development_redirect_uri": "https://planner.umec.space/api/v1/integrations/zoom/oauth/callback",
+    "production_redirect_uri": "https://planner.umec.space/api/v1/integrations/zoom/oauth/callback",
+    "oauth_allow_list": [
+      "https://planner.umec.space"
+    ],
+    "strict_mode": true,
+    "subdomain_strict_mode": true,
+    "scopes": [
+      {
+        "scope": "user:read:user",
+        "optional": false
+      },
+      {
+        "scope": "meeting:write:meeting",
+        "optional": false
+      }
+    ],
+    "scope_description": "Read the authorized user's basic Zoom profile and create Zoom meetings only after that user confirms the action in UMEC AI Planner."
+  },
+  "developer_information": {
+    "contact_details": [
+      {
+        "contact_name": "Tigran",
+        "contact_email": "tigramaan@gmail.com",
+        "role": "Developer"
+      }
+    ]
+  },
+  "features": {
+    "products": [
+      "ZOOM_MEETING"
+    ],
+    "development_home_uri": "https://planner.umec.space/settings",
+    "production_home_uri": "https://planner.umec.space/settings"
+  }
+}

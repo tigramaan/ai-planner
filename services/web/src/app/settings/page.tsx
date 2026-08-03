@@ -18,6 +18,8 @@ type Preferences = {
   default_calendar: string;
   default_mail: string;
   default_conference: string;
+  fallback_teams_url: string;
+  fallback_telemost_url: string;
 };
 
 export default function Settings() {
@@ -29,6 +31,8 @@ export default function Settings() {
     default_calendar: "google",
     default_mail: "google",
     default_conference: "none",
+    fallback_teams_url: "",
+    fallback_telemost_url: "",
   });
   const state = (provider: string) =>
     items.find((item) => item.provider === provider);
@@ -120,6 +124,8 @@ export default function Settings() {
           default_calendar: data.get("default_calendar"),
           default_mail: data.get("default_mail"),
           default_conference: data.get("default_conference"),
+          fallback_teams_url: data.get("fallback_teams_url"),
+          fallback_telemost_url: data.get("fallback_telemost_url"),
         }),
       });
       setPreferences(saved);
@@ -305,6 +311,44 @@ export default function Settings() {
               {t(
                 "Видеосвязь используется только если вы явно попросили онлайн-встречу.",
                 "Video is used only when you explicitly request an online meeting.",
+              )}
+            </p>
+            <label className="label">
+              {t("Постоянная ссылка Teams", "Permanent Teams link")}
+              <input
+                className="field"
+                name="fallback_teams_url"
+                type="url"
+                value={preferences.fallback_teams_url}
+                placeholder="https://teams.microsoft.com/l/meetup-join/..."
+                onChange={(e) =>
+                  setPreferences({
+                    ...preferences,
+                    fallback_teams_url: e.target.value,
+                  })
+                }
+              />
+            </label>
+            <label className="label">
+              {t("Постоянная ссылка Телемоста", "Permanent Telemost link")}
+              <input
+                className="field"
+                name="fallback_telemost_url"
+                type="url"
+                value={preferences.fallback_telemost_url}
+                placeholder="https://telemost.yandex.ru/j/..."
+                onChange={(e) =>
+                  setPreferences({
+                    ...preferences,
+                    fallback_telemost_url: e.target.value,
+                  })
+                }
+              />
+            </label>
+            <p className="muted">
+              {t(
+                "Если API видеосервиса недоступен, постоянная ссылка будет добавлена в событие. Любой получивший её сможет использовать общую комнату повторно.",
+                "If the video API is unavailable, the permanent link is added to the event. Anyone who has it can reuse the shared room.",
               )}
             </p>
             <button className="button">{t("Сохранить", "Save")}</button>

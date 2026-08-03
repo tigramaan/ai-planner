@@ -48,6 +48,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-041: Each user selects default calendar, mail and video providers. Defaults apply only when a requested capability omits its provider; a video meeting is never inferred from an ordinary meeting, call reminder or offline event.
 - REQ-042: Calendar creation is independently useful: if an explicitly requested video provider is unavailable, the confirmed calendar event is still created and the result reports a partial-success warning.
 - REQ-043: Zoom uses user-managed OAuth and verified meeting creation. Yandex Calendar/Mail use the documented CalDAV/IMAP/SMTP business-service path; Telemost API is offered only for eligible Yandex 360 Business organization accounts.
+- REQ-044: A user may store encrypted permanent Teams and Telemost room URLs. They are used only for an explicitly requested provider when its API is unavailable, are inserted into the calendar event, and produce a visible shared-room warning.
 
 ## Constraints
 
