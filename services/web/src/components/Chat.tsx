@@ -1,12 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Microphone, PaperPlaneRight, Stop } from "@phosphor-icons/react";
 import { api, uploadAudio } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
 type Message = { id?: string; role: "user" | "assistant"; text: string };
 type Pending = { id: string; display_summary: string; status: string; result: { link?: string } };
+const appendMessage = (items: Message[], message: Message) => [...items, message].slice(-50);
 
 export function Chat() {
   const { locale, t } = useI18n();
@@ -22,6 +23,8 @@ export function Chat() {
   const waveform = useRef<HTMLCanvasElement | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
   const animationFrame = useRef<number | null>(null);
+  const messageList = useRef<HTMLDivElement | null>(null);
+  const stickToBottom = useRef(true);
 
   function loadPending() {
     api<Pending[]>("/pending-actions").then(setPending).catch((value) => setError(value.message));
@@ -32,6 +35,17 @@ export function Chat() {
     loadPending();
     return () => stopVisualization();
   }, []);
+
+  useLayoutEffect(() => {
+    const list = messageList.current;
+    if (list && stickToBottom.current) list.scrollTop = list.scrollHeight;
+  }, [messages, pending]);
+
+  function trackScroll() {
+    const list = messageList.current;
+    if (!list) return;
+    stickToBottom.current = list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+  }
 
   function stopVisualization() {
     if (animationFrame.current !== null) cancelAnimationFrame(animationFrame.current);
@@ -83,7 +97,8 @@ export function Chat() {
     event?.preventDefault();
     const value = text.trim();
     if (!value || busy) return;
-    setMessages((items) => [...items, { role: "user", text: value }]);
+    stickToBottom.current = true;
+    setMessages((items) => appendMessage(items, { role: "user", text: value }));
     setText("");
     setBusy(true);
     setError("");
@@ -92,7 +107,7 @@ export function Chat() {
         method: "POST",
         body: JSON.stringify({ text: value }),
       });
-      setMessages((items) => [...items, { role: "assistant", text: result.message }]);
+      setMessages((items) => appendMessage(items, { role: "assistant", text: result.message }));
       if (result.pending_action_id) loadPending();
     } catch (value) {
       setError(value instanceof Error ? value.message : t("Команда не выполнена", "Command failed"));
@@ -107,7 +122,8 @@ export function Chat() {
     try {
       const result = await api<{ result?: { link?: string } }>(`/pending-actions/${id}/${decision}`, { method: "POST" });
       const link = result?.result?.link;
-      setMessages((items) => [...items, { role: "assistant", text: link ? `${t("Готово. Ссылка на встречу:", "Done. Meeting link:")} ${link}` : decision === "confirm" ? t("Действие выполнено.", "Action completed.") : t("Действие отменено.", "Action cancelled.") }]);
+      stickToBottom.current = true;
+      setMessages((items) => appendMessage(items, { role: "assistant", text: link ? `${t("Готово. Ссылка на встречу:", "Done. Meeting link:")} ${link}` : decision === "confirm" ? t("Действие выполнено.", "Action completed.") : t("Действие отменено.", "Action cancelled.") }));
       loadPending();
     } catch (value) {
       setError(value instanceof Error ? value.message : t("Не удалось обработать подтверждение", "Could not process confirmation"));
@@ -152,7 +168,7 @@ export function Chat() {
   }
 
   return <section className="panel chat" aria-label={t("Чат с планировщиком", "Planner chat")}>
-    <div className="messages" aria-live="polite">
+    <div className="messages" ref={messageList} onScroll={trackScroll} aria-live="polite">
       {messages.length === 0 ? <p className="muted">{t("Напишите команду или запишите голосовое сообщение.", "Type a command or record a voice message.")}</p> : messages.map((message, index) => <div className={`message ${message.role}`} key={message.id ?? index}>{message.text}</div>)}
       {pending.filter((action) => action.status === "pending").map((action) => <div className="confirmation" key={action.id}><strong>{t("Требуется подтверждение", "Confirmation required")}</strong><p>{action.display_summary}</p><div className="row"><button className="button" disabled={busy} onClick={() => decide(action.id, "confirm")}>{t("Подтвердить", "Confirm")}</button><button className="button secondary" disabled={busy} onClick={() => decide(action.id, "cancel")}>{t("Отменить", "Cancel")}</button></div></div>)}
     </div>

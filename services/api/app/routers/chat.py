@@ -116,12 +116,13 @@ def browser_locale(request: Request) -> str:
 
 @router.get("/chat/messages")
 def messages(user: User = Depends(current_user), db: Session = Depends(get_db)):
-    return db.scalars(
+    latest = db.scalars(
         select(AgentMessage)
         .where(AgentMessage.user_id == user.id)
-        .order_by(AgentMessage.created_at)
-        .limit(200)
+        .order_by(AgentMessage.created_at.desc())
+        .limit(50)
     ).all()
+    return list(reversed(latest))
 
 
 @router.post("/chat/messages")
