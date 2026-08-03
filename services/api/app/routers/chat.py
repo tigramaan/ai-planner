@@ -190,13 +190,25 @@ async def chat(
     try:
         intent = await extract_intent(
             config["api_key"],
-            config["model"],
+            config["junior_model"],
             body.text,
             locale,
             user.timezone,
             history,
-            config["reasoning_effort"],
+            config["junior_reasoning_effort"],
         )
+        model_tier = "junior"
+        if intent.requires_senior or intent.intent == "unknown":
+            intent = await extract_intent(
+                config["api_key"],
+                config["senior_model"],
+                body.text,
+                locale,
+                user.timezone,
+                history,
+                config["senior_reasoning_effort"],
+            )
+            model_tier = "senior"
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
     explicit_conference = explicit_conference_provider(body.text)
@@ -402,7 +414,7 @@ async def chat(
         "agent.command",
         "message",
         user_message.id,
-        {"intent": intent.intent, "pending": bool(pending)},
+        {"intent": intent.intent, "pending": bool(pending), "model_tier": model_tier},
     )
     db.commit()
     return {

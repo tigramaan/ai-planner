@@ -145,6 +145,7 @@ async def test_intent_schema_delegates_mail_strategy_to_model(monkeypatch):
                 mail_mode="triage",
                 participants=[],
                 conference_requested=False,
+                requires_senior=False,
                 requires_clarification=False,
             )
             return type("Response", (), {"output_text": json.dumps(payload)})()
@@ -229,6 +230,43 @@ def test_email_draft_shows_exact_text_and_requires_confirmation(logged_in, monke
     assert "Итоги проекта" in response.json()["message"]
     assert "recipient@example.com" in response.json()["message"]
     assert "Подтвердите, пожалуйста" in response.json()["message"]
+
+
+def test_complex_command_is_escalated_to_senior_model(logged_in, monkeypatch):
+    calls = []
+
+    async def intent(api_key, model, text, locale, timezone, history, reasoning_effort):
+        calls.append((model, reasoning_effort))
+        if len(calls) == 1:
+            return Intent(
+                intent="unknown",
+                requires_senior=True,
+                route_reason="Several dependent operations",
+            )
+        return Intent(intent="show_today")
+
+    monkeypatch.setattr(chat_router, "extract_intent", intent)
+    response = logged_in.post(
+        "/api/v1/chat/messages",
+        json={"text": "Разбери входящие, подготовь ответы и поставь задачи по срокам"},
+    )
+
+    assert response.status_code == 200
+    assert calls == [("gpt-5.6-luna", "low"), ("gpt-5.6-sol", "medium")]
+
+
+def test_simple_command_stays_on_junior_model(logged_in, monkeypatch):
+    calls = []
+
+    async def intent(api_key, model, text, locale, timezone, history, reasoning_effort):
+        calls.append((model, reasoning_effort))
+        return Intent(intent="show_today")
+
+    monkeypatch.setattr(chat_router, "extract_intent", intent)
+    response = logged_in.post("/api/v1/chat/messages", json={"text": "Что сегодня?"})
+
+    assert response.status_code == 200
+    assert calls == [("gpt-5.6-luna", "low")]
 
 
 def test_task_can_be_created_with_details_and_completed_through_chat(logged_in, monkeypatch):

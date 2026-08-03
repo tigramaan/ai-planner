@@ -163,6 +163,8 @@ class Intent(BaseModel):
     conference_provider: Literal["google", "microsoft", "yandex", "zoom", "none"] | None = None
     conference_requested: bool = False
     body: str | None = None
+    requires_senior: bool = False
+    route_reason: str | None = Field(default=None, max_length=300)
     requires_clarification: bool = False
     clarification_question: str | None = None
 
