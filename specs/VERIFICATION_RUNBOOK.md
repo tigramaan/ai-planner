@@ -29,7 +29,7 @@ Adaptive logo acceptance (2026-08-03): navigation shows the supplied black UMEC 
 
 Gmail OAuth callback acceptance (2026-08-03): Google denial, omitted Gmail permissions and a failed Gmail profile capability check redirect back to Settings with localized recovery instructions. The integration is persisted as connected only after the token's granted scopes cover the request and the Gmail API accepts the access token; a rejected callback never leaves a false connected record.
 
-OAuth session-return acceptance (2026-08-03): access and refresh cookies are HttpOnly, Secure in production and SameSite=Lax. A top-level GET redirect from Google/Microsoft/Zoom retains the application session and reaches Settings rather than Login; cross-site POST requests still do not receive the cookies. OAuth state remains single-use and user-bound.
+OAuth session-return acceptance (2026-08-03): access and refresh cookies are HttpOnly, Secure in production and SameSite=Lax. OAuth start reissues an existing session with the compatible attribute before leaving the site, so pre-fix browser sessions are repaired without another login. A top-level GET redirect from Google/Microsoft/Zoom retains the application session and reaches Settings rather than Login; cross-site POST requests still do not receive the cookies. OAuth state remains single-use and user-bound.
 
 Family invitation and logout acceptance (2026-08-03): navigation provides an explicit logout action that revokes the current refresh session before returning to login. Every authenticated member can create and copy unlimited high-entropy invitation URLs from Settings; raw tokens are never stored, each expires after seven days and registers exactly one isolated non-admin account. Invite replay returns forbidden.
 

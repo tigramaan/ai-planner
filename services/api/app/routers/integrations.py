@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -15,6 +15,7 @@ from ..integrations import integration_view, read_secret, upsert_secret
 from ..models import Integration, User
 from ..oauth import authorization_url, consume_state, create_state, exchange_code, resolve_scopes
 from ..schemas import OAuthStart, SecretWrite
+from .auth import set_auth_cookies
 
 router = APIRouter(prefix="/api/v1/integrations", tags=["integrations"])
 
@@ -69,6 +70,7 @@ def oauth_start(
     provider: str,
     body: OAuthStart,
     request: Request,
+    response: Response,
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
@@ -94,6 +96,10 @@ def oauth_start(
     except ValueError as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
     state = create_state(db, user, provider, scopes)
+    access = request.cookies.get("access_token", "")
+    refresh = request.cookies.get("refresh_token", "")
+    if access and refresh:
+        set_auth_cookies(response, settings, access, refresh)
     return {
         "authorization_url": authorization_url(settings, provider, state, scopes),
         "scopes": scopes,
