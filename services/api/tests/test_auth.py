@@ -21,7 +21,8 @@ def test_single_use_initial_setup(client):
     with SessionLocal() as db:
         db.execute(delete(User))
         db.commit()
-    assert client.get("/api/v1/auth/setup-status").json()["setup_required"] is True
+    setup = client.get("/api/v1/auth/setup-status").json()
+    assert setup == {"setup_required": True}
     response = client.post(
         "/api/v1/auth/setup",
         json={

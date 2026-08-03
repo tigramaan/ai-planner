@@ -3,7 +3,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
 RUN addgroup --system planner && adduser --system --ingroup planner planner
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir .
+RUN python -m pip install --no-cache-dir --upgrade "pip>=26.1.2,<27" \
+    && python -m pip install --no-cache-dir .
 COPY . .
 USER planner
 EXPOSE 8000

@@ -16,7 +16,7 @@ def current_user(
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Authentication required")
     payload = decode_access_token(settings, access_token)
     session = db.get(UserSession, payload["sid"])
-    if not session or session.revoked_at is not None:
+    if not session or session.revoked_at is not None or session.user_id != payload["sub"]:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Session revoked")
     user = db.get(User, payload["sub"])
     if not user:

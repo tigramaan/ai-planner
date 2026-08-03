@@ -32,7 +32,7 @@ router = APIRouter(prefix="/api/v1", tags=["auth"])
 @router.get("/auth/setup-status")
 def setup_status(db: Session = Depends(get_db), settings: Settings = Depends(get_settings)):
     configured = db.scalar(select(User).where(User.email == str(settings.owner_email))) is not None
-    return {"setup_required": not configured, "owner_email": str(settings.owner_email)}
+    return {"setup_required": not configured}
 
 
 @router.post("/auth/setup", response_model=UserView, status_code=201)

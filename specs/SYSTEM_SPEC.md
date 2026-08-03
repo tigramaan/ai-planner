@@ -11,6 +11,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-003: Every user can change their password after confirming the current password.
 - REQ-004: Sessions use HttpOnly, Secure-in-production, SameSite=Strict cookies and can be revoked.
 - REQ-005: Every integration, secret, task, message, pending action and audit row is owned by one user and inaccessible to other users.
+- REQ-006: Every account has independent credentials, sessions, preferences, provider identities, OAuth tokens, fallback links, planner items, chat history and external calendar/mail views. Only application infrastructure and server-level API configuration are shared.
 
 ## Architecture
 
@@ -58,6 +59,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-044: A user may store encrypted permanent Teams and Telemost room URLs. They are used only for an explicitly requested provider when its API is unavailable, are inserted into the calendar event, and produce a visible shared-room warning.
 - REQ-045: Chat initially loads only the latest 50 messages in chronological order and stays pinned to the newest message unless the user deliberately scrolls upward.
 - REQ-046: Calendar events use a per-user reminder offset, defaulting to five minutes; zero disables it. An explicitly named video provider in the current message overrides defaults and conversation history.
+- REQ-054: Object access returns not-found for foreign-owned identifiers, and an access token is accepted only when its session belongs to the same token subject.
 
 ## Constraints
 

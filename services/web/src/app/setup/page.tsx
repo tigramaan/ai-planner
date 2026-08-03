@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
-type SetupStatus = { setup_required: boolean; owner_email: string };
+type SetupStatus = { setup_required: boolean };
 
 export default function SetupPage() {
   const [status, setStatus] = useState<SetupStatus | null>(null);
@@ -45,7 +45,7 @@ export default function SetupPage() {
           <><p className="muted">{t("Настройка уже завершена.", "Setup is already complete.")}</p><a className="button" href="/login">{t("Войти", "Sign in")}</a></>
         ) : (
           <form className="form" onSubmit={submit}>
-            <p className="muted">{t("Создайте пароль администратора", "Create an administrator password for")} {status?.owner_email ?? t("семьи", "the family")}.</p>
+            <p className="muted">{t("Создайте пароль администратора семьи.", "Create an administrator password for the family.")}</p>
             <label className="label">{t("Одноразовый код", "One-time code")}<input className="field" name="token" type="password" autoComplete="one-time-code" required minLength={32}/></label>
             <label className="label">{t("Новый пароль", "New password")}<input className="field" name="password" type="password" autoComplete="new-password" required minLength={12}/></label>
             {error && <p className="error" role="alert">{error}</p>}
