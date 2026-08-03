@@ -61,6 +61,7 @@ def openai_config(db, settings: Settings, user: User) -> dict[str, str]:
     return {
         "api_key": saved.get("api_key") or settings.openai_api_key,
         "model": saved.get("model") or settings.openai_planner_model,
+        "reasoning_effort": settings.openai_reasoning_effort,
         "transcription_model": saved.get("transcription_model")
         or settings.openai_transcription_model,
     }
@@ -73,6 +74,7 @@ async def extract_intent(
     locale: str = "en",
     timezone: str = "Europe/Moscow",
     history: list[dict[str, str]] | None = None,
+    reasoning_effort: str = "low",
 ) -> Intent:
     if not api_key:
         raise RuntimeError("OpenAI is not configured")
@@ -84,6 +86,7 @@ async def extract_intent(
         local_now = datetime.now(ZoneInfo(timezone)).isoformat()
         response = await client.responses.create(
             model=model,
+            reasoning={"effort": reasoning_effort},
             instructions=(
                 f"{SYSTEM_PROMPT}\nCurrent local date and time: {local_now}. "
                 f"Default IANA timezone: {timezone}. Write clarification_question in "

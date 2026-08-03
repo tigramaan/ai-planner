@@ -52,6 +52,8 @@ Use sandbox contacts only. For each family member:
 1. Create multiple member invite links, register through one, verify it cannot be reused, and verify another member's tasks/integrations are absent.
 2. Create a task with a due date and priority; edit, complete, reopen and delete it, then verify a second user cannot mutate it.
 3. Save an OpenAI key, transcribe a voice sample, and verify no key appears in API/log/audit output.
+
+OpenAI latency acceptance (2026-08-03): the default planner model is `gpt-5.6-luna`; intent extraction sends explicit `reasoning.effort=low` through the Responses API. Unit tests must assert the reasoning request contract, while existing structured-intent and conversation tests guard behavior.
 4. Authorize Google Calendar/Contacts, then Gmail read/compose/send incrementally.
 5. Authorize Microsoft Calendar/Contacts/Teams, verify granted scopes.
 6. Create a pending meeting action; cancel once and confirm a new one once.

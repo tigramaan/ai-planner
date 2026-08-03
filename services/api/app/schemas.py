@@ -45,7 +45,7 @@ class UserView(BaseModel):
 
 class SecretWrite(BaseModel):
     api_key: str = Field(min_length=10, max_length=500)
-    model: str = Field(default="gpt-5-mini", max_length=100)
+    model: str = Field(default="gpt-5.6-luna", max_length=100)
     transcription_model: str = Field(default="whisper-1", max_length=100)
 
 

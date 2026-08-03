@@ -5,7 +5,7 @@
 | REQ-001..005 | auth routes, family invite, OAuth-compatible session cookies, user ownership | auth/isolation and cookie-attribute tests |
 | REQ-010..014 | service directories, contracts, Compose | file guard, health tests |
 | REQ-020 | web PWA | web build and browser tests |
-| REQ-021 | OpenAI adapter and agent route | agent unit tests |
+| REQ-021 | OpenAI adapter and agent route; explicit Luna low-reasoning request | agent and conversation unit tests |
 | REQ-022 | Google OAuth/adapter | OAuth state and mocked adapter tests |
 | REQ-023 | Microsoft OAuth/adapter | OAuth state and mocked adapter tests |
 | REQ-024..026 | policy/pending action/idempotency | policy and confirmation tests |

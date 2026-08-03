@@ -60,6 +60,7 @@ async def test_intent_extraction_includes_bounded_conversation_context(monkeypat
     sent = json.loads(captured["input"])
     assert sent["conversation_history"][0]["role"] == "user"
     assert sent["current_user_message"] == "Москва, sorokina@example.com"
+    assert captured["reasoning"] == {"effort": "low"}
     assert intent.intent == "create_meeting"
     assert intent.participants == ["sorokina@example.com"]
 

@@ -203,6 +203,7 @@ async def chat(
             locale,
             user.timezone,
             history,
+            config["reasoning_effort"],
         )
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc

@@ -4,7 +4,7 @@ Replace `https://planner.example.com` with the user's public HTTPS origin.
 
 ## OpenAI
 
-Create a project API key in OpenAI Platform, configure budget alerts and set `OPENAI_API_KEY`. ChatGPT subscriptions do not include API credits. Default planner model is `gpt-5-mini`; transcription defaults to `whisper-1`.
+Create a project API key in OpenAI Platform, configure budget alerts and set `OPENAI_API_KEY`. ChatGPT subscriptions do not include API credits. Default planner model is `gpt-5.6-luna` with `OPENAI_REASONING_EFFORT=low`; transcription defaults to `whisper-1`.
 
 ## Google
 

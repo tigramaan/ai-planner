@@ -22,7 +22,8 @@ class Settings(BaseSettings):
     access_token_minutes: int = Field(1440, ge=5, le=10080)
     refresh_token_days: int = Field(30, ge=1, le=90)
     openai_api_key: str = ""
-    openai_planner_model: str = "gpt-5-mini"
+    openai_planner_model: str = "gpt-5.6-luna"
+    openai_reasoning_effort: str = "low"
     openai_transcription_model: str = "whisper-1"
     google_client_id: str = ""
     google_client_secret: str = ""

@@ -424,7 +424,7 @@ export default function Settings() {
               <input
                 className="field"
                 name="model"
-                defaultValue="gpt-5-mini"
+                defaultValue="gpt-5.6-luna"
                 required
               />
             </label>
