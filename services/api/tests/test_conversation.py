@@ -6,7 +6,7 @@ from sqlalchemy import select
 from app import agent
 from app.config import get_settings
 from app.database import SessionLocal
-from app.models import PendingAction, User
+from app.models import Integration, PendingAction, User
 from app.policy import create_pending_action
 from app.routers import chat as chat_router
 from app.schemas import Intent
@@ -62,6 +62,20 @@ async def test_intent_extraction_includes_bounded_conversation_context(monkeypat
     assert sent["current_user_message"] == "Москва, sorokina@example.com"
     assert intent.intent == "create_meeting"
     assert intent.participants == ["sorokina@example.com"]
+
+
+def test_mail_access_requires_incremental_scope(logged_in):
+    with SessionLocal() as db:
+        user = db.scalar(select(User))
+        integration = Integration(
+            user_id=user.id, provider="google", status="connected", scopes=["openid"]
+        )
+        db.add(integration)
+        db.commit()
+        assert not chat_router.mail_access_granted(db, user, "google")
+        integration.scopes = ["https://www.googleapis.com/auth/gmail.readonly"]
+        db.commit()
+        assert chat_router.mail_access_granted(db, user, "google")
 
 
 def test_correction_replaces_pending_draft(logged_in, monkeypatch):

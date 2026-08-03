@@ -1,9 +1,10 @@
 "use client";
-import { CalendarBlank, ChatCircleDots, Gear, ListChecks } from "@phosphor-icons/react";
+import { CalendarBlank, CalendarDots, ChatCircleDots, Gear, ListChecks } from "@phosphor-icons/react";
 import { useI18n } from "@/lib/i18n";
 
 const links = [
   ["/", "Чат", "Chat", ChatCircleDots], ["/today", "Сегодня", "Today", CalendarBlank],
+  ["/week", "Неделя", "Week", CalendarDots],
   ["/tasks", "Задачи", "Tasks", ListChecks], ["/settings", "Настройки", "Settings", Gear],
 ] as const;
 

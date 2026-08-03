@@ -22,7 +22,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 
 ## Product
 
-- REQ-020: A responsive Web/PWA provides chat, voice capture with visible live recording feedback, Today, tasks, timers, integration settings and audit. Voice upload supports browser-produced WebM and MP4/M4A variants.
+- REQ-020: A responsive Web/PWA provides chat, voice capture with visible live recording feedback, Today, a seven-day agenda, tasks, timers, integration settings and audit. Voice upload supports browser-produced WebM and MP4/M4A variants.
 - REQ-021: OpenAI performs transcription and structured intent extraction; secrets and OAuth tokens are never sent to the model.
 - REQ-022: Google OAuth supports incremental Calendar, Contacts and Gmail scopes.
 - REQ-023: Microsoft OAuth supports Outlook Calendar, Teams meetings, directory and mail.
@@ -31,6 +31,8 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-026: All external writes are idempotent and verified by reading the created, updated or deleted resource state.
 - REQ-027: The Web/PWA and assistant responses support Russian and English. Locale is derived only from browser language preferences; unsupported preferences fall back to English and no manual override is stored.
 - REQ-028: Existing Google/Microsoft events can be rescheduled, cancelled or extended with participants only after unique matching and explicit confirmation.
+- REQ-047: The seven-day agenda combines the current user's local tasks, reminders, active timers and available Google/Microsoft calendar events; unavailable providers degrade without blocking local data.
+- REQ-048: Mail-provider authorization failures are converted into localized reconnect guidance and never expose raw upstream errors to the user.
 
 ## Security
 

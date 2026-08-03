@@ -15,7 +15,7 @@ from ..config import Settings, get_settings
 from ..database import get_db
 from ..dependencies import current_user
 from ..integrations import valid_access_token
-from ..models import AgentMessage, LocalTask, PendingAction, Reminder, Timer, User
+from ..models import AgentMessage, Integration, LocalTask, PendingAction, Reminder, Timer, User
 from ..policy import action_status, create_pending_action
 from ..recipient_aliases import remembered_recipient_request, save_recipient_alias
 from ..recipients import resolve_recipients
@@ -37,6 +37,10 @@ AFFIRMATIVE = {
     "do it",
 }
 NEGATIVE = {"нет", "не надо", "отмена", "отмени", "cancel", "no"}
+MAIL_READ_SCOPE = {
+    "google": "https://www.googleapis.com/auth/gmail.readonly",
+    "microsoft": "Mail.Read",
+}
 
 
 def decision(text: str) -> str | None:
@@ -46,6 +50,16 @@ def decision(text: str) -> str | None:
     if normalized in NEGATIVE:
         return "cancel"
     return None
+
+
+def mail_access_granted(db: Session, user: User, provider: str) -> bool:
+    integration = db.scalar(
+        select(Integration).where(
+            Integration.user_id == user.id, Integration.provider == provider
+        )
+    )
+    required = MAIL_READ_SCOPE.get(provider)
+    return bool(integration and integration.status == "connected" and required in integration.scopes)
 
 
 def pending_drafts(db: Session, user: User) -> list[PendingAction]:
@@ -358,26 +372,37 @@ async def chat(
         )
     elif intent.intent == "search_email":
         provider = intent.provider or user.default_mail
-        try:
-            token = await valid_access_token(db, settings, user, provider)
-            rows = await search_email(provider, token, intent.body or intent.title or body.text)
-        except LookupError:
+        if provider in MAIL_READ_SCOPE and not mail_access_granted(db, user, provider):
             answer = (
-                f"Сначала подключите {provider} в настройках."
-                if ru
-                else f"Connect {provider} in Settings first."
+                f"Для чтения писем нужно отдельно разрешить доступ к {provider}. "
+                "Откройте «Настройки», нажмите кнопку авторизации почты и повторите запрос."
+                if ru else
+                f"Mail read access for {provider} is not authorized. Open Settings, "
+                "authorize mail access, and retry."
             )
-        except ProviderError as exc:
-            raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(exc)) from exc
         else:
-            answer = (
-                ("Писем не найдено." if ru else "No emails found.")
-                if not rows
-                else "\n".join(
-                    f"{index + 1}. {row['subject']} | {row['from']}"
-                    for index, row in enumerate(rows)
+            try:
+                token = await valid_access_token(db, settings, user, provider)
+                rows = await search_email(provider, token, intent.body or intent.title or body.text)
+            except LookupError:
+                answer = f"Сначала подключите {provider} в настройках." if ru else f"Connect {provider} in Settings first."
+            except ProviderError as exc:
+                answer = (
+                    "Gmail отклонил доступ. Повторно авторизуйте Gmail в настройках."
+                    if ru and provider == "google" else
+                    "Gmail rejected access. Reauthorize Gmail in Settings."
+                    if provider == "google" else
+                    f"{provider} отклонил запрос ({exc.status_code})."
+                    if ru else f"{provider} rejected the request ({exc.status_code})."
                 )
-            )
+            else:
+                answer = (
+                    ("Писем не найдено." if ru else "No emails found.")
+                    if not rows else "\n".join(
+                        f"{index + 1}. {row['subject']} | {row['from']}"
+                        for index, row in enumerate(rows)
+                    )
+                )
     else:
         answer = (
             "Я понял команду, но для этого действия пока нет безопасного инструмента."

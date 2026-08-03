@@ -12,12 +12,11 @@ from ..adapters import (
     create_calendar_event,
     create_teams_online_meeting,
     create_zoom_meeting,
-    default_event_window,
     delete_teams_online_meeting,
-    list_calendar_events,
     send_email,
     update_calendar_event,
 )
+from ..agenda import collect_agenda
 from ..audit import audit
 from ..conference_fallbacks import read_fallback_url, store_fallback_url
 from ..config import Settings, get_settings
@@ -226,69 +225,19 @@ async def today(
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ):
-    start, end = default_event_window()
-    items = [
-        {
-            "kind": "task",
-            "source": "local",
-            "id": row.id,
-            "title": row.title,
-            "at": row.due_at,
-            "status": row.status,
-        }
-        for row in db.scalars(
-            select(LocalTask).where(LocalTask.user_id == user.id, LocalTask.status == "open")
-        ).all()
-    ]
-    timers = db.scalars(
-        select(Timer).where(Timer.user_id == user.id, Timer.status == "active")
-    ).all()
-    items.extend(
-        {
-            "kind": "timer",
-            "source": "local",
-            "id": row.id,
-            "title": row.title,
-            "at": row.ends_at,
-            "status": row.status,
-        }
-        for row in timers
-    )
-    reminder_rows = db.scalars(
-        select(Reminder).where(
-            Reminder.user_id == user.id,
-            Reminder.status.in_(["scheduled", "retry", "processing"]),
-        )
-    ).all()
-    items.extend(
-        {
-            "kind": "reminder",
-            "source": "local",
-            "id": row.id,
-            "title": row.title,
-            "at": row.due_at,
-            "status": row.status,
-        }
-        for row in reminder_rows
-    )
-    for provider in ("google", "microsoft"):
-        try:
-            token = await valid_access_token(db, settings, user, provider)
-            events = await list_calendar_events(provider, token, start, end)
-            items.extend(
-                {
-                    "kind": "event",
-                    "source": provider,
-                    "id": row.get("id"),
-                    "title": row.get("summary") or row.get("subject"),
-                    "at": row.get("start"),
-                    "status": "scheduled",
-                }
-                for row in events
-            )
-        except (LookupError, ProviderError):
-            continue
+    start, _, items = await collect_agenda(db, settings, user, 1)
     return {"date": start.date(), "timezone": user.timezone, "items": items}
+
+
+@router.get("/week")
+async def week(
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+):
+    start, end, items = await collect_agenda(db, settings, user, 7)
+    return {"start_date": start.date(), "end_date": end.date(),
+            "timezone": user.timezone, "items": items}
 
 
 @router.get("/pending-actions", response_model=list[PendingActionView])
