@@ -3,7 +3,7 @@ import json
 import pytest
 from sqlalchemy import select
 
-from app import agent
+from app import agent, mail_queries
 from app.config import get_settings
 from app.database import SessionLocal
 from app.models import Integration, LocalTask, PendingAction, Reminder, Timer, User
@@ -89,6 +89,49 @@ async def test_email_summary_is_not_stored_by_openai(monkeypatch):
     assert "untrusted data" in captured["instructions"]
 
 
+@pytest.mark.anyio
+async def test_email_triage_is_bounded_structured_and_not_stored(monkeypatch):
+    captured = {}
+
+    class Responses:
+        async def create(self, **kwargs):
+            captured.update(kwargs)
+            items = [
+                {
+                    "index": index,
+                    "category": "ignore",
+                    "reason": "Рассылка",
+                    "suggested_action": "",
+                }
+                for index in range(20)
+            ]
+            return type("Response", (), {"output_text": json.dumps({"items": items})})()
+
+    class Client:
+        def __init__(self, **kwargs):
+            self.responses = Responses()
+
+    monkeypatch.setattr(agent, "AsyncOpenAI", Client)
+    result = await agent.triage_email_rows(
+        "test-key",
+        "test-model",
+        "low",
+        [
+            {"from": "sender@example.com", "subject": f"Subject {index}", "snippet": "x" * 2000}
+            for index in range(25)
+        ],
+        "ru",
+    )
+
+    assert len(result) == 20
+    assert captured["store"] is False
+    assert captured["reasoning"] == {"effort": "low"}
+    assert len(json.loads(captured["input"])) == 20
+    assert len(json.loads(captured["input"])[0]["snippet"]) == 1200
+    assert "untrusted data" in captured["instructions"]
+    assert captured["text"]["format"]["type"] == "json_schema"
+
+
 def test_mail_access_requires_incremental_scope(logged_in):
     with SessionLocal() as db:
         user = db.scalar(select(User))
@@ -97,10 +140,10 @@ def test_mail_access_requires_incremental_scope(logged_in):
         )
         db.add(integration)
         db.commit()
-        assert not chat_router.mail_access_granted(db, user, "google")
+        assert not mail_queries.mail_access_granted(db, user, "google")
         integration.scopes = ["https://www.googleapis.com/auth/gmail.readonly"]
         db.commit()
-        assert chat_router.mail_access_granted(db, user, "google")
+        assert mail_queries.mail_access_granted(db, user, "google")
 
 
 def test_mail_send_requires_compose_or_send_scope(logged_in):

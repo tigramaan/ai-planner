@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..action_summary import action_summary
-from ..adapters import ProviderError, search_email
+from ..adapters import ProviderError
 from ..agent import (
     extract_intent,
     openai_config,
@@ -20,15 +20,9 @@ from ..conference_intent import explicit_conference_provider
 from ..config import Settings, get_settings
 from ..database import get_db
 from ..dependencies import current_user
-from ..integrations import valid_access_token
 from ..local_chat_actions import LOCAL_INTENTS, handle_local_intent
-from ..mail_queries import (
-    MAIL_READ_SCOPE,
-    mail_access_granted,
-    mail_send_access_granted,
-    provider_mail_query,
-)
-from ..mail_summary import mail_search_answer, summarize_google_email, summary_requested
+from ..mail_chat import handle_mail_search
+from ..mail_queries import mail_send_access_granted
 from ..models import AgentMessage, PendingAction, Reminder, User
 from ..policy import action_status, create_pending_action
 from ..recipient_aliases import remembered_recipient_request, save_recipient_alias
@@ -383,48 +377,7 @@ async def chat(
             else "Open Today. Data is already updating from connected sources."
         )
     elif intent.intent == "search_email":
-        provider = intent.provider or user.default_mail
-        if provider in MAIL_READ_SCOPE and not mail_access_granted(db, user, provider):
-            answer = (
-                f"Для чтения писем нужно отдельно разрешить доступ к {provider}. "
-                "Откройте «Настройки», нажмите кнопку авторизации почты и повторите запрос."
-                if ru
-                else f"Mail read access for {provider} is not authorized. Open Settings, "
-                "authorize mail access, and retry."
-            )
-        else:
-            try:
-                token = await valid_access_token(db, settings, user, provider)
-                query = provider_mail_query(provider, intent, body.text, user.timezone)
-                rows = await search_email(provider, token, query)
-            except LookupError:
-                answer = (
-                    f"Сначала подключите {provider} в настройках."
-                    if ru
-                    else f"Connect {provider} in Settings first."
-                )
-            except ProviderError as exc:
-                answer = (
-                    "Gmail отклонил доступ. Повторно авторизуйте Gmail в настройках."
-                    if ru and provider == "google"
-                    else "Gmail rejected access. Reauthorize Gmail in Settings."
-                    if provider == "google"
-                    else f"{provider} отклонил запрос ({exc.status_code})."
-                    if ru
-                    else f"{provider} rejected the request ({exc.status_code})."
-                )
-            else:
-                if rows and summary_requested(body.text) and provider == "google":
-                    try:
-                        answer = await summarize_google_email(token, rows[0], config, locale)
-                    except (ProviderError, RuntimeError):
-                        answer = (
-                            "Письмо найдено, но подготовить резюме сейчас не удалось."
-                            if ru
-                            else "The email was found, but its summary could not be prepared."
-                        )
-                else:
-                    answer = mail_search_answer(rows, locale)
+        answer = await handle_mail_search(db, settings, user, intent, body.text, config, locale)
     else:
         answer = (
             "Я понял команду, но для этого действия пока нет безопасного инструмента."
