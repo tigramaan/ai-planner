@@ -29,6 +29,7 @@ from ..recipient_aliases import remembered_recipient_request, save_recipient_ali
 from ..recipients import resolve_recipients
 from ..schemas import ChatRequest
 from ..security import decrypt_json
+from ..senior_agent import run_senior_agent
 
 router = APIRouter(prefix="/api/v1", tags=["agent"])
 AFFIRMATIVE = {
@@ -198,7 +199,13 @@ async def chat(
             config["junior_reasoning_effort"],
         )
         model_tier = "junior"
-        if intent.requires_senior or intent.intent == "unknown":
+        senior_answer = None
+        if intent.intent == "unknown":
+            senior_answer = await run_senior_agent(
+                db, settings, user, config, body.text, history, locale
+            )
+            model_tier = "senior"
+        elif intent.requires_senior:
             intent = await extract_intent(
                 config["api_key"],
                 config["senior_model"],
@@ -329,7 +336,9 @@ async def chat(
             action_error = str(exc)
         except ProviderError as exc:
             raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(exc)) from exc
-    if resolution_answer:
+    if senior_answer:
+        answer = senior_answer
+    elif resolution_answer:
         answer = resolution_answer
     elif action_error:
         answer = action_error

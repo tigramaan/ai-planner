@@ -78,6 +78,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-068: An explicit inbox-triage request classifies up to twenty bounded mail metadata records into action-required, important-to-read and ignorable noise. The answer shows only the first two groups with a grounded reason and suggested next step, reports the ignored count, uses non-stored model processing with prompt-injection isolation, and does not mutate the mailbox.
 - REQ-069: The model selects supported tool strategies semantically from the user's goal and conversation rather than application phrase lists. Reasoning and paraphrasing remain model-directed; deterministic code is limited to tool contracts, ownership, permissions, resource bounds, external-response validation and explicit confirmation of side effects.
 - REQ-070: A semantic model router sends clear single-operation commands to the configured junior model and escalates novel, unknown, ambiguous, strategic or multi-operation goals to the configured senior model. Routing is based on task shape declared by the junior model, never application keyword lists; the selected tier is audited without storing hidden reasoning.
+- REQ-071: The senior path owns a bounded non-stored Responses API tool loop of at most six sequential rounds. It may inspect connected mail and perform guarded local task/timer operations, receives actual tool outputs before choosing later calls, never receives provider credentials, and never claims unavailable external writes occurred.
 
 ## Constraints
 

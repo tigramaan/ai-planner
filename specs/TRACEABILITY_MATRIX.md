@@ -40,6 +40,7 @@
 | REQ-068 | bounded non-stored mail metadata triage and grounded actionable response formatting | agent privacy, triage detection/formatting and chat route tests |
 | REQ-069 | schema-declared semantic strategy selection with deterministic execution boundaries | intent-schema, paraphrase strategy and policy tests |
 | REQ-070 | Luna junior routing with automatic Sol escalation and distinct reasoning effort | simple/complex route tests, config validation and audit inspection |
+| REQ-071 | bounded senior Responses tool loop over mail and local planner contracts | multi-round output propagation, storage, call-limit and tool validation tests |
 | REQ-030..035 | password, cipher, OAuth state, redaction | security tests |
 | REQ-036 | recipient resolver and Google/Microsoft contact adapters | recipient and adapter unit tests |
 | REQ-037 | bounded per-user conversation history passed to intent extraction | conversation continuation tests |

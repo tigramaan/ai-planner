@@ -76,6 +76,8 @@ Mail triage acceptance (2026-08-03): request today's emails that actually requir
 Semantic agent freedom acceptance (2026-08-03): express search, single-message explanation and inbox prioritization through several indirect Russian and English paraphrases that contain none of the implementation's prior marker words. Verify the model selects `mail_mode=search|summarize|triage` from meaning, no application keyword list participates in routing, and the same deterministic permission, size, confirmation and provider-response guards apply after strategy selection.
 
 Junior/senior router acceptance (2026-08-03): verify a clear one-operation command is interpreted once by `gpt-5.6-luna` with low reasoning. Verify novel, unknown, ambiguous, strategic and multi-operation goals produce a bounded junior escalation and are reinterpreted by `gpt-5.6-sol` with medium reasoning. Routing must not inspect application keyword lists; audit stores only the selected tier. Provider permissions and confirmation policy are identical for both tiers.
+
+Senior tool-loop acceptance (2026-08-03): issue a compound request that requires mail inspection followed by a local task. Verify Sol calls the bounded mail tool, receives its real output, then calls the local planner tool and reports only completed effects. The Responses requests use `store=false`, sequential calls and at most six rounds. Invalid arguments become bounded tool errors; secrets never enter model/tool payloads; external email/calendar writes are not executed or claimed by this loop.
 4. Authorize Google Calendar/Contacts, then Gmail read/compose/send incrementally.
 5. Authorize Microsoft Calendar/Contacts/Teams, verify granted scopes.
 6. Create a pending meeting action; cancel once and confirm a new one once.

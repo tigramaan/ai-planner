@@ -239,7 +239,7 @@ def test_complex_command_is_escalated_to_senior_model(logged_in, monkeypatch):
         calls.append((model, reasoning_effort))
         if len(calls) == 1:
             return Intent(
-                intent="unknown",
+                intent="show_today",
                 requires_senior=True,
                 route_reason="Several dependent operations",
             )
