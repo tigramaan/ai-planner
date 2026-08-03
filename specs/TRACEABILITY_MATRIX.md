@@ -29,6 +29,7 @@
 | REQ-059 | adaptive black/white navigation logo selected by the browser color scheme | Web production build and visual acceptance |
 | REQ-060 | granted-scope and live Gmail validation before OAuth persistence with localized callback recovery | OAuth callback tests and Web production build |
 | REQ-061 | explicit session-revoking logout and admin-only, hashed, expiring single-use family invites | auth/family permission and replay tests, migration drill and Web build |
+| REQ-062 | public README/Pages/screenshots, security policy, Gitleaks CI and deploy-aiplanner skill | Gitleaks history/tree scans, skill validator, static-page visual review and CI |
 | REQ-030..035 | password, cipher, OAuth state, redaction | security tests |
 | REQ-036 | recipient resolver and Google/Microsoft contact adapters | recipient and adapter unit tests |
 | REQ-037 | bounded per-user conversation history passed to intent extraction | conversation continuation tests |

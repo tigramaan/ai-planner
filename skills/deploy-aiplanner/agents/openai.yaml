@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deploy AI Planner"
+  short_description: "Securely deploy and connect UMEC AI Planner"
+  default_prompt: "Use $deploy-aiplanner to deploy UMEC AI Planner and configure its providers without exposing secrets."

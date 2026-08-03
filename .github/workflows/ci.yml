@@ -5,6 +5,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Scan Git history for secrets
+        run: docker run --rm -v "$GITHUB_WORKSPACE:/repo" zricethezav/gitleaks:latest git /repo --redact
       - uses: actions/setup-node@v4
         with: {node-version: 24, cache: npm}
       - uses: actions/setup-python@v5

@@ -67,6 +67,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-059: The navigation brand logo remains legible in the browser's light and dark color schemes, using the original black mark on light surfaces and an automatic white rendering on dark surfaces.
 - REQ-060: An OAuth callback marks Gmail connected only after checking the actually granted scopes and a live Gmail capability request. Declines, missing permissions and disabled Gmail API return the user to Settings with localized recovery guidance and never store a false connected state.
 - REQ-061: Every signed-in user can explicitly sign out and revoke the current session. Only administrators can create family/friend invitation links; each link contains a high-entropy token stored only as a hash, expires after seven days, is single-use, and creates an otherwise fully isolated non-admin account.
+- REQ-062: The public repository provides a Russian-first README, responsive GitHub Pages product/install site with real screenshots, private vulnerability reporting guidance, full-history secret scanning in CI, and a validated agent skill for secure self-hosted deployment and provider onboarding.
 
 ## Constraints
 
