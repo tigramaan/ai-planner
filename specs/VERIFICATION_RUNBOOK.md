@@ -61,6 +61,8 @@ Gmail summary acceptance (2026-08-03): explicitly request a summary for a matchi
 
 Public/privacy and feedback acceptance (2026-08-03): README and Pages use `docs/assets/ai-planner-infographic.png`; the former chat screenshot containing personal data is absent from the tree and all public references. `LICENSE` contains MIT terms. Creating/copying an invite and successful task, agenda, settings and push actions surface a localized `role=status` notification that disappears automatically and remains above mobile navigation.
 
+Public screenshot acceptance (2026-08-03): direct Pages assets `mobile-composer.jpg`, `chat.jpg` and `today.jpg` contain only purpose-built fictional UI with abstract placeholder strokes. Verify visually that they contain no names, addresses, message text, dates, event titles, provider data or malformed pseudo-text before publishing.
+
 Gmail compose/send acceptance (2026-08-03): ask the agent to write a polite email from a communication goal. Verify it produces a complete subject and body without invented facts, resolves a unique recipient, refuses to prepare a send action without Gmail compose/send scope, and shows the exact recipient, subject and body before Confirm/Cancel. Confirmation performs Gmail send and a metadata read-back; cancellation and automated tests never contact a real recipient.
 4. Authorize Google Calendar/Contacts, then Gmail read/compose/send incrementally.
 5. Authorize Microsoft Calendar/Contacts/Teams, verify granted scopes.
