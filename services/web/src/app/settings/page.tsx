@@ -24,7 +24,7 @@ type Preferences = {
 };
 
 export default function Settings() {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const [items, setItems] = useState<Integration[]>([]);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -56,7 +56,29 @@ export default function Settings() {
       })
       .catch((value) => setError(value.message));
   }
-  useEffect(load, []);
+  useEffect(() => {
+    load();
+    const params = new URLSearchParams(location.search);
+    const connected = params.get("connected");
+    const oauthError = params.get("oauth_error");
+    if (connected) {
+      setNotice(t(
+        connected === "google" ? "Google успешно подключён." : "Интеграция успешно подключена.",
+        connected === "google" ? "Google connected successfully." : "Integration connected successfully.",
+      ));
+    }
+    if (oauthError) {
+      setError(t(
+        oauthError === "gmail_access_denied"
+          ? "Google не предоставил доступ к Gmail. Убедитесь, что Gmail API включён в Google Cloud, приложение опубликовано или ваш адрес добавлен в тестовые пользователи, затем нажмите «Авторизовать Gmail» ещё раз и разрешите все запрошенные права."
+          : "Провайдер отклонил авторизацию. Повторите подключение и разрешите запрошенные права.",
+        oauthError === "gmail_access_denied"
+          ? "Google did not grant Gmail access. Ensure the Gmail API is enabled, the app is published or your address is a test user, then authorize Gmail again and allow every requested permission."
+          : "The provider declined authorization. Reconnect and allow the requested permissions.",
+      ));
+    }
+    if (connected || oauthError) history.replaceState({}, "", location.pathname);
+  }, [locale]);
 
   async function connect(provider: string, scopes: string[]) {
     setError("");

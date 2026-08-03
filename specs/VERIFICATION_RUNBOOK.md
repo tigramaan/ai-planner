@@ -27,6 +27,8 @@ Persistent session acceptance (2026-08-03): expiry of the short-lived access coo
 
 Adaptive logo acceptance (2026-08-03): navigation shows the supplied black UMEC mark on light surfaces and automatically renders the same transparent mark in white when the browser requests a dark color scheme. Switching the system theme updates the mark without a reload; PWA application icons retain their branded artwork.
 
+Gmail OAuth callback acceptance (2026-08-03): Google denial, omitted Gmail permissions and a failed Gmail profile capability check redirect back to Settings with localized recovery instructions. The integration is persisted as connected only after the token's granted scopes cover the request and the Gmail API accepts the access token; a rejected callback never leaves a false connected record.
+
 Additional UI acceptance (2026-08-03): Today/Week show start/end, timer trigger, attendees, reminders, safe meeting links, provider edit links, task completion/deletion, timer restart/deletion and calendar change/cancel drafts. PWA installation supports the browser prompt plus iOS/Android fallback instructions, with UMEC-branded manifest and Apple icons. Tasks support description, Moscow due date, priority, search, status/date filters, completion/reopening, inline editing, collapsed completed work and confirmed deletion; mutation endpoints enforce per-user ownership. Chat/voice support detailed task creation, update, completion, reopening and deletion plus timer restart/deletion. Command examples cover these mutations and open as chat drafts. Explicit Telemost selection overrides stale video context for both new and updated events, and a configured permanent room is written into the calendar event.
 
 ## Migration drill

@@ -54,6 +54,10 @@ async def account_profile(provider: str, token: str) -> dict:
     return await provider_request("GET", "https://api.zoom.us/v2/users/me", token)
 
 
+async def verify_google_gmail_access(token: str) -> None:
+    await provider_request("GET", "https://gmail.googleapis.com/gmail/v1/users/me/profile", token)
+
+
 async def create_zoom_meeting(token: str, payload: dict[str, Any]) -> dict:
     created = await provider_request(
         "POST",

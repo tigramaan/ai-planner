@@ -1,11 +1,12 @@
 from datetime import UTC, datetime, timedelta
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..adapters import account_profile
+from ..adapters import account_profile, verify_google_gmail_access
 from ..audit import audit
 from ..config import Settings, get_settings
 from ..database import get_db
@@ -103,7 +104,8 @@ def oauth_start(
 async def oauth_callback(
     provider: str,
     state: str,
-    code: str,
+    code: str | None = None,
+    error: str | None = None,
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ):
@@ -111,10 +113,22 @@ async def oauth_callback(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Unsupported provider")
     try:
         record = consume_state(db, state, provider)
+        if error or not code:
+            raise RuntimeError("OAuth access was declined")
         tokens = await exchange_code(settings, provider, code, record.scopes)
+        if provider == "google":
+            granted = set(tokens.get("scope", "").split())
+            if not granted or not set(record.scopes).issubset(granted):
+                raise RuntimeError("Google did not grant all requested permissions")
         profile = await account_profile(provider, tokens["access_token"])
-    except (ValueError, RuntimeError) as exc:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+        if provider == "google" and any("/auth/gmail." in scope for scope in record.scopes):
+            await verify_google_gmail_access(tokens["access_token"])
+    except (ValueError, RuntimeError):
+        reason = "gmail_access_denied" if provider == "google" else "oauth_access_denied"
+        return RedirectResponse(
+            f"{settings.public_base_url}/settings?{urlencode({'oauth_error': reason})}",
+            status_code=303,
+        )
     user = db.get(User, record.user_id)
     try:
         previous = read_secret(db, settings, user, provider)
@@ -130,7 +144,8 @@ async def oauth_callback(
     integration.last_healthcheck_at = datetime.now(UTC)
     db.commit()
     return RedirectResponse(
-        f"{settings.public_base_url}/settings?connected={provider}", status_code=303
+        f"{settings.public_base_url}/settings?{urlencode({'connected': provider})}",
+        status_code=303,
     )
 
 
