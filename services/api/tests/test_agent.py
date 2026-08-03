@@ -17,7 +17,7 @@ def test_meeting_intent_becomes_calendar_payload():
     assert payload["start_iso"] == "2026-08-03T08:00:00+00:00"
     assert payload["end_iso"] == "2026-08-03T08:45:00+00:00"
     assert payload["attendees"] == ["family@example.com"]
-    assert payload["conference"] == "microsoft_teams"
+    assert payload["conference"] == "none"
 
 
 def test_meeting_payload_rejects_time_without_offset():
@@ -76,6 +76,7 @@ def test_google_calendar_can_use_teams_conference():
             participants=["guest@example.com"],
             provider="google",
             conference_provider="microsoft",
+            conference_requested=True,
         )
     )
     assert payload["provider"] == "google"

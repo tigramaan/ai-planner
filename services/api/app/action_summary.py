@@ -20,13 +20,19 @@ def action_summary(action_type: str, payload: dict, locale: str) -> str:
         "Без названия" if ru else "Untitled"
     )
     provider = payload.get("provider", "google")
-    calendar_name = "Microsoft" if provider == "microsoft" else "Google"
+    calendar_name = (
+        "Microsoft" if provider == "microsoft" else "Яндекс" if provider == "yandex" else "Google"
+    )
     conference = payload.get("conference")
     conference_name = (
         "Microsoft Teams"
         if conference == "microsoft_teams"
         else "Google Meet"
         if conference == "google_meet"
+        else "Яндекс Телемост"
+        if conference == "yandex_telemost"
+        else "Zoom"
+        if conference == "zoom"
         else ("без видеосвязи" if ru else "none")
     )
     attendees = (
@@ -52,7 +58,11 @@ def action_summary(action_type: str, payload: dict, locale: str) -> str:
                 f"Участники: {people}.",
                 f"Календарь: {calendar_name}.",
                 f"Видеосвязь: {conference_name}.",
-                "После подтверждения создам событие, ссылку видеовстречи и отправлю календарные приглашения.",
+                (
+                    "После подтверждения создам событие и отправлю календарные приглашения."
+                    if conference == "none"
+                    else "После подтверждения создам событие и видеовстречу, затем отправлю календарные приглашения."
+                ),
             ]
             if ru
             else [
@@ -62,7 +72,11 @@ def action_summary(action_type: str, payload: dict, locale: str) -> str:
                 f"Participants: {people}.",
                 f"Calendar: {calendar_name}.",
                 f"Video service: {conference_name}.",
-                "After confirmation I will create the event and video link and send calendar invitations.",
+                (
+                    "After confirmation I will create the event and send calendar invitations."
+                    if conference == "none"
+                    else "After confirmation I will create the event and video meeting, then send invitations."
+                ),
             ]
         )
     elif action_type == "update_event":

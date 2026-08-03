@@ -32,6 +32,7 @@ async def provider_request(
             "https://gmail.googleapis.com/",
             "https://people.googleapis.com/",
             "https://graph.microsoft.com/",
+            "https://api.zoom.us/",
         )
     ):
         raise ProviderError("Provider URL is not allowlisted")
@@ -48,7 +49,37 @@ async def provider_request(
 async def account_profile(provider: str, token: str) -> dict:
     if provider == "google":
         return await provider_request("GET", "https://www.googleapis.com/oauth2/v2/userinfo", token)
-    return await provider_request("GET", "https://graph.microsoft.com/v1.0/me", token)
+    if provider == "microsoft":
+        return await provider_request("GET", "https://graph.microsoft.com/v1.0/me", token)
+    return await provider_request("GET", "https://api.zoom.us/v2/users/me", token)
+
+
+async def create_zoom_meeting(token: str, payload: dict[str, Any]) -> dict:
+    created = await provider_request(
+        "POST",
+        "https://api.zoom.us/v2/users/me/meetings",
+        token,
+        json={
+            "topic": payload["title"],
+            "type": 2,
+            "start_time": payload["start_iso"],
+            "duration": max(
+                1,
+                int(
+                    (
+                        datetime.fromisoformat(payload["end_iso"])
+                        - datetime.fromisoformat(payload["start_iso"])
+                    ).total_seconds()
+                    // 60
+                ),
+            ),
+            "timezone": payload["timezone"],
+            "settings": {"waiting_room": True, "join_before_host": False},
+        },
+    )
+    return await provider_request(
+        "GET", f"https://api.zoom.us/v2/meetings/{created['id']}", token
+    )
 
 
 async def search_contacts(provider: str, token: str, query: str, limit: int = 10) -> list[dict]:

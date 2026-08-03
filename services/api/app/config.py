@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     microsoft_client_id: str = ""
     microsoft_client_secret: str = ""
     microsoft_tenant: str = "common"
+    zoom_client_id: str = ""
+    zoom_client_secret: str = ""
     worker_service_token: str = ""
     vapid_public_key: str = ""
 

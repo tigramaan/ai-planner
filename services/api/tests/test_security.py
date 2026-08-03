@@ -47,6 +47,7 @@ def test_oauth_state_is_single_use(logged_in):
 
 def test_scope_groups_are_allowlisted():
     assert "Calendars.ReadWrite" in resolve_scopes("microsoft", ["calendar"])
+    assert resolve_scopes("zoom", ["meeting"]) == ["meeting:write:meeting"]
     with pytest.raises(ValueError):
         resolve_scopes("google", ["drive.everything"])
 

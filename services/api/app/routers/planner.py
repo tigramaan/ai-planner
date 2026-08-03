@@ -11,6 +11,7 @@ from ..adapters import (
     cancel_calendar_event,
     create_calendar_event,
     create_teams_online_meeting,
+    create_zoom_meeting,
     default_event_window,
     delete_teams_online_meeting,
     list_calendar_events,
@@ -39,10 +40,34 @@ from ..schemas import (
     ReminderCreate,
     TaskCreate,
     TimerCreate,
+    UserPreferences,
 )
 from ..security import decrypt_json, encrypt_json
 
 router = APIRouter(prefix="/api/v1", tags=["planner"])
+
+
+@router.get("/preferences", response_model=UserPreferences)
+def preferences(user: User = Depends(current_user)):
+    return UserPreferences(
+        default_calendar=user.default_calendar,
+        default_mail=user.default_mail,
+        default_conference=user.default_conference,
+    )
+
+
+@router.put("/preferences", response_model=UserPreferences)
+def update_preferences(
+    body: UserPreferences,
+    request: Request,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    for key, value in body.model_dump().items():
+        setattr(user, key, value)
+    audit(db, user, request, "preferences.updated", "user", user.id, body.model_dump())
+    db.commit()
+    return body
 
 
 @router.get("/tasks")
@@ -291,25 +316,53 @@ async def confirm(
         settings, action.payload_encrypted, f"pending:{action.id}:{action.payload_hash}"
     )
     action.confirmed_at = datetime.now(UTC)
+    warnings: list[str] = []
     try:
         if action.action_type == "create_meeting":
             provider = payload.get("provider", "google")
             token = await valid_access_token(db, settings, user, provider)
             payload["idempotency_key"] = action.idempotency_key
             if provider == "google" and payload.get("conference") == "microsoft_teams":
-                teams_token = await valid_access_token(db, settings, user, "microsoft")
-                teams = await create_teams_online_meeting(teams_token, payload)
-                payload["external_join_url"] = teams.get("joinWebUrl")
-                if not payload["external_join_url"]:
-                    raise ProviderError("Microsoft returned no Teams join URL")
+                try:
+                    teams_token = await valid_access_token(db, settings, user, "microsoft")
+                    teams = await create_teams_online_meeting(teams_token, payload)
+                    payload["external_join_url"] = teams.get("joinWebUrl")
+                    if not payload["external_join_url"]:
+                        raise ProviderError("Microsoft returned no Teams join URL")
+                except (LookupError, ProviderError):
+                    payload["conference"] = "none"
+                    warnings.append("Microsoft Teams meeting was not created")
+                    result = await create_calendar_event(provider, token, payload)
+                else:
+                    try:
+                        result = await create_calendar_event(provider, token, payload)
+                    except Exception:
+                        await delete_teams_online_meeting(teams_token, teams["id"])
+                        raise
+                    result["onlineMeeting"] = {"joinUrl": payload["external_join_url"]}
+            elif provider == "google" and payload.get("conference") == "zoom":
+                try:
+                    zoom_token = await valid_access_token(db, settings, user, "zoom")
+                    zoom = await create_zoom_meeting(zoom_token, payload)
+                    payload["external_join_url"] = zoom.get("join_url")
+                    if not payload["external_join_url"]:
+                        raise ProviderError("Zoom returned no join URL")
+                except (LookupError, ProviderError):
+                    payload["conference"] = "none"
+                    warnings.append("Zoom meeting was not created")
+                    result = await create_calendar_event(provider, token, payload)
+                else:
+                    result = await create_calendar_event(provider, token, payload)
+                    result["onlineMeeting"] = {"joinUrl": payload["external_join_url"]}
+            else:
                 try:
                     result = await create_calendar_event(provider, token, payload)
-                except Exception:
-                    await delete_teams_online_meeting(teams_token, teams["id"])
-                    raise
-                result["onlineMeeting"] = {"joinUrl": payload["external_join_url"]}
-            else:
-                result = await create_calendar_event(provider, token, payload)
+                except ProviderError:
+                    if payload.get("conference") == "none":
+                        raise
+                    payload["conference"] = "none"
+                    warnings.append("Video meeting was not created")
+                    result = await create_calendar_event(provider, token, payload)
         elif action.action_type in {"update_event", "add_event_participants"}:
             provider = payload.get("provider", "google")
             token = await valid_access_token(db, settings, user, provider)
@@ -348,6 +401,7 @@ async def confirm(
         "id": result.get("id"),
         "link": (result.get("onlineMeeting") or {}).get("joinUrl") or result.get("htmlLink"),
         "status": result.get("status"),
+        "warnings": warnings,
     }
     action.executed_at = datetime.now(UTC)
     audit(

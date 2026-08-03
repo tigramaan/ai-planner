@@ -77,6 +77,12 @@ class ChatRequest(BaseModel):
     text: str = Field(min_length=1, max_length=12000)
 
 
+class UserPreferences(BaseModel):
+    default_calendar: Literal["google", "microsoft", "yandex", "local"]
+    default_mail: Literal["google", "microsoft", "yandex"]
+    default_conference: Literal["none", "google", "microsoft", "yandex", "zoom"]
+
+
 class Intent(BaseModel):
     intent: Literal[
         "show_today",
@@ -98,8 +104,9 @@ class Intent(BaseModel):
     timezone: str | None = None
     duration_minutes: int | None = Field(default=None, ge=1, le=1440)
     participants: list[str] = Field(default_factory=list, max_length=50)
-    provider: Literal["google", "microsoft", "local"] | None = None
-    conference_provider: Literal["google", "microsoft", "none"] | None = None
+    provider: Literal["google", "microsoft", "yandex", "local"] | None = None
+    conference_provider: Literal["google", "microsoft", "yandex", "zoom", "none"] | None = None
+    conference_requested: bool = False
     body: str | None = None
     requires_clarification: bool = False
     clarification_question: str | None = None

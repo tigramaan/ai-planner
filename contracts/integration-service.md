@@ -14,4 +14,8 @@ Meeting and mail recipients may be supplied as names. The agent resolves names a
 
 If the owner explicitly asks to remember an email supplied after a missing-recipient clarification, the API stores an encrypted, per-user alias. Saved aliases are checked before external contacts and mail. Provider validation failures are returned as guarded `409`/`502` responses and never as an unhandled `500`.
 
+User preferences select default calendar, mail and video providers. Calendar/mail defaults apply when the user omits a provider. The video default applies only after the user explicitly requests an online/video meeting; otherwise `conference=none`. A video-provider failure does not roll back a successfully creatable calendar event and is returned in `result.warnings`.
+
+Zoom is authorized with user-managed OAuth and creates meetings through `/v2/users/me/meetings` with read-after-write verification. Yandex 360 Calendar/Mail require the documented organization service application and CalDAV/IMAP/SMTP access; Telemost REST API must remain disabled for accounts that are not eligible Yandex 360 Business organization users.
+
 Calendar adapters support read-after-write event creation, rescheduling, participant replacement and verified cancellation for Google Calendar and Microsoft Graph. Provider event identifiers never come from the model; they are selected from the authenticated user's bounded calendar search.

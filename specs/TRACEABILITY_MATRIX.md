@@ -14,6 +14,7 @@
 | REQ-037..038 | bounded chat context, localized action summaries and latest-draft replacement | conversation and action-summary tests |
 | REQ-039 | cancelled-draft recovery and independent calendar/conference providers | conversation, agent and calendar mutation tests |
 | REQ-040 | encrypted per-user recipient aliases and guarded provider failures | recipient-alias, ownership and confirmation error tests |
+| REQ-041..043 | provider preferences, explicit conference intent, partial success, Zoom OAuth/meeting adapter and Yandex eligibility guard | preferences, intent, confirmation fallback, OAuth and adapter tests |
 | REQ-030..035 | password, cipher, OAuth state, redaction | security tests |
 | REQ-036 | recipient resolver and Google/Microsoft contact adapters | recipient and adapter unit tests |
 | REQ-037 | bounded per-user conversation history passed to intent extraction | conversation continuation tests |

@@ -147,10 +147,18 @@ async def chat(
             for stale in drafts[1:]:
                 stale.cancelled_at = datetime.now(UTC)
             result = await confirm_pending(active_pending.id, request, user, db, settings)
-            link = (result.get("result") or {}).get("link")
+            execution = result.get("result") or {}
+            link = execution.get("link")
+            warnings = execution.get("warnings") or []
             answer = "Действие выполнено." if ru else "Action completed."
             if link:
                 answer += (" Ссылка: " if ru else " Link: ") + link
+            if warnings:
+                answer += (
+                    " Видеовстречу создать не удалось; событие календаря сохранено."
+                    if ru
+                    else " The video meeting failed, but the calendar event was saved."
+                )
         else:
             cancel_pending(active_pending.id, request, user, db)
             answer = "Черновик отменён." if ru else "Draft cancelled."
@@ -183,6 +191,16 @@ async def chat(
         )
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+    if intent.intent in {"create_meeting", "update_event", "cancel_event", "add_event_participants"}:
+        intent.provider = intent.provider or user.default_calendar
+    if intent.intent in {"send_email", "search_email"}:
+        intent.provider = intent.provider or user.default_mail
+    if intent.intent == "create_meeting":
+        intent.conference_provider = (
+            intent.conference_provider or user.default_conference
+            if intent.conference_requested
+            else "none"
+        )
     user_message = AgentMessage(
         user_id=user.id, role="user", text=body.text, structured_intent_json=intent.model_dump()
     )
@@ -201,7 +219,11 @@ async def chat(
             intent.title = f"Meeting with {participant_names}" if participant_names else "Meeting"
     resolution_answer = None
     if intent.intent in {"create_meeting", "add_event_participants", "send_email"} and intent.participants:
-        provider = intent.provider if intent.provider in {"google", "microsoft"} else "google"
+        provider = (
+            intent.provider
+            if intent.provider in {"google", "microsoft", "yandex"}
+            else user.default_calendar
+        )
         resolution = await resolve_recipients(db, settings, user, intent.participants, provider)
         intent.participants = resolution.recipients
         if resolution.ambiguous:
@@ -327,7 +349,7 @@ async def chat(
             else "Open Today. Data is already updating from connected sources."
         )
     elif intent.intent == "search_email":
-        provider = intent.provider if intent.provider in {"google", "microsoft"} else "google"
+        provider = intent.provider or user.default_mail
         try:
             token = await valid_access_token(db, settings, user, provider)
             rows = await search_email(provider, token, intent.body or intent.title or body.text)

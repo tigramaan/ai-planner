@@ -45,6 +45,9 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-038: Every pending external action presents a localized human-readable summary; corrections replace the draft and an explicit affirmative chat reply executes only the latest version.
 - REQ-039: An explicitly referenced cancelled, unexecuted draft can be corrected into a new draft; Google Calendar meetings may use a Microsoft Teams conference link when both integrations are authorized.
 - REQ-040: An explicitly requested name-to-email mapping is stored per user with authenticated encryption and reused for later recipient resolution; provider failures return actionable API errors without an internal-server-error leak.
+- REQ-041: Each user selects default calendar, mail and video providers. Defaults apply only when a requested capability omits its provider; a video meeting is never inferred from an ordinary meeting, call reminder or offline event.
+- REQ-042: Calendar creation is independently useful: if an explicitly requested video provider is unavailable, the confirmed calendar event is still created and the result reports a partial-success warning.
+- REQ-043: Zoom uses user-managed OAuth and verified meeting creation. Yandex Calendar/Mail use the documented CalDAV/IMAP/SMTP business-service path; Telemost API is offered only for eligible Yandex 360 Business organization accounts.
 
 ## Constraints
 

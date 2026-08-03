@@ -76,6 +76,30 @@ async def test_standalone_teams_meeting_is_idempotent_and_verified(monkeypatch):
     assert result["joinWebUrl"] == "https://teams.example/join"
 
 
+@pytest.mark.anyio
+async def test_zoom_meeting_is_created_and_verified(monkeypatch):
+    calls = []
+
+    async def request(method, url, token, **kwargs):
+        calls.append((method, url, kwargs.get("json")))
+        return {"id": 42, "join_url": "https://zoom.example/j/42"}
+
+    monkeypatch.setattr(adapters, "provider_request", request)
+    result = await adapters.create_zoom_meeting(
+        "token",
+        {
+            "title": "Meeting",
+            "start_iso": "2026-08-03T09:30:00+00:00",
+            "end_iso": "2026-08-03T10:00:00+00:00",
+            "timezone": "Europe/Moscow",
+        },
+    )
+    assert [call[0] for call in calls] == ["POST", "GET"]
+    assert calls[0][1].endswith("/users/me/meetings")
+    assert calls[0][2]["duration"] == 30
+    assert result["join_url"] == "https://zoom.example/j/42"
+
+
 def test_confirm_creates_teams_link_inside_google_event(logged_in, monkeypatch):
     calls = []
 
@@ -122,15 +146,20 @@ def test_confirm_creates_teams_link_inside_google_event(logged_in, monkeypatch):
     ]
 
 
-def test_confirm_returns_guarded_error_when_teams_rejects_request(logged_in, monkeypatch):
+def test_confirm_keeps_calendar_event_when_teams_rejects_request(logged_in, monkeypatch):
     async def token(db, settings, user, provider):
         return f"{provider}-token"
 
     async def teams(token_value, payload):
         raise adapters.ProviderError("Provider request failed (400)", 400)
 
+    async def calendar(provider, token_value, payload):
+        assert payload["conference"] == "none"
+        return {"id": "google-1", "htmlLink": "https://calendar.example/event"}
+
     monkeypatch.setattr(planner, "valid_access_token", token)
     monkeypatch.setattr(planner, "create_teams_online_meeting", teams)
+    monkeypatch.setattr(planner, "create_calendar_event", calendar)
     with SessionLocal() as db:
         user = db.scalar(select(User))
         action = create_pending_action(
@@ -152,5 +181,7 @@ def test_confirm_returns_guarded_error_when_teams_rejects_request(logged_in, mon
         db.commit()
         action_id = action.id
     response = logged_in.post(f"/api/v1/pending-actions/{action_id}/confirm")
-    assert response.status_code == 502
-    assert "OnlineMeetings.ReadWrite" in response.json()["detail"]
+    assert response.status_code == 200
+    result = response.json()["result"]
+    assert result["link"] == "https://calendar.example/event"
+    assert result["warnings"] == ["Microsoft Teams meeting was not created"]

@@ -73,7 +73,7 @@ def oauth_start(
     settings: Settings = Depends(get_settings),
 ):
     ru = request.headers.get("accept-language", "").lower().startswith("ru")
-    if provider not in {"google", "microsoft"}:
+    if provider not in {"google", "microsoft", "zoom"}:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Unsupported provider")
     if provider == "google" and not settings.google_client_id:
         detail = "Клиент Google OAuth не настроен" if ru else "Google OAuth client is not configured"
@@ -84,6 +84,9 @@ def oauth_start(
             if ru
             else "Microsoft OAuth client is not configured"
         )
+        raise HTTPException(status.HTTP_409_CONFLICT, detail)
+    if provider == "zoom" and not settings.zoom_client_id:
+        detail = "Клиент Zoom OAuth не настроен" if ru else "Zoom OAuth client is not configured"
         raise HTTPException(status.HTTP_409_CONFLICT, detail)
     try:
         scopes = resolve_scopes(provider, body.scopes)
@@ -104,7 +107,7 @@ async def oauth_callback(
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ):
-    if provider not in {"google", "microsoft"}:
+    if provider not in {"google", "microsoft", "zoom"}:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Unsupported provider")
     try:
         record = consume_state(db, state, provider)

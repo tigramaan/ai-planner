@@ -24,7 +24,11 @@ update_event, cancel_event, add_event_participants, send_email, search_email, un
 For an existing calendar event, put its name or description in event_query and its current known
 time in event_start_iso. For rescheduling, put the requested new time in start_iso. For adding
 participants, include only the new people in participants. For create_meeting, provider is the
-requested calendar and conference_provider is the requested video service. They may differ: Google
+explicitly requested calendar and conference_provider is the explicitly requested video service.
+Set conference_requested=true only if the user explicitly asks for a video/online meeting or names
+a video service. A call, reminder to call, offline meeting, or ordinary calendar event is not a
+video meeting. Leave provider and conference_provider null when not explicit; application defaults
+are applied later. Calendar and conference providers may differ: Google
 Calendar with a Microsoft Teams link uses provider=google and conference_provider=microsoft.
 Use ISO-8601 with an explicit offset for start_iso. Use the supplied default IANA timezone when the
 user does not explicitly specify another timezone.
@@ -130,8 +134,8 @@ def pending_payload(intent: Intent) -> dict[str, Any]:
         start = datetime.fromisoformat(intent.start_iso)
         if start.tzinfo is None:
             raise ValueError("Meeting start time must include an explicit UTC offset")
-        provider = intent.provider if intent.provider in {"google", "microsoft"} else "google"
-        conference_provider = intent.conference_provider or provider
+        provider = intent.provider if intent.provider in {"google", "microsoft", "yandex"} else "google"
+        conference_provider = intent.conference_provider if intent.conference_requested else "none"
         duration = intent.duration_minutes or 30
         payload.update(
             {
@@ -145,6 +149,10 @@ def pending_payload(intent: Intent) -> dict[str, Any]:
                     if conference_provider == "microsoft"
                     else "google_meet"
                     if conference_provider == "google"
+                    else "yandex_telemost"
+                    if conference_provider == "yandex"
+                    else "zoom"
+                    if conference_provider == "zoom"
                     else "none"
                 ),
             }
@@ -152,7 +160,7 @@ def pending_payload(intent: Intent) -> dict[str, Any]:
     if intent.intent == "send_email":
         if not intent.title or not intent.body or not intent.participants:
             raise ValueError("Email requires subject, body and at least one recipient")
-        provider = intent.provider if intent.provider in {"google", "microsoft"} else "google"
+        provider = intent.provider if intent.provider in {"google", "microsoft", "yandex"} else "google"
         payload.update(
             {
                 "provider": provider,
