@@ -4,8 +4,10 @@ import pytest
 from sqlalchemy import select
 
 from app import agent
+from app.config import get_settings
 from app.database import SessionLocal
-from app.models import PendingAction
+from app.models import PendingAction, User
+from app.policy import create_pending_action
 from app.routers import chat as chat_router
 from app.schemas import Intent
 
@@ -88,3 +90,39 @@ def test_correction_replaces_pending_draft(logged_in, monkeypatch):
         assert len(rows) == 2
         assert rows[0].cancelled_at is not None
         assert rows[1].cancelled_at is None
+
+
+def test_explicit_correction_recovers_cancelled_unexecuted_draft(logged_in):
+    with SessionLocal() as db:
+        user = db.scalar(select(User))
+        action = create_pending_action(
+            db,
+            get_settings(),
+            user,
+            "create_meeting",
+            "Встреча 03.08.2026 в 11:25 Europe/Moscow",
+            {
+                "title": "Встреча с Анастасией",
+                "start_iso": "2026-08-03T08:25:00+00:00",
+                "end_iso": "2026-08-03T08:55:00+00:00",
+                "timezone": "Europe/Moscow",
+                "attendees": ["anastasia@example.com"],
+                "provider": "microsoft",
+                "conference": "microsoft_teams",
+            },
+        )
+        action.cancelled_at = action.expires_at
+        db.commit()
+        context = chat_router.cancelled_draft_context(
+            db, get_settings(), user, "Измени время этой встречи на 12:30"
+        )
+        assert context is not None
+        assert "not executed" in context["text"]
+        assert "create_meeting" in context["text"]
+        assert "anastasia@example.com" in context["text"]
+        assert (
+            chat_router.cancelled_draft_context(
+                db, get_settings(), user, "Создай новую задачу"
+            )
+            is None
+        )

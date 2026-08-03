@@ -18,6 +18,7 @@ from ..models import AgentMessage, LocalTask, PendingAction, Reminder, Timer, Us
 from ..policy import action_status, create_pending_action
 from ..recipients import resolve_recipients
 from ..schemas import ChatRequest
+from ..security import decrypt_json
 
 router = APIRouter(prefix="/api/v1", tags=["agent"])
 
@@ -53,6 +54,54 @@ def pending_drafts(db: Session, user: User) -> list[PendingAction]:
         .limit(10)
     ).all()
     return [row for row in rows if action_status(row) == "pending"]
+
+
+def references_recent_draft(text: str) -> bool:
+    normalized = text.casefold()
+    references = ("эту", "этой", "чернов", "предыдущ", "встреч", "it", "this", "draft", "previous")
+    changes = ("измени", "поменя", "перенес", "добав", "ещё", "еще", "correct", "change", "move", "add")
+    return any(value in normalized for value in references) and any(
+        value in normalized for value in changes
+    )
+
+
+def cancelled_draft_context(
+    db: Session, settings: Settings, user: User, text: str
+) -> dict[str, str] | None:
+    if not references_recent_draft(text):
+        return None
+    rows = db.scalars(
+        select(PendingAction)
+        .where(PendingAction.user_id == user.id, PendingAction.cancelled_at.is_not(None))
+        .order_by(PendingAction.cancelled_at.desc())
+        .limit(1)
+    ).all()
+    if not rows:
+        return None
+    action = rows[0]
+    payload = decrypt_json(
+        settings, action.payload_encrypted, f"pending:{action.id}:{action.payload_hash}"
+    )
+    safe = {
+        key: payload.get(key)
+        for key in (
+            "title",
+            "start_iso",
+            "end_iso",
+            "timezone",
+            "attendees",
+            "provider",
+            "conference",
+        )
+        if payload.get(key) is not None
+    }
+    return {
+        "role": "assistant",
+        "text": (
+            f"Recently cancelled, not executed draft. Action type: {action.action_type}. "
+            f"Summary: {action.display_summary}. Structured draft: {safe}"
+        )[:2000],
+    }
 
 
 def browser_locale(request: Request) -> str:
@@ -118,6 +167,9 @@ async def chat(
         {"role": row.role, "text": row.text[:2000]}
         for row in reversed(recent)
     ]
+    cancelled_context = cancelled_draft_context(db, settings, user, body.text)
+    if cancelled_context:
+        history.append(cancelled_context)
     try:
         intent = await extract_intent(
             config["api_key"],

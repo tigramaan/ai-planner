@@ -2,6 +2,7 @@ import base64
 from datetime import UTC, datetime, timedelta
 from email.message import EmailMessage
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -129,6 +130,9 @@ async def create_calendar_event(provider: str, token: str, payload: dict[str, An
             "end": {"dateTime": payload["end_iso"], "timeZone": payload["timezone"]},
             "attendees": [{"email": email} for email in attendees],
         }
+        if payload.get("external_join_url"):
+            body["location"] = payload["external_join_url"]
+            body["description"] = f"Join online: {payload['external_join_url']}"
         if payload.get("conference") == "google_meet":
             body["conferenceData"] = {
                 "createRequest": {
@@ -164,6 +168,31 @@ async def create_calendar_event(provider: str, token: str, payload: dict[str, An
     )
     return await provider_request(
         "GET", f"https://graph.microsoft.com/v1.0/me/events/{created['id']}", token
+    )
+
+
+async def create_teams_online_meeting(token: str, payload: dict[str, Any]) -> dict:
+    created = await provider_request(
+        "POST",
+        "https://graph.microsoft.com/v1.0/me/onlineMeetings/createOrGet",
+        token,
+        json={
+            "externalId": payload["idempotency_key"],
+            "startDateTime": payload["start_iso"],
+            "endDateTime": payload["end_iso"],
+            "subject": payload["title"],
+        },
+    )
+    meeting_id = quote(created["id"], safe="")
+    return await provider_request(
+        "GET", f"https://graph.microsoft.com/v1.0/me/onlineMeetings/{meeting_id}", token
+    )
+
+
+async def delete_teams_online_meeting(token: str, meeting_id: str) -> None:
+    encoded = quote(meeting_id, safe="")
+    await provider_request(
+        "DELETE", f"https://graph.microsoft.com/v1.0/me/onlineMeetings/{encoded}", token
     )
 
 

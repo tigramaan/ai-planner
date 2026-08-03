@@ -99,6 +99,7 @@ class Intent(BaseModel):
     duration_minutes: int | None = Field(default=None, ge=1, le=1440)
     participants: list[str] = Field(default_factory=list, max_length=50)
     provider: Literal["google", "microsoft", "local"] | None = None
+    conference_provider: Literal["google", "microsoft", "none"] | None = None
     body: str | None = None
     requires_clarification: bool = False
     clarification_question: str | None = None

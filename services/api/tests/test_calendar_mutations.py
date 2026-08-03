@@ -1,6 +1,12 @@
 import pytest
+from sqlalchemy import select
 
 from app import adapters
+from app.config import get_settings
+from app.database import SessionLocal
+from app.models import User
+from app.policy import create_pending_action
+from app.routers import planner
 
 
 @pytest.mark.anyio
@@ -44,3 +50,73 @@ async def test_cancel_event_verifies_provider_404(monkeypatch):
     result = await adapters.cancel_calendar_event("google", "token", "event-1")
     assert calls == ["DELETE", "GET"]
     assert result == {"id": "event-1", "status": "cancelled"}
+
+
+@pytest.mark.anyio
+async def test_standalone_teams_meeting_is_idempotent_and_verified(monkeypatch):
+    calls = []
+
+    async def request(method, url, token, **kwargs):
+        calls.append((method, url, kwargs.get("json")))
+        return {"id": "meeting/id", "joinWebUrl": "https://teams.example/join"}
+
+    monkeypatch.setattr(adapters, "provider_request", request)
+    result = await adapters.create_teams_online_meeting(
+        "token",
+        {
+            "idempotency_key": "action-1",
+            "start_iso": "2026-08-03T09:30:00+00:00",
+            "end_iso": "2026-08-03T10:00:00+00:00",
+            "title": "Meeting",
+        },
+    )
+    assert [call[0] for call in calls] == ["POST", "GET"]
+    assert calls[0][2]["externalId"] == "action-1"
+    assert calls[1][1].endswith("meeting%2Fid")
+    assert result["joinWebUrl"] == "https://teams.example/join"
+
+
+def test_confirm_creates_teams_link_inside_google_event(logged_in, monkeypatch):
+    calls = []
+
+    async def token(db, settings, user, provider):
+        return f"{provider}-token"
+
+    async def teams(token_value, payload):
+        calls.append(("teams", token_value))
+        return {"id": "teams-1", "joinWebUrl": "https://teams.example/join"}
+
+    async def calendar(provider, token_value, payload):
+        calls.append(("calendar", provider, token_value, payload.get("external_join_url")))
+        return {"id": "google-1", "htmlLink": "https://calendar.example/event"}
+
+    monkeypatch.setattr(planner, "valid_access_token", token)
+    monkeypatch.setattr(planner, "create_teams_online_meeting", teams)
+    monkeypatch.setattr(planner, "create_calendar_event", calendar)
+    with SessionLocal() as db:
+        user = db.scalar(select(User))
+        action = create_pending_action(
+            db,
+            get_settings(),
+            user,
+            "create_meeting",
+            "Google Calendar + Teams",
+            {
+                "provider": "google",
+                "conference": "microsoft_teams",
+                "title": "Meeting",
+                "start_iso": "2026-08-03T09:30:00+00:00",
+                "end_iso": "2026-08-03T10:00:00+00:00",
+                "timezone": "Europe/Moscow",
+                "attendees": ["guest@example.com"],
+            },
+        )
+        db.commit()
+        action_id = action.id
+    response = logged_in.post(f"/api/v1/pending-actions/{action_id}/confirm")
+    assert response.status_code == 200
+    assert response.json()["result"]["link"] == "https://teams.example/join"
+    assert calls == [
+        ("teams", "microsoft-token"),
+        ("calendar", "google", "google-token", "https://teams.example/join"),
+    ]

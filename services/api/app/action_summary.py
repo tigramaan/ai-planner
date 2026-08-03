@@ -20,7 +20,15 @@ def action_summary(action_type: str, payload: dict, locale: str) -> str:
         "Без названия" if ru else "Untitled"
     )
     provider = payload.get("provider", "google")
-    provider_name = "Microsoft / Teams" if provider == "microsoft" else "Google / Meet"
+    calendar_name = "Microsoft" if provider == "microsoft" else "Google"
+    conference = payload.get("conference")
+    conference_name = (
+        "Microsoft Teams"
+        if conference == "microsoft_teams"
+        else "Google Meet"
+        if conference == "google_meet"
+        else ("без видеосвязи" if ru else "none")
+    )
     attendees = (
         payload.get("added_attendees")
         or payload.get("attendees")
@@ -42,7 +50,8 @@ def action_summary(action_type: str, payload: dict, locale: str) -> str:
                 f"Когда: {when}.",
                 f"Часовой пояс: {timezone}.",
                 f"Участники: {people}.",
-                f"Сервис: {provider_name}.",
+                f"Календарь: {calendar_name}.",
+                f"Видеосвязь: {conference_name}.",
                 "После подтверждения создам событие, ссылку видеовстречи и отправлю календарные приглашения.",
             ]
             if ru
@@ -51,7 +60,8 @@ def action_summary(action_type: str, payload: dict, locale: str) -> str:
                 f"When: {when}.",
                 f"Timezone: {timezone}.",
                 f"Participants: {people}.",
-                f"Service: {provider_name}.",
+                f"Calendar: {calendar_name}.",
+                f"Video service: {conference_name}.",
                 "After confirmation I will create the event and video link and send calendar invitations.",
             ]
         )

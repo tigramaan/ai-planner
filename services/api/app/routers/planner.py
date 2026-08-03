@@ -10,7 +10,9 @@ from ..adapters import (
     ProviderError,
     cancel_calendar_event,
     create_calendar_event,
+    create_teams_online_meeting,
     default_event_window,
+    delete_teams_online_meeting,
     list_calendar_events,
     send_email,
     update_calendar_event,
@@ -20,7 +22,16 @@ from ..config import Settings, get_settings
 from ..database import get_db
 from ..dependencies import current_user
 from ..integrations import valid_access_token
-from ..models import AuditLog, LocalTask, PendingAction, PushSubscription, Reminder, Timer, User
+from ..models import (
+    AgentMessage,
+    AuditLog,
+    LocalTask,
+    PendingAction,
+    PushSubscription,
+    Reminder,
+    Timer,
+    User,
+)
 from ..policy import action_status
 from ..schemas import (
     PendingActionView,
@@ -284,7 +295,20 @@ async def confirm(
         provider = payload.get("provider", "google")
         token = await valid_access_token(db, settings, user, provider)
         payload["idempotency_key"] = action.idempotency_key
-        result = await create_calendar_event(provider, token, payload)
+        if provider == "google" and payload.get("conference") == "microsoft_teams":
+            teams_token = await valid_access_token(db, settings, user, "microsoft")
+            teams = await create_teams_online_meeting(teams_token, payload)
+            payload["external_join_url"] = teams.get("joinWebUrl")
+            if not payload["external_join_url"]:
+                raise ProviderError("Microsoft returned no Teams join URL")
+            try:
+                result = await create_calendar_event(provider, token, payload)
+            except Exception:
+                await delete_teams_online_meeting(teams_token, teams["id"])
+                raise
+            result["onlineMeeting"] = {"joinUrl": payload["external_join_url"]}
+        else:
+            result = await create_calendar_event(provider, token, payload)
     elif action.action_type in {"update_event", "add_event_participants"}:
         provider = payload.get("provider", "google")
         token = await valid_access_token(db, settings, user, provider)
@@ -301,7 +325,7 @@ async def confirm(
         raise HTTPException(status.HTTP_501_NOT_IMPLEMENTED, "Confirmed tool is not implemented")
     action.result_json = {
         "id": result.get("id"),
-        "link": result.get("htmlLink") or (result.get("onlineMeeting") or {}).get("joinUrl"),
+        "link": (result.get("onlineMeeting") or {}).get("joinUrl") or result.get("htmlLink"),
         "status": result.get("status"),
     }
     action.executed_at = datetime.now(UTC)
@@ -332,6 +356,17 @@ def cancel(
         raise HTTPException(status.HTTP_409_CONFLICT, "Action is no longer pending")
     action.cancelled_at = datetime.now(UTC)
     audit(db, user, request, "pending_action.cancelled", "pending_action", action.id)
+    db.add(
+        AgentMessage(
+            user_id=user.id,
+            role="assistant",
+            text=(
+                f"Черновик отменён, но его можно исправить: {action.display_summary}"
+                if request.headers.get("accept-language", "").lower().startswith("ru")
+                else f"Draft cancelled, but it can still be revised: {action.display_summary}"
+            ),
+        )
+    )
     db.commit()
 
 

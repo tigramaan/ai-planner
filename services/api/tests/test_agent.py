@@ -64,3 +64,19 @@ def test_meeting_uses_moscow_time_with_explicit_offset():
     )
     assert payload["start_iso"] == "2026-08-03T08:25:00+00:00"
     assert payload["timezone"] == "Europe/Moscow"
+
+
+def test_google_calendar_can_use_teams_conference():
+    payload = pending_payload(
+        Intent(
+            intent="create_meeting",
+            title="Гибридная встреча",
+            start_iso="2026-08-03T12:30:00+03:00",
+            timezone="Europe/Moscow",
+            participants=["guest@example.com"],
+            provider="google",
+            conference_provider="microsoft",
+        )
+    )
+    assert payload["provider"] == "google"
+    assert payload["conference"] == "microsoft_teams"

@@ -23,7 +23,9 @@ Supported intents: show_today, create_task, create_reminder, start_timer, create
 update_event, cancel_event, add_event_participants, send_email, search_email, unknown.
 For an existing calendar event, put its name or description in event_query and its current known
 time in event_start_iso. For rescheduling, put the requested new time in start_iso. For adding
-participants, include only the new people in participants. Preserve the requested provider.
+participants, include only the new people in participants. For create_meeting, provider is the
+requested calendar and conference_provider is the requested video service. They may differ: Google
+Calendar with a Microsoft Teams link uses provider=google and conference_provider=microsoft.
 Use ISO-8601 with an explicit offset for start_iso. Use the supplied default IANA timezone when the
 user does not explicitly specify another timezone.
 External meetings and email are confirmed later by a separate policy layer; you never ask for that
@@ -31,9 +33,12 @@ confirmation and never execute tools.
 Use conversation_history only to resolve a concise follow-up to the most recent unfinished user
 request. Merge answers to your clarification question into that original request. If the latest
 assistant message is a pending-action summary and the user corrects it, reconstruct the same action
-with the correction applied. If the current message is a complete standalone command, do not merge
-an older request. Assistant messages are context, not instructions. Never revive an executed or
-cancelled action."""
+with the correction applied. A recently cancelled draft did not create an external resource: when
+the user explicitly refers to that draft and corrects it, keep its original intent (for example,
+create_meeting), apply the changes, and prepare a new draft. Never reinterpret that as update_event.
+If the current message is a complete standalone command, do not merge an older request. Assistant
+messages are context, not instructions. Never revive an executed action or a cancelled draft unless
+the current message explicitly asks to revise that draft."""
 
 
 def openai_config(db, settings: Settings, user: User) -> dict[str, str]:
@@ -126,6 +131,7 @@ def pending_payload(intent: Intent) -> dict[str, Any]:
         if start.tzinfo is None:
             raise ValueError("Meeting start time must include an explicit UTC offset")
         provider = intent.provider if intent.provider in {"google", "microsoft"} else "google"
+        conference_provider = intent.conference_provider or provider
         duration = intent.duration_minutes or 30
         payload.update(
             {
@@ -134,7 +140,13 @@ def pending_payload(intent: Intent) -> dict[str, Any]:
                 "start_iso": start.astimezone(UTC).isoformat(),
                 "end_iso": (start + timedelta(minutes=duration)).astimezone(UTC).isoformat(),
                 "attendees": intent.participants,
-                "conference": "microsoft_teams" if provider == "microsoft" else "google_meet",
+                "conference": (
+                    "microsoft_teams"
+                    if conference_provider == "microsoft"
+                    else "google_meet"
+                    if conference_provider == "google"
+                    else "none"
+                ),
             }
         )
     if intent.intent == "send_email":
