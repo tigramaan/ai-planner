@@ -4,6 +4,7 @@ WORKER_HEADERS = {"X-Worker-Token": "test-worker-service-token-that-is-long-enou
 
 
 def test_reminder_claim_delivery_and_encrypted_push(logged_in):
+    assert logged_in.get("/api/v1/push/status").json() == {"configured": False}
     subscription = logged_in.post(
         "/api/v1/push/subscriptions",
         json={
@@ -14,6 +15,7 @@ def test_reminder_claim_delivery_and_encrypted_push(logged_in):
     )
     assert subscription.status_code == 201
     assert "endpoint" not in subscription.text
+    assert logged_in.get("/api/v1/push/status").json() == {"configured": True}
     due = datetime.now(UTC) - timedelta(seconds=1)
     created = logged_in.post(
         "/api/v1/reminders",

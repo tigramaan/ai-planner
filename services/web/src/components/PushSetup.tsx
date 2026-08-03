@@ -1,9 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { Bell, BellSlash, WarningCircle } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
+
+import { ActionToast } from "@/components/ActionToast";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
-import { ActionToast } from "@/components/ActionToast";
+
+type PushState =
+  | "checking"
+  | "idle"
+  | "enabled"
+  | "unsupported"
+  | "denied"
+  | "invalid"
+  | "failed";
 
 function decodeKey(value: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (value.length % 4)) % 4);
@@ -11,48 +22,71 @@ function decodeKey(value: string): Uint8Array<ArrayBuffer> {
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 
-export function PushSetup() {
+export function PushSetup({ compact = false }: { compact?: boolean }) {
   const { t } = useI18n();
-  const [state, setState] = useState<
-    "idle" | "enabled" | "unsupported" | "denied" | "invalid" | "failed"
-  >("idle");
+  const [state, setState] = useState<PushState>("checking");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
-  const labels = {
-    idle: t("Включить push-уведомления", "Enable push notifications"),
-    enabled: t("Push-уведомления включены", "Push notifications enabled"),
-    unsupported: t(
-      "Этот браузер не поддерживает Web Push",
-      "This browser does not support Web Push",
-    ),
-    denied: t(
-      "Доступ к уведомлениям не предоставлен",
-      "Notification permission was not granted",
-    ),
-    invalid: t(
-      "Браузер вернул неполную push-подписку",
-      "The browser returned an incomplete push subscription",
-    ),
-    failed: t(
-      "Не удалось включить уведомления",
-      "Could not enable notifications",
-    ),
+
+  const labels: Record<PushState, string> = {
+    checking: t("Проверяю уведомления…", "Checking notifications…"),
+    idle: t("Уведомления выключены", "Notifications are off"),
+    enabled: t("Уведомления включены", "Notifications are on"),
+    unsupported: t("Push не поддерживается", "Push is not supported"),
+    denied: t("Уведомления заблокированы", "Notifications are blocked"),
+    invalid: t("Push-подписка повреждена", "Push subscription is invalid"),
+    failed: t("Не удалось проверить уведомления", "Could not check notifications"),
   };
 
+  useEffect(() => {
+    let active = true;
+    async function inspect() {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        if (active) setState("unsupported");
+        return;
+      }
+      if (Notification.permission === "denied") {
+        if (active) setState("denied");
+        return;
+      }
+      try {
+        const [{ configured }, registration] = await Promise.all([
+          api<{ configured: boolean }>("/push/status"),
+          navigator.serviceWorker.ready,
+        ]);
+        const subscription = await registration.pushManager.getSubscription();
+        if (active) setState(configured && subscription ? "enabled" : "idle");
+      } catch {
+        if (active) setState("failed");
+      }
+    }
+    void inspect();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   async function enable() {
+    if (state === "denied") {
+      setNotice(
+        t(
+          "Разрешите уведомления в настройках сайта браузера, затем обновите страницу.",
+          "Allow notifications in the browser site settings, then reload the page.",
+        ),
+      );
+      return;
+    }
     setBusy(true);
     try {
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
         setState("unsupported");
-        throw new Error("unsupported");
+        return;
       }
       if ((await Notification.requestPermission()) !== "granted") {
-        setState("denied");
-        throw new Error("denied");
+        setState(Notification.permission === "denied" ? "denied" : "idle");
+        return;
       }
-      const { public_key } = await api<{ public_key: string }>(
-        "/push/public-key",
-      );
+      const { public_key } = await api<{ public_key: string }>("/push/public-key");
       const registration = await navigator.serviceWorker.ready;
       const current = await registration.pushManager.getSubscription();
       const subscription =
@@ -64,7 +98,7 @@ export function PushSetup() {
       const data = subscription.toJSON();
       if (!data.endpoint || !data.keys?.p256dh || !data.keys?.auth) {
         setState("invalid");
-        throw new Error("invalid");
+        return;
       }
       await api("/push/subscriptions", {
         method: "POST",
@@ -75,12 +109,37 @@ export function PushSetup() {
         }),
       });
       setState("enabled");
-      setNotice(t("Push-уведомления включены", "Push notifications enabled"));
+      setNotice(t("Уведомления включены", "Notifications enabled"));
     } catch {
-      setState((current) => (current === "idle" ? "failed" : current));
+      setState("failed");
     } finally {
       setBusy(false);
     }
+  }
+
+  const Icon = state === "enabled" ? Bell : state === "idle" ? BellSlash : WarningCircle;
+  const actionLabel = state === "denied"
+    ? t("Как разрешить", "How to allow")
+    : t("Включить", "Enable");
+
+  if (compact) {
+    return (
+      <aside className={`notificationBanner ${state}`} role="status" aria-live="polite">
+        <Icon size={22} weight="duotone" />
+        <div>
+          <strong>{labels[state]}</strong>
+          {state !== "enabled" && state !== "checking" && (
+            <span>{t("Таймеры и задачи не смогут прислать сигнал.", "Timers and tasks cannot alert you.")}</span>
+          )}
+        </div>
+        {state !== "enabled" && state !== "checking" && state !== "unsupported" && (
+          <button className="button secondary" type="button" disabled={busy} onClick={enable}>
+            {busy ? t("Подключаю…", "Enabling…") : actionLabel}
+          </button>
+        )}
+        <ActionToast message={notice} onDismiss={() => setNotice("")} />
+      </aside>
+    );
   }
 
   return (
@@ -89,18 +148,19 @@ export function PushSetup() {
       <h2>{t("Уведомления", "Notifications")}</h2>
       <p className="muted">
         {t(
-          "Напоминания приходят при закрытой PWA, если Android не ограничил браузер.",
-          "Reminders arrive while the PWA is closed unless Android restricts the browser.",
+          "Статус проверяется для этого браузера. Напоминания приходят при закрытой PWA, если система не ограничила браузер.",
+          "Status is checked for this browser. Alerts arrive while the PWA is closed unless the system restricts the browser.",
         )}
       </p>
-      <button
-        className="button secondary"
-        type="button"
-        disabled={busy}
-        onClick={enable}
-      >
-        {busy ? t("Подключаю...", "Enabling...") : labels[state]}
-      </button>
+      <div className={`notificationSetting ${state}`} role="status">
+        <Icon size={24} weight="duotone" />
+        <strong>{labels[state]}</strong>
+      </div>
+      {state !== "enabled" && state !== "checking" && state !== "unsupported" && (
+        <button className="button secondary" type="button" disabled={busy} onClick={enable}>
+          {busy ? t("Подключаю…", "Enabling…") : actionLabel}
+        </button>
+      )}
     </section>
   );
 }

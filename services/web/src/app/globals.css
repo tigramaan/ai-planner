@@ -71,6 +71,15 @@ h1 { font-size:clamp(30px,4vw,46px); line-height:1.05; letter-spacing:-.045em; m
 .error { color:var(--danger); margin:8px 0; }
 .actionToast { position:fixed; z-index:40; right:22px; bottom:22px; max-width:min(420px,calc(100vw - 32px)); display:flex; align-items:center; gap:9px; padding:12px 16px; border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); border-radius:12px; background:var(--surface); color:var(--text); box-shadow:0 16px 45px rgba(0,0,0,.24); font-weight:650; }
 .actionToast svg { flex:none; color:var(--accent); }
+.notificationBanner { display:flex; align-items:center; gap:12px; margin-bottom:18px; padding:12px 14px; border:1px solid var(--line); border-radius:14px; background:var(--surface); color:var(--muted); }
+.notificationBanner>div { display:grid; gap:2px; flex:1; }
+.notificationBanner span { font-size:13px; }
+.notificationBanner .button { padding:8px 13px; }
+.notificationBanner.enabled { border-color:color-mix(in srgb,#2db46f 50%,var(--line)); color:#238b57; }
+.notificationBanner.idle,.notificationBanner.denied,.notificationBanner.failed,.notificationBanner.invalid { border-color:color-mix(in srgb,#e6a12a 55%,var(--line)); }
+.notificationSetting { display:flex; align-items:center; gap:10px; padding:12px 14px; border:1px solid var(--line); border-radius:12px; }
+.notificationSetting.enabled { color:#238b57; border-color:color-mix(in srgb,#2db46f 50%,var(--line)); }
+.notificationSetting.denied,.notificationSetting.failed,.notificationSetting.invalid { color:var(--danger); }
 .loginWrap { min-height:100dvh; display:grid; place-items:center; padding:20px; }
 .login { width:min(420px,100%); }
 .login h1 { margin-bottom:10px; }

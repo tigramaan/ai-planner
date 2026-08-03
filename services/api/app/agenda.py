@@ -41,6 +41,7 @@ async def collect_agenda(
         select(Reminder).where(
             Reminder.user_id == user.id,
             Reminder.timer_id.is_(None),
+            Reminder.task_id.is_(None),
             Reminder.status.in_(["scheduled", "retry", "processing"]),
             Reminder.due_at >= start,
             Reminder.due_at < end,

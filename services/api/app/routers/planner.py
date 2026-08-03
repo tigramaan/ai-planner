@@ -141,6 +141,14 @@ def push_public_key(settings: Settings = Depends(get_settings)):
     return {"public_key": settings.vapid_public_key}
 
 
+@router.get("/push/status")
+def push_status(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    configured = db.scalar(
+        select(PushSubscription.id).where(PushSubscription.user_id == user.id).limit(1)
+    )
+    return {"configured": configured is not None}
+
+
 @router.post("/push/subscriptions", status_code=201)
 def subscribe_push(
     body: PushSubscriptionWrite,

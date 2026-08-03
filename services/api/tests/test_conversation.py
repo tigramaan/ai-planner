@@ -180,7 +180,9 @@ def test_task_can_be_created_with_details_and_completed_through_chat(logged_in, 
         return next(responses)
 
     monkeypatch.setattr(chat_router, "extract_intent", intent)
-    assert logged_in.post("/api/v1/chat/messages", json={"text": "Создай задачу"}).status_code == 200
+    created = logged_in.post("/api/v1/chat/messages", json={"text": "Создай задачу"})
+    assert created.status_code == 200
+    assert "Enable notifications" in created.json()["message"]
     assert logged_in.post("/api/v1/chat/messages", json={"text": "Задача сделана"}).status_code == 200
     reopened = logged_in.post("/api/v1/chat/messages", json={"text": "Верни задачу в работу"})
     assert reopened.status_code == 200
@@ -190,6 +192,7 @@ def test_task_can_be_created_with_details_and_completed_through_chat(logged_in, 
         assert task.priority == "high"
         assert task.description == "Проверить приложение"
         assert task.due_at is not None
+        assert db.scalar(select(Reminder).where(Reminder.task_id == task.id)) is not None
 
 
 def test_timer_can_be_restarted_and_deleted_through_chat(logged_in, monkeypatch):

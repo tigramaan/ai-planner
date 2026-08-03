@@ -60,6 +60,48 @@ def test_task_can_be_edited_completed_reopened_and_deleted(logged_in):
     )
 
 
+def test_due_task_notification_follows_task_lifecycle(logged_in):
+    created = logged_in.post(
+        "/api/v1/tasks",
+        json={
+            "title": "Отправить отчёт",
+            "due_at": "2026-08-05T18:00:00+03:00",
+            "timezone": "Europe/Moscow",
+        },
+    )
+    task_id = created.json()["id"]
+    with SessionLocal() as db:
+        reminder = db.scalar(select(Reminder).where(Reminder.task_id == task_id))
+        assert reminder is not None
+        original_due = reminder.due_at
+        assert "Отправить отчёт" in reminder.title
+
+    renamed = logged_in.put(
+        f"/api/v1/tasks/{task_id}", json={"title": "Отправить итоговый отчёт"}
+    )
+    assert renamed.status_code == 200
+    with SessionLocal() as db:
+        reminder = db.scalar(select(Reminder).where(Reminder.task_id == task_id))
+        assert reminder.due_at == original_due
+        assert "итоговый" in reminder.title
+
+    completed = logged_in.put(
+        f"/api/v1/tasks/{task_id}", json={"status": "completed"}
+    )
+    assert completed.status_code == 200
+    with SessionLocal() as db:
+        assert db.scalar(select(Reminder).where(Reminder.task_id == task_id)) is None
+
+    reopened = logged_in.put(f"/api/v1/tasks/{task_id}", json={"status": "open"})
+    assert reopened.status_code == 200
+    with SessionLocal() as db:
+        assert db.scalar(select(Reminder).where(Reminder.task_id == task_id)) is not None
+
+    assert logged_in.delete(f"/api/v1/tasks/{task_id}").status_code == 204
+    with SessionLocal() as db:
+        assert db.scalar(select(Reminder).where(Reminder.task_id == task_id)) is None
+
+
 def test_timer_can_be_restarted_renamed_and_deleted(logged_in):
     created = logged_in.post(
         "/api/v1/timers", json={"title": "Фокус", "duration_seconds": 300}

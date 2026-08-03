@@ -7,9 +7,14 @@ from sqlalchemy.orm import Session
 from ..audit import audit
 from ..database import get_db
 from ..dependencies import current_user
+from ..local_notifications import (
+    delete_task_notification,
+    delete_timer_notification,
+    schedule_task_notification,
+    schedule_timer_notification,
+)
 from ..models import LocalTask, Timer, User
 from ..schemas import TaskCreate, TaskUpdate, TimerCreate, TimerUpdate
-from ..timer_notifications import delete_timer_notification, schedule_timer_notification
 
 router = APIRouter(prefix="/api/v1", tags=["local-planner"])
 
@@ -41,6 +46,7 @@ def create_task(
     task = LocalTask(user_id=user.id, **body.model_dump())
     db.add(task)
     db.flush()
+    schedule_task_notification(db, user, task)
     audit(db, user, request, "task.created", "task", task.id, {"title": task.title})
     db.commit()
     return task
@@ -58,6 +64,12 @@ def update_task(
     changes = body.model_dump(exclude_unset=True)
     for field, value in changes.items():
         setattr(task, field, value)
+    schedule_task_notification(
+        db,
+        user,
+        task,
+        reset="due_at" in changes or changes.get("status") == "open",
+    )
     audit(
         db,
         user,
@@ -81,6 +93,7 @@ def delete_task(
 ):
     task = owned(LocalTask, task_id, user, db)
     audit(db, user, request, "task.deleted", "task", task.id, {"title": task.title})
+    delete_task_notification(db, task)
     db.delete(task)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -102,7 +115,7 @@ def create_timer(
     )
     db.add(timer)
     db.flush()
-    schedule_timer_notification(db, user, timer)
+    schedule_timer_notification(db, user, timer, reset=body.duration_seconds is not None)
     audit(
         db,
         user,

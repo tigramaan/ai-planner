@@ -4,9 +4,14 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .local_notifications import (
+    delete_task_notification,
+    delete_timer_notification,
+    schedule_task_notification,
+    schedule_timer_notification,
+)
 from .models import LocalTask, Timer, User
 from .schemas import Intent
-from .timer_notifications import delete_timer_notification, schedule_timer_notification
 
 LOCAL_INTENTS = {
     "create_task",
@@ -53,7 +58,16 @@ def task_action(db: Session, user: User, intent: Intent, raw: str, ru: bool) -> 
             priority=intent.priority or "normal",
         )
         db.add(task)
-        return f"Задача «{task.title}» создана." if ru else f'Task "{task.title}" created.'
+        db.flush()
+        push_is_ready = schedule_task_notification(db, user, task)
+        answer = f"Задача «{task.title}» создана." if ru else f'Task "{task.title}" created.'
+        if task.due_at and not push_is_ready:
+            answer += (
+                " Чтобы получить напоминание о сроке, включите уведомления в Настройках."
+                if ru
+                else " Enable notifications in Settings to receive the due-time reminder."
+            )
+        return answer
     query = (intent.event_query or intent.title or "").casefold().strip()
     task = recent_match(db, LocalTask, user, query) if query else None
     if not task:
@@ -64,14 +78,25 @@ def task_action(db: Session, user: User, intent: Intent, raw: str, ru: bool) -> 
         )
     if intent.intent == "delete_task":
         title = task.title
+        delete_task_notification(db, task)
         db.delete(task)
         return f"Задача «{title}» удалена." if ru else f'Task "{title}" deleted.'
     if intent.intent == "complete_task":
         task.status = "completed"
+        delete_task_notification(db, task)
         return f"Задача «{task.title}» выполнена." if ru else f'Task "{task.title}" completed.'
     if intent.intent == "reopen_task":
         task.status = "open"
-        return f"Задача «{task.title}» возвращена в работу." if ru else f'Task "{task.title}" reopened.'
+        push_is_ready = schedule_task_notification(db, user, task)
+        answer = f"Задача «{task.title}» возвращена в работу." if ru else f'Task "{task.title}" reopened.'
+        if task.due_at and not push_is_ready:
+            answer += (
+                " Чтобы получить напоминание о сроке, включите уведомления в Настройках."
+                if ru
+                else " Enable notifications in Settings to receive the due-time reminder."
+            )
+        return answer
+    due_changed = bool(intent.start_iso)
     if intent.title:
         task.title = intent.title
     if intent.body is not None:
@@ -85,7 +110,15 @@ def task_action(db: Session, user: User, intent: Intent, raw: str, ru: bool) -> 
                 status.HTTP_422_UNPROCESSABLE_ENTITY, "Task due time requires UTC offset"
             )
         task.due_at = due_at
-    return f"Задача «{task.title}» изменена." if ru else f'Task "{task.title}" updated.'
+    push_is_ready = schedule_task_notification(db, user, task, reset=due_changed)
+    answer = f"Задача «{task.title}» изменена." if ru else f'Task "{task.title}" updated.'
+    if task.due_at and not push_is_ready:
+        answer += (
+            " Чтобы получить напоминание о сроке, включите уведомления в Настройках."
+            if ru
+            else " Enable notifications in Settings to receive the due-time reminder."
+        )
+    return answer
 
 
 def timer_action(db: Session, user: User, intent: Intent, ru: bool) -> str:

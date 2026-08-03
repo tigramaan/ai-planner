@@ -122,6 +122,9 @@ class Reminder(Base):
     timer_id: Mapped[str | None] = mapped_column(
         ForeignKey("timers.id", ondelete="CASCADE"), unique=True, index=True
     )
+    task_id: Mapped[str | None] = mapped_column(
+        ForeignKey("local_tasks.id", ondelete="CASCADE"), unique=True, index=True
+    )
     title: Mapped[str] = mapped_column(String(300))
     due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     timezone: Mapped[str] = mapped_column(String(64), default="Europe/Moscow")
