@@ -16,6 +16,7 @@ from ..database import get_db
 from ..dependencies import current_user
 from ..integrations import valid_access_token
 from ..local_chat_actions import LOCAL_INTENTS, handle_local_intent
+from ..mail_queries import provider_mail_query
 from ..models import AgentMessage, Integration, PendingAction, Reminder, User
 from ..policy import action_status, create_pending_action
 from ..recipient_aliases import remembered_recipient_request, save_recipient_alias
@@ -385,7 +386,8 @@ async def chat(
         else:
             try:
                 token = await valid_access_token(db, settings, user, provider)
-                rows = await search_email(provider, token, intent.body or intent.title or body.text)
+                query = provider_mail_query(provider, intent, body.text, user.timezone)
+                rows = await search_email(provider, token, query)
             except LookupError:
                 answer = (
                     f"Сначала подключите {provider} в настройках."
