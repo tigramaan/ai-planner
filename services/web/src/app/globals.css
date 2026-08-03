@@ -182,5 +182,17 @@ h1 { font-size:clamp(30px,4vw,46px); line-height:1.05; letter-spacing:-.045em; m
   .taskEditRow { grid-template-columns:1fr; }
   .taskEditActions .button { flex:1; justify-content:center; }
   .actionToast { right:16px; bottom:82px; }
+  .shell:has(.chatPage) { height:100dvh; min-height:0; overflow:hidden; padding-bottom:64px; }
+  .content:has(.chatPage) { height:calc(100dvh - 64px); display:flex; flex-direction:column; overflow:hidden; padding:8px; }
+  .content:has(.chatPage) .notificationBanner { flex:none; margin-bottom:8px; }
+  .chatPage { min-height:0; flex:1; }
+  .chatPageHead,.chatPage .commandExamples { display:none; }
+  .chatGrid { height:100%; min-height:0; }
+  .chatPage .chat { height:100%; min-height:0; padding:10px; }
+  .chatPage .messages { min-height:0; max-height:none; padding-bottom:8px; overscroll-behavior:contain; }
+  .chatPage .composer { flex:none; margin-top:8px; }
+  .chatPage .composerInput { min-height:48px; max-height:120px; padding:13px 14px 5px; }
+  .chatPage .composerActions { min-height:54px; padding:2px 7px 7px; }
+  .chatPage .composerButton { width:46px; height:46px; }
 }
 @media (prefers-reduced-motion:no-preference) { .button,.navlink { transition:background-color .18s ease,transform .12s ease,color .18s ease; } }

@@ -36,6 +36,7 @@
 | REQ-064 | natural-language email drafting, Gmail send-scope guard, exact-body confirmation and verified Gmail send adapter | agent, action-summary, scope and Gmail adapter tests |
 | REQ-065 | one-to-one timer reminder lifecycle, migration backfill, push readiness guidance and no-subscription retry | planner/chat, agenda, migration and worker tests |
 | REQ-066 | one-to-one due-task delivery plus browser/server push status and global enable/recovery UI | task lifecycle, push status API, Web tests/build and migration drill |
+| REQ-067 | mobile-only chat viewport, hidden desktop guidance and internally scrolling message history | Web production build and phone-viewport visual acceptance |
 | REQ-030..035 | password, cipher, OAuth state, redaction | security tests |
 | REQ-036 | recipient resolver and Google/Microsoft contact adapters | recipient and adapter unit tests |
 | REQ-037 | bounded per-user conversation history passed to intent extraction | conversation continuation tests |
