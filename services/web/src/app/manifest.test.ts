@@ -6,6 +6,6 @@ describe("PWA manifest", () => {
     const value = manifest();
     expect(value.display).toBe("standalone");
     expect(value.start_url).toBe("/");
-    expect(value.icons).toHaveLength(1);
+    expect(value.icons).toHaveLength(3);
   });
 });

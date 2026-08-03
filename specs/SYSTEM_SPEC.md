@@ -33,6 +33,8 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-028: Existing Google/Microsoft events can be rescheduled, cancelled or extended with participants only after unique matching and explicit confirmation.
 - REQ-047: The seven-day agenda combines the current user's local tasks, reminders, active timers and available Google/Microsoft calendar events; unavailable providers degrade without blocking local data.
 - REQ-048: Mail-provider authorization failures are converted into localized reconnect guidance and never expose raw upstream errors to the user.
+- REQ-049: Today and Week expose start/end, timer trigger, participants, reminder offset, safe meeting link and provider edit link. Calendar events can open a prefilled chat correction.
+- REQ-050: The PWA exposes installation from the main screen and navigation, provides iOS/Android instructions, and ships branded manifest and Apple icons.
 
 ## Security
 

@@ -19,7 +19,8 @@ button, input, textarea { font:inherit; }
 a { color:inherit; text-decoration:none; }
 .shell { min-height:100dvh; display:grid; grid-template-columns:248px minmax(0,1fr); }
 .nav { padding:24px 18px; border-right:1px solid var(--line); background:var(--surface); position:sticky; top:0; height:100dvh; }
-.brand { font-size:20px; font-weight:700; letter-spacing:-.03em; margin:0 10px 28px; }
+.brand { font-size:20px; font-weight:700; letter-spacing:-.03em; margin:0 10px 28px; display:flex; align-items:center; gap:10px; }
+.brand img { width:34px; height:34px; border-radius:9px; }
 .navlinks { display:grid; gap:6px; }
 .navlink { display:flex; gap:12px; align-items:center; padding:11px 12px; border-radius:var(--radius); color:var(--muted); }
 .navlink:hover, .navlink:focus-visible { background:var(--surface-2); color:var(--text); outline:2px solid transparent; }
@@ -61,16 +62,38 @@ h1 { font-size:clamp(30px,4vw,46px); line-height:1.05; letter-spacing:-.045em; m
 .label { display:grid; gap:7px; font-weight:600; }
 .timeline { display:grid; gap:0; }
 .timelineItem { padding:14px 0; border-bottom:1px solid var(--line); }
+.agenda { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+.agendaItem { display:grid; grid-template-columns:150px minmax(0,1fr); gap:22px; padding:18px 20px; border-bottom:1px solid var(--line); }
+.agendaItem:last-child { border-bottom:0; }
+.agendaTime { display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap; font-variant-numeric:tabular-nums; font-weight:650; }
+.agendaTime .muted { width:100%; padding-left:26px; font-size:13px; }
+.agendaBody { min-width:0; display:grid; gap:10px; }
+.agendaBody p { margin:0; color:var(--muted); }
+.agendaTitle { display:flex; justify-content:space-between; gap:18px; align-items:flex-start; }
+.agendaMeta { display:grid; gap:7px; color:var(--muted); font-size:14px; }
+.agendaMeta span { display:flex; align-items:center; gap:7px; overflow-wrap:anywhere; }
+.agendaActions { display:flex; flex-wrap:wrap; gap:8px; }
+.agendaActions .button,.installButton { display:inline-flex; align-items:center; gap:7px; }
+.dayTitle { margin:22px 0 10px; font-size:20px; text-transform:capitalize; }
+.installNav { width:100%; border:0; background:transparent; font:inherit; cursor:pointer; text-align:left; }
+.installOverlay { position:fixed; inset:0; z-index:20; display:grid; place-items:center; padding:20px; background:color-mix(in srgb,var(--bg) 78%,transparent); backdrop-filter:blur(8px); }
+.installDialog { width:min(480px,100%); display:grid; gap:14px; }
+.installDialog h2,.installDialog p { margin:0; }
 @media (max-width:767px) {
   .shell { grid-template-columns:1fr; padding-bottom:74px; }
   .nav { z-index:2; position:fixed; inset:auto 0 0; width:100%; height:64px; border-right:0; border-top:1px solid var(--line); padding:7px 12px; }
   .brand { display:none; }
-  .navlinks { grid-template-columns:repeat(4,1fr); }
+  .navlinks { grid-template-columns:repeat(6,1fr); }
   .navlink { flex-direction:column; gap:2px; font-size:11px; padding:5px; }
   .content { padding:22px 16px; }
   .pageHead { align-items:start; flex-direction:column; }
   .grid { grid-template-columns:1fr; }
   .chat { min-height:66dvh; }
   .message { max-width:92%; }
+  .agendaItem { grid-template-columns:1fr; gap:10px; padding:16px; }
+  .agendaTime .muted { width:auto; padding-left:0; }
+  .agendaTitle { display:grid; gap:4px; }
+  .agendaActions .button { flex:1 1 100%; justify-content:center; }
+  .installButton { width:100%; justify-content:center; }
 }
 @media (prefers-reduced-motion:no-preference) { .button,.navlink { transition:background-color .18s ease,transform .12s ease,color .18s ease; } }

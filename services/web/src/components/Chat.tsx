@@ -31,6 +31,8 @@ export function Chat() {
   }
 
   useEffect(() => {
+    const draft = new URLSearchParams(window.location.search).get("draft");
+    if (draft) setText(draft);
     api<Message[]>("/chat/messages").then(setMessages).catch((value) => setError(value.message));
     loadPending();
     return () => stopVisualization();

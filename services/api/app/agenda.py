@@ -25,7 +25,8 @@ async def collect_agenda(
     ).all()
     items = [
         {"kind": "task", "source": "local", "id": row.id, "title": row.title,
-         "at": row.due_at, "status": row.status}
+         "start": row.due_at, "end": None, "status": row.status,
+         "description": row.description, "priority": row.priority}
         for row in tasks if row.due_at is None or start <= row.due_at.astimezone(UTC) < end
     ]
     timers = db.scalars(
@@ -33,7 +34,7 @@ async def collect_agenda(
     ).all()
     items.extend(
         {"kind": "timer", "source": "local", "id": row.id, "title": row.title,
-         "at": row.ends_at, "status": row.status}
+         "start": row.starts_at, "end": row.ends_at, "status": row.status}
         for row in timers if start <= row.ends_at.astimezone(UTC) < end
     )
     reminders = db.scalars(
@@ -46,7 +47,7 @@ async def collect_agenda(
     ).all()
     items.extend(
         {"kind": "reminder", "source": "local", "id": row.id, "title": row.title,
-         "at": row.due_at, "status": row.status}
+         "start": row.due_at, "end": None, "status": row.status, "channel": row.channel}
         for row in reminders
     )
     for provider in ("google", "microsoft"):
@@ -55,10 +56,44 @@ async def collect_agenda(
             events = await list_calendar_events(provider, token, start, end)
         except (LookupError, ProviderError):
             continue
-        items.extend(
-            {"kind": "event", "source": provider, "id": row.get("id"),
-             "title": row.get("summary") or row.get("subject"), "at": row.get("start"),
-             "status": "scheduled"}
-            for row in events
-        )
+        items.extend(provider_event(provider, row) for row in events)
     return start, end, items
+
+
+def provider_event(provider: str, row: dict) -> dict:
+    if provider == "google":
+        points = row.get("conferenceData", {}).get("entryPoints", [])
+        video = next(
+            (item.get("uri") for item in points if item.get("entryPointType") == "video"), None
+        )
+        location = row.get("location")
+        return {
+            "kind": "event", "source": provider, "id": row.get("id"),
+            "title": row.get("summary") or "Без названия", "start": row.get("start"),
+            "end": row.get("end"), "status": row.get("status", "scheduled"),
+            "attendees": [x.get("email") for x in row.get("attendees", []) if x.get("email")],
+            "location": location, "join_url": row.get("hangoutLink") or video or https_url(location),
+            "edit_url": https_url(row.get("htmlLink")),
+            "reminder_minutes": google_reminder_minutes(row),
+        }
+    location = row.get("location", {}).get("displayName")
+    return {
+        "kind": "event", "source": provider, "id": row.get("id"),
+        "title": row.get("subject") or "Без названия", "start": row.get("start"),
+        "end": row.get("end"), "status": "scheduled",
+        "attendees": [x.get("emailAddress", {}).get("address") for x in row.get("attendees", []) if x.get("emailAddress", {}).get("address")],
+        "location": location,
+        "join_url": row.get("onlineMeeting", {}).get("joinUrl") or https_url(location),
+        "edit_url": https_url(row.get("webLink")),
+        "reminder_minutes": row.get("reminderMinutesBeforeStart") if row.get("isReminderOn") else None,
+    }
+
+
+def https_url(value: object) -> str | None:
+    return value if isinstance(value, str) and value.startswith("https://") else None
+
+
+def google_reminder_minutes(row: dict) -> int | None:
+    reminders = row.get("reminders", {})
+    overrides = reminders.get("overrides", [])
+    return overrides[0].get("minutes") if overrides else None
