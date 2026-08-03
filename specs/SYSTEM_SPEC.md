@@ -40,6 +40,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-034: Logs and audit records redact credentials, tokens and message bodies where required.
 - REQ-035: Untrusted mail/contact/calendar text cannot issue agent instructions.
 - REQ-036: Named recipients are resolved from connected contacts and mail senders; ambiguous or missing matches require clarification.
+- REQ-037: The agent resolves concise follow-up answers against recent conversation context without reviving completed actions.
 
 ## Constraints
 

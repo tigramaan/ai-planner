@@ -49,9 +49,24 @@ async def chat(
     locale = browser_locale(request)
     ru = locale == "ru"
     config = openai_config(db, settings, user)
+    recent = db.scalars(
+        select(AgentMessage)
+        .where(AgentMessage.user_id == user.id)
+        .order_by(AgentMessage.created_at.desc())
+        .limit(8)
+    ).all()
+    history = [
+        {"role": row.role, "text": row.text[:2000]}
+        for row in reversed(recent)
+    ]
     try:
         intent = await extract_intent(
-            config["api_key"], config["model"], body.text, locale, user.timezone
+            config["api_key"],
+            config["model"],
+            body.text,
+            locale,
+            user.timezone,
+            history,
         )
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
