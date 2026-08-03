@@ -184,12 +184,15 @@ async def voice(
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ):
-    if audio.content_type not in {
+    content_type = (audio.content_type or "").split(";", 1)[0].strip().lower()
+    if content_type not in {
         "audio/webm",
         "audio/ogg",
         "audio/mpeg",
         "audio/mp4",
+        "audio/x-m4a",
         "audio/wav",
+        "video/mp4",
         "application/octet-stream",
     }:
         raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, "Unsupported audio type")

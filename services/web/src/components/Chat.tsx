@@ -16,8 +16,12 @@ export function Chat() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
   const recorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
+  const waveform = useRef<HTMLCanvasElement | null>(null);
+  const audioContext = useRef<AudioContext | null>(null);
+  const animationFrame = useRef<number | null>(null);
 
   function loadPending() {
     api<Pending[]>("/pending-actions").then(setPending).catch((value) => setError(value.message));
@@ -26,7 +30,54 @@ export function Chat() {
   useEffect(() => {
     api<Message[]>("/chat/messages").then(setMessages).catch((value) => setError(value.message));
     loadPending();
+    return () => stopVisualization();
   }, []);
+
+  function stopVisualization() {
+    if (animationFrame.current !== null) cancelAnimationFrame(animationFrame.current);
+    animationFrame.current = null;
+    if (audioContext.current) void audioContext.current.close();
+    audioContext.current = null;
+  }
+
+  function startVisualization(stream: MediaStream) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const context = new AudioContext();
+    const analyser = context.createAnalyser();
+    analyser.fftSize = 128;
+    context.createMediaStreamSource(stream).connect(analyser);
+    audioContext.current = context;
+    const levels = new Uint8Array(analyser.frequencyBinCount);
+    const draw = () => {
+      const canvas = waveform.current;
+      if (canvas) {
+        const ratio = window.devicePixelRatio || 1;
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+        if (canvas.width !== width * ratio || canvas.height !== height * ratio) {
+          canvas.width = width * ratio;
+          canvas.height = height * ratio;
+        }
+        const paint = canvas.getContext("2d");
+        if (paint) {
+          analyser.getByteFrequencyData(levels);
+          paint.setTransform(ratio, 0, 0, ratio, 0, 0);
+          paint.clearRect(0, 0, width, height);
+          paint.fillStyle = getComputedStyle(canvas).color;
+          const bars = 22;
+          const gap = 3;
+          const barWidth = Math.max(2, (width - gap * (bars - 1)) / bars);
+          for (let index = 0; index < bars; index += 1) {
+            const value = levels[Math.floor(index * levels.length / bars)] / 255;
+            const barHeight = Math.max(3, value * height);
+            paint.fillRect(index * (barWidth + gap), (height - barHeight) / 2, barWidth, barHeight);
+          }
+        }
+      }
+      animationFrame.current = requestAnimationFrame(draw);
+    };
+    draw();
+  }
 
   async function send(event?: FormEvent) {
     event?.preventDefault();
@@ -66,26 +117,37 @@ export function Chat() {
   }
 
   async function toggleRecording() {
-    if (recording) { recorder.current?.stop(); return; }
+    if (recording) {
+      setRecording(false);
+      stopVisualization();
+      if (recorder.current?.state !== "inactive") recorder.current?.stop();
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const media = new MediaRecorder(stream);
+      const supportedType = ["audio/webm;codecs=opus", "audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/webm"]
+        .find((type) => MediaRecorder.isTypeSupported(type));
+      const media = new MediaRecorder(stream, supportedType ? { mimeType: supportedType } : undefined);
       chunks.current = [];
-      media.ondataavailable = (event) => chunks.current.push(event.data);
+      media.ondataavailable = (event) => { if (event.data.size) chunks.current.push(event.data); };
       media.onstop = async () => {
         setRecording(false);
+        stopVisualization();
         stream.getTracks().forEach((track) => track.stop());
         setBusy(true);
+        setTranscribing(true);
         try {
-          const result = await uploadAudio(new Blob(chunks.current, { type: media.mimeType }));
+          const type = media.mimeType || chunks.current[0]?.type || "application/octet-stream";
+          const result = await uploadAudio(new Blob(chunks.current, { type }));
           setText(result.text);
         } catch (value) {
           setError(value instanceof Error ? value.message : t("Ошибка записи", "Recording failed"));
-        } finally { setBusy(false); }
+        } finally { setBusy(false); setTranscribing(false); }
       };
       recorder.current = media;
       media.start();
       setRecording(true);
+      startVisualization(stream);
     } catch { setError(t("Разрешите доступ к микрофону в браузере.", "Allow microphone access in your browser.")); }
   }
 
@@ -95,8 +157,12 @@ export function Chat() {
       {pending.filter((action) => action.status === "pending").map((action) => <div className="confirmation" key={action.id}><strong>{t("Требуется подтверждение", "Confirmation required")}</strong><p>{action.display_summary}</p><div className="row"><button className="button" disabled={busy} onClick={() => decide(action.id, "confirm")}>{t("Подтвердить", "Confirm")}</button><button className="button secondary" disabled={busy} onClick={() => decide(action.id, "cancel")}>{t("Отменить", "Cancel")}</button></div></div>)}
     </div>
     {error && <p className="error" role="alert">{error}</p>}
+    {(recording || transcribing) && <div className="voiceStatus" role="status">
+      <span>{recording ? t("Идёт запись", "Recording") : t("Распознаю запись", "Transcribing")}</span>
+      {recording && <canvas ref={waveform} className="waveform" aria-hidden="true"/>}
+    </div>}
     <form className="composer" onSubmit={send}>
-      <button type="button" className="button secondary iconButton" onClick={toggleRecording} aria-label={recording ? t("Остановить запись", "Stop recording") : t("Записать голос", "Record voice")}>{recording ? <Stop size={21}/> : <Microphone size={21}/>}</button>
+      <button type="button" className={`button secondary iconButton${recording ? " recordingButton" : ""}`} disabled={transcribing} onClick={toggleRecording} aria-pressed={recording} aria-label={recording ? t("Остановить запись", "Stop recording") : t("Записать голос", "Record voice")}>{recording ? <Stop size={21}/> : <Microphone size={21}/>}</button>
       <textarea className="field" lang={locale} rows={2} value={text} onChange={(event) => setText(event.target.value)} aria-label={t("Команда", "Command")} placeholder={t("Например: поставь встречу завтра в 15:00", "For example: schedule a meeting tomorrow at 3 PM")}/>
       <button className="button iconButton" disabled={busy || !text.trim()} aria-label={t("Отправить", "Send")}><PaperPlaneRight size={21}/></button>
     </form>

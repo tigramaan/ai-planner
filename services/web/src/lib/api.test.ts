@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { api } from "./api";
+import { api, audioFilename } from "./api";
 
 describe("api client", () => {
   afterEach(() => vi.restoreAllMocks());
@@ -28,5 +28,11 @@ describe("api client", () => {
     await expect(api("/auth/register", { method: "POST" })).rejects.toThrow(
       "Registration is invitation-only",
     );
+  });
+
+  it("uses a filename matching browser audio MIME types", () => {
+    expect(audioFilename("audio/webm;codecs=opus")).toBe("voice.webm");
+    expect(audioFilename("audio/mp4;codecs=mp4a.40.2")).toBe("voice.m4a");
+    expect(audioFilename("video/mp4")).toBe("voice.m4a");
   });
 });

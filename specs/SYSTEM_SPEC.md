@@ -22,7 +22,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 
 ## Product
 
-- REQ-020: A responsive Web/PWA provides chat, voice capture, Today, tasks, timers, integration settings and audit.
+- REQ-020: A responsive Web/PWA provides chat, voice capture with visible live recording feedback, Today, tasks, timers, integration settings and audit. Voice upload supports browser-produced WebM and MP4/M4A variants.
 - REQ-021: OpenAI performs transcription and structured intent extraction; secrets and OAuth tokens are never sent to the model.
 - REQ-022: Google OAuth supports incremental Calendar, Contacts and Gmail scopes.
 - REQ-023: Microsoft OAuth supports Outlook Calendar, Teams meetings, directory and mail.

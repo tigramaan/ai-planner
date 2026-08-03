@@ -10,9 +10,19 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   return response.status === 204 ? (undefined as T) : response.json();
 }
 
+export function audioFilename(contentType: string): string {
+  const type = contentType.split(";", 1)[0].toLowerCase();
+  const extension = type === "audio/ogg" ? "ogg"
+    : type === "audio/mpeg" ? "mp3"
+    : type === "audio/wav" ? "wav"
+    : type === "audio/mp4" || type === "audio/x-m4a" || type === "video/mp4" ? "m4a"
+    : "webm";
+  return `voice.${extension}`;
+}
+
 export async function uploadAudio(blob: Blob): Promise<{text:string}> {
   const form = new FormData();
-  form.append("audio", blob, "voice.webm");
+  form.append("audio", blob, audioFilename(blob.type));
   const response = await fetch("/api/v1/voice/transcribe", { method:"POST", credentials:"include", headers:{"Accept-Language":browserLocale()}, body:form });
   if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail ?? "Не удалось распознать голос");
   return response.json();
