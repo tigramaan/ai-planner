@@ -35,6 +35,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-048: Mail-provider authorization failures are converted into localized reconnect guidance and never expose raw upstream errors to the user.
 - REQ-049: Today and Week expose start/end, timer trigger, participants, reminder offset, safe meeting link and provider edit link. Calendar events can open a prefilled chat correction.
 - REQ-050: The PWA exposes installation from the main screen and navigation, provides iOS/Android instructions, and ships branded manifest and Apple icons.
+- REQ-051: The task workspace supports creation with description, Moscow due date and priority; search and status/date filters; completion and reopening; inline editing; confirmed deletion; and strict per-user ownership on every mutation.
 
 ## Security
 

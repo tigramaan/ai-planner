@@ -15,6 +15,42 @@ def test_local_task_and_timer(logged_in):
     assert {item["kind"] for item in week.json()["items"]} == {"task", "timer"}
 
 
+def test_task_can_be_edited_completed_reopened_and_deleted(logged_in):
+    created = logged_in.post(
+        "/api/v1/tasks", json={"title": "Черновик", "priority": "normal"}
+    )
+    task_id = created.json()["id"]
+    updated = logged_in.put(
+        f"/api/v1/tasks/{task_id}",
+        json={
+            "title": "Подготовить договор",
+            "description": "Проверить приложение",
+            "due_at": "2026-08-05T12:00:00+03:00",
+            "timezone": "Europe/Moscow",
+            "priority": "high",
+            "status": "completed",
+        },
+    )
+    assert updated.status_code == 200
+    assert updated.json()["title"] == "Подготовить договор"
+    assert updated.json()["priority"] == "high"
+    assert updated.json()["status"] == "completed"
+    assert logged_in.put(f"/api/v1/tasks/{task_id}", json={"title": None}).status_code == 422
+
+    reopened = logged_in.put(
+        f"/api/v1/tasks/{task_id}", json={"status": "open", "due_at": None}
+    )
+    assert reopened.status_code == 200
+    assert reopened.json()["status"] == "open"
+    assert reopened.json()["due_at"] is None
+
+    assert logged_in.delete(f"/api/v1/tasks/{task_id}").status_code == 204
+    assert (
+        logged_in.put(f"/api/v1/tasks/{task_id}", json={"status": "open"}).status_code
+        == 404
+    )
+
+
 def test_google_agenda_event_keeps_time_links_attendees_and_reminder():
     item = provider_event("google", {
         "id": "event-1", "summary": "Встреча", "status": "confirmed",

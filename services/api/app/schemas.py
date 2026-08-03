@@ -51,6 +51,22 @@ class TaskCreate(BaseModel):
     priority: Literal["low", "normal", "high"] = "normal"
 
 
+class TaskUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=300)
+    description: str | None = Field(default=None, max_length=5000)
+    due_at: datetime | None = None
+    timezone: str | None = Field(default=None, max_length=64)
+    priority: Literal["low", "normal", "high"] | None = None
+    status: Literal["open", "completed"] | None = None
+
+    @field_validator("title", "description", "timezone", "priority", "status")
+    @classmethod
+    def reject_null_values(cls, value):
+        if value is None:
+            raise ValueError("Field cannot be null")
+        return value
+
+
 class TimerCreate(BaseModel):
     title: str = Field(default="Таймер", max_length=300)
     duration_seconds: int = Field(ge=1, le=86400)

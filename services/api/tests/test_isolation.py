@@ -15,7 +15,8 @@ def test_planner_and_integrations_are_isolated_per_user(client):
     from app.config import get_settings
 
     register(client, "first@example.com")
-    assert client.post("/api/v1/tasks", json={"title": "Только для первого"}).status_code == 200
+    first_task = client.post("/api/v1/tasks", json={"title": "Только для первого"})
+    assert first_task.status_code == 200
     assert (
         client.post(
             "/api/v1/timers", json={"title": "Личный таймер", "duration_seconds": 60}
@@ -32,6 +33,9 @@ def test_planner_and_integrations_are_isolated_per_user(client):
 
     register(client, "second@example.com")
     assert client.get("/api/v1/tasks").json() == []
+    task_path = f"/api/v1/tasks/{first_task.json()['id']}"
+    assert client.put(task_path, json={"status": "completed"}).status_code == 404
+    assert client.delete(task_path).status_code == 404
     integrations = client.get("/api/v1/integrations").json()
     server_fallback = [
         {

@@ -15,7 +15,7 @@ Run from repository root:
 
 Latest local result (2026-08-03): ruff passed; API planner suite includes authenticated Today/Week aggregation and anonymous-access rejection. The seven-day view uses the same guarded provider collector as Today, and Gmail 401/403 failures return localized reauthorization guidance rather than a raw upstream error. Calendar events apply the per-user reminder offset (five minutes by default), and an explicit Telemost/Yandex request overrides stale Teams context. Chat history is limited to the latest 50 messages in chronological order and the Web viewport follows new messages unless the user scrolls upward. Provider defaults, explicit-only video creation, Zoom OAuth/meeting verification, encrypted recipient aliases, encrypted Teams/Telemost fallback rooms, strict fallback URL allowlisting, partial calendar success when video creation fails, conversation continuation, calendar mutations, provider guards, browser audio and untrusted-host rejection passed. Russian/English browser-locale resolution, Next production build, Compose config, line guard and diff check passed. Python dependency audit found no known vulnerabilities. npm audit retains three high advisories in dependencies bundled by Next.js 16.2.12; the application does not accept external CSS or image uploads. Migration upgrade/downgrade/upgrade passed through the reminder preference. Production smoke, VAPID access, Nginx security headers, auth/AI rate limits and all service health checks passed. A checksum-verified production backup restored 11 tables into a disposable database and was removed after the drill.
 
-Additional UI acceptance (2026-08-03): Today/Week show start/end, timer trigger, attendees, reminders, safe meeting links, provider edit links and prefilled chat correction. PWA installation supports the browser prompt plus iOS/Android fallback instructions, with manifest and Apple icons.
+Additional UI acceptance (2026-08-03): Today/Week show start/end, timer trigger, attendees, reminders, safe meeting links, provider edit links and prefilled chat correction. PWA installation supports the browser prompt plus iOS/Android fallback instructions, with manifest and Apple icons. Tasks support description, Moscow due date, priority, search, status/date filters, completion/reopening, inline editing and confirmed deletion; mutation endpoints enforce per-user ownership.
 
 ## Migration drill
 
@@ -30,12 +30,13 @@ The `backup` service creates a custom-format `pg_dump`, validates its catalog, w
 Use sandbox contacts only. For each family member:
 
 1. Register with the family code and verify another member's tasks/integrations are absent.
-2. Save an OpenAI key, transcribe a voice sample, and verify no key appears in API/log/audit output.
-3. Authorize Google Calendar/Contacts, then Gmail read/compose/send incrementally.
-4. Authorize Microsoft Calendar/Contacts/Teams, verify granted scopes.
-5. Create a pending meeting action; cancel once and confirm a new one once.
-6. Verify read-after-write result, meeting URL, participant invitation and audit record.
-7. Change password and verify prior sessions are rejected.
+2. Create a task with a due date and priority; edit, complete, reopen and delete it, then verify a second user cannot mutate it.
+3. Save an OpenAI key, transcribe a voice sample, and verify no key appears in API/log/audit output.
+4. Authorize Google Calendar/Contacts, then Gmail read/compose/send incrementally.
+5. Authorize Microsoft Calendar/Contacts/Teams, verify granted scopes.
+6. Create a pending meeting action; cancel once and confirm a new one once.
+7. Verify read-after-write result, meeting URL, participant invitation and audit record.
+8. Change password and verify prior sessions are rejected.
 
 Real OAuth acceptance requires provider consent for every production account.
 
