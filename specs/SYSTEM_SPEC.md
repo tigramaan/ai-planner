@@ -61,6 +61,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-046: Calendar events use a per-user reminder offset, defaulting to five minutes; zero disables it. An explicitly named video provider in the current message overrides defaults and conversation history.
 - REQ-054: Object access returns not-found for foreign-owned identifiers, and an access token is accepted only when its session belongs to the same token subject.
 - REQ-055: The chat composer uses the full available width, automatically grows with entered or transcribed text up to a bounded height, and places voice/send actions in a separate bottom row with mobile touch targets.
+- REQ-056: Calendar mutations identify events flexibly by partial title, participant name/address and approximate wording. Current time is an optional ranking hint, never a required identifier. Ambiguous or weak matches return numbered local-time choices that can be selected in the next chat reply.
 
 ## Constraints
 

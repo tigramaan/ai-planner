@@ -266,3 +266,33 @@ def test_current_telemost_request_overrides_video_on_event_update(logged_in, mon
     )
     assert response.status_code == 200
     assert "Video service: Яндекс Телемост" in response.json()["message"]
+
+
+def test_ambiguous_calendar_match_offers_numbered_choices(logged_in, monkeypatch):
+    async def intent(*args, **kwargs):
+        return Intent(
+            intent="update_event",
+            event_query="с Анастасией",
+            start_iso="2026-08-03T18:00:00+03:00",
+            provider="google",
+        )
+
+    async def ambiguous(*args, **kwargs):
+        raise chat_router.EventAmbiguous(
+            [
+                "Встреча с Анастасией Сорокиной (03.08.2026, 15:30)",
+                "Созвон с Анастасией (04.08.2026, 11:00)",
+            ]
+        )
+
+    monkeypatch.setattr(chat_router, "extract_intent", intent)
+    monkeypatch.setattr(chat_router, "prepare_calendar_action", ambiguous)
+    response = logged_in.post(
+        "/api/v1/chat/messages",
+        json={"text": "Перенеси встречу с Анастасией на 18:00"},
+        headers={"accept-language": "ru"},
+    )
+    assert response.status_code == 200
+    assert "1. Встреча с Анастасией" in response.json()["message"]
+    assert "2. Созвон с Анастасией" in response.json()["message"]
+    assert "Ответьте номером" in response.json()["message"]

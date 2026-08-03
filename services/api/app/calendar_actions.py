@@ -1,6 +1,9 @@
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from difflib import SequenceMatcher
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
 
@@ -12,7 +15,9 @@ from .schemas import Intent
 
 
 class EventNotFound(LookupError):
-    pass
+    def __init__(self, choices: list[str] | None = None):
+        super().__init__("Calendar event not found")
+        self.choices = choices or []
 
 
 class EventAmbiguous(ValueError):
@@ -28,6 +33,47 @@ class CalendarEvent:
     start: datetime
     end: datetime
     attendees: list[str]
+    attendee_names: list[str]
+
+
+IGNORED_WORDS = {
+    "встреча", "встречу", "встречи", "событие", "события", "созвон", "созвона",
+    "перенеси", "перенести", "измени", "изменить", "отмени", "отменить", "добавь",
+    "сегодня", "сегодняшнюю", "завтра", "пожалуйста", "meeting", "event", "call",
+    "move", "change", "cancel", "add", "today", "tomorrow", "please", "with",
+}
+
+
+def words(value: str) -> list[str]:
+    return [
+        token for token in re.findall(r"[\w@.+-]+", value.casefold().replace("ё", "е"))
+        if len(token) > 1 and token not in IGNORED_WORDS
+    ]
+
+
+def word_score(left: str, right: str) -> float:
+    if left == right:
+        return 1.0
+    if len(left) >= 5 and len(right) >= 5 and left[:5] == right[:5]:
+        return 0.92
+    return SequenceMatcher(None, left, right).ratio()
+
+
+def event_relevance(event: CalendarEvent, query: str) -> float:
+    query_words = words(query)
+    if not query_words:
+        return 0.0
+    searchable = " ".join([event.title, *event.attendees, *event.attendee_names])
+    event_words = words(searchable)
+    if not event_words:
+        return 0.0
+    matches = [max(word_score(query_word, candidate) for candidate in event_words) for query_word in query_words]
+    return sum(matches) / len(matches)
+
+
+def display_choice(event: CalendarEvent, timezone: str) -> str:
+    local = event.start.astimezone(ZoneInfo(timezone))
+    return f"{event.title} ({local.strftime('%d.%m.%Y, %H:%M')})"
 
 
 def parse_provider_time(value: str) -> datetime:
@@ -42,12 +88,17 @@ def normalize_event(provider: str, row: dict[str, Any]) -> CalendarEvent | None:
         start_value = (row.get("start") or {}).get("dateTime")
         end_value = (row.get("end") or {}).get("dateTime")
         attendees = [item.get("email", "") for item in row.get("attendees", [])]
+        attendee_names = [item.get("displayName", "") for item in row.get("attendees", [])]
         title = row.get("summary", "")
     else:
         start_value = (row.get("start") or {}).get("dateTime")
         end_value = (row.get("end") or {}).get("dateTime")
         attendees = [
             (item.get("emailAddress") or {}).get("address", "")
+            for item in row.get("attendees", [])
+        ]
+        attendee_names = [
+            (item.get("emailAddress") or {}).get("name", "")
             for item in row.get("attendees", [])
         ]
         title = row.get("subject", "")
@@ -59,6 +110,7 @@ def normalize_event(provider: str, row: dict[str, Any]) -> CalendarEvent | None:
         start=parse_provider_time(start_value),
         end=parse_provider_time(end_value),
         attendees=[email.casefold() for email in attendees if email],
+        attendee_names=[name for name in attendee_names if name],
     )
 
 
@@ -71,22 +123,43 @@ async def prepare_calendar_action(
     if anchor and anchor.tzinfo is None:
         raise ValueError("Existing event time requires UTC offset")
     now = datetime.now(UTC)
-    window_start = anchor.astimezone(UTC) - timedelta(hours=12) if anchor else now - timedelta(days=1)
-    window_end = anchor.astimezone(UTC) + timedelta(hours=12) if anchor else now + timedelta(days=90)
+    window_start = min(now - timedelta(days=7), anchor.astimezone(UTC) - timedelta(days=1)) if anchor else now - timedelta(days=7)
+    window_end = max(now + timedelta(days=90), anchor.astimezone(UTC) + timedelta(days=1)) if anchor else now + timedelta(days=90)
     rows = await list_calendar_events(provider, token, window_start, window_end)
     events = [event for row in rows if (event := normalize_event(provider, row))]
     query = (intent.event_query or intent.title or "").casefold().strip()
-    if query:
-        title_matches = [event for event in events if query in event.title.casefold()]
-        if title_matches or not anchor:
-            events = title_matches
+    ranked = [(event, event_relevance(event, query)) for event in events]
+    fuzzy = [(event, score) for event, score in ranked if score >= 0.58]
+    if fuzzy:
+        ranked = fuzzy
+    elif query and not anchor:
+        choices = [display_choice(event, user.timezone) for event in events[:5]]
+        raise EventNotFound(choices)
     if anchor:
-        events = [event for event in events if abs((event.start - anchor).total_seconds()) <= 900]
+        anchor_utc = anchor.astimezone(UTC)
+        ranked.sort(
+            key=lambda item: (
+                -item[1],
+                item[0].start.astimezone(ZoneInfo(user.timezone)).date()
+                != anchor.astimezone(ZoneInfo(user.timezone)).date(),
+                abs((item[0].start - anchor_utc).total_seconds()),
+            )
+        )
+    else:
+        ranked.sort(key=lambda item: (-item[1], item[0].start))
+    events = [event for event, _ in ranked]
     if not events:
-        raise EventNotFound("Calendar event not found")
-    if len(events) > 1:
+        raise EventNotFound()
+    top_score = ranked[0][1]
+    second_score = ranked[1][1] if len(ranked) > 1 else -1.0
+    top_is_clear = top_score >= 0.72 and top_score - second_score >= 0.18
+    anchor_is_clear = bool(
+        anchor and abs((events[0].start - anchor.astimezone(UTC)).total_seconds()) <= 900
+        and (len(events) == 1 or abs((events[1].start - anchor.astimezone(UTC)).total_seconds()) > 900)
+    )
+    if len(events) > 1 and not top_is_clear and not anchor_is_clear:
         raise EventAmbiguous(
-            [f"{event.title} ({event.start.isoformat()})" for event in events[:5]]
+            [display_choice(event, user.timezone) for event in events[:5]]
         )
     event = events[0]
     payload: dict[str, Any] = {

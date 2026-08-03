@@ -19,6 +19,8 @@ Cross-account security acceptance (2026-08-03): a second family member cannot li
 
 Mobile chat acceptance (2026-08-03): the composer occupies the full chat width, expands from one line with typed, drafted or transcribed text up to 240 px, then scrolls internally. Microphone and send controls sit in a separate bottom action row and retain at least 50 px touch targets on mobile. Ctrl/Cmd+Enter sends while plain Enter creates a new line.
 
+Flexible calendar lookup acceptance (2026-08-03): update/cancel/participant actions match partial titles, inflected participant names and attendee addresses. An inferred current time only ranks candidates and never filters out a strong name match. Multiple or weak matches are shown as numbered choices with local date/time, and a numeric follow-up reconstructs the unfinished action.
+
 Additional UI acceptance (2026-08-03): Today/Week show start/end, timer trigger, attendees, reminders, safe meeting links, provider edit links, task completion/deletion, timer restart/deletion and calendar change/cancel drafts. PWA installation supports the browser prompt plus iOS/Android fallback instructions, with UMEC-branded manifest and Apple icons. Tasks support description, Moscow due date, priority, search, status/date filters, completion/reopening, inline editing, collapsed completed work and confirmed deletion; mutation endpoints enforce per-user ownership. Chat/voice support detailed task creation, update, completion, reopening and deletion plus timer restart/deletion. Command examples cover these mutations and open as chat drafts. Explicit Telemost selection overrides stale video context for both new and updated events, and a configured permanent room is written into the calendar event.
 
 ## Migration drill

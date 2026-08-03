@@ -291,16 +291,27 @@ async def chat(
             prepared_payload, prepared_summary = await prepare_calendar_action(
                 db, settings, user, intent
             )
-        except EventNotFound:
-            action_error = (
-                "Не нашёл подходящее событие. Уточните название и текущее время."
-                if ru
-                else "No matching event found. Specify its title and current time."
-            )
+        except EventNotFound as exc:
+            if exc.choices:
+                options = "; ".join(f"{index}. {choice}" for index, choice in enumerate(exc.choices, 1))
+                action_error = (
+                    f"Не нашёл точного совпадения. Возможно, вы имели в виду: {options}. Ответьте номером."
+                    if ru
+                    else f"No close match found. Did you mean: {options}. Reply with a number."
+                )
+            else:
+                action_error = (
+                    "Не нашёл событий в календаре за ближайший период."
+                    if ru
+                    else "No calendar events were found in the nearby date range."
+                )
         except EventAmbiguous as exc:
+            options = "; ".join(f"{index}. {choice}" for index, choice in enumerate(exc.choices, 1))
             action_error = (
-                "Нашёл несколько событий: " if ru else "I found multiple events: "
-            ) + "; ".join(exc.choices)
+                f"Нашёл несколько подходящих событий: {options}. Ответьте номером."
+                if ru
+                else f"I found several matching events: {options}. Reply with a number."
+            )
         except LookupError:
             action_error = (
                 "Сначала подключите нужный календарь в настройках."

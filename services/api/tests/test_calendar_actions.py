@@ -124,3 +124,60 @@ async def test_prepare_requires_disambiguation(monkeypatch, owner):
             Intent(intent="cancel_event", event_query="Weekly sync", provider="microsoft"),
         )
     assert len(error.value.choices) == 2
+
+
+@pytest.mark.anyio
+async def test_flexible_name_match_does_not_require_current_time(monkeypatch, owner):
+    async def token(*args):
+        return "token"
+
+    async def events(*args):
+        return [
+            microsoft_event(
+                "anastasia",
+                "Встреча с Анастасией Сорокиной",
+                15,
+            ),
+            microsoft_event("other", "Планирование продукта", 17),
+        ]
+
+    monkeypatch.setattr(calendar_actions, "valid_access_token", token)
+    monkeypatch.setattr(calendar_actions, "list_calendar_events", events)
+    payload, _ = await calendar_actions.prepare_calendar_action(
+        None,
+        Settings(),
+        owner,
+        Intent(
+            intent="update_event",
+            event_query="сегодняшнюю с Анастасией",
+            start_iso="2026-08-03T18:00:00+03:00",
+            provider="microsoft",
+        ),
+    )
+    assert payload["event_id"] == "anastasia"
+
+
+@pytest.mark.anyio
+async def test_participant_name_can_identify_event(monkeypatch, owner):
+    row = microsoft_event("participant", "Еженедельный статус", 15)
+    row["attendees"][0]["emailAddress"]["name"] = "Анастасия Сорокина"
+
+    async def token(*args):
+        return "token"
+
+    async def events(*args):
+        return [row]
+
+    monkeypatch.setattr(calendar_actions, "valid_access_token", token)
+    monkeypatch.setattr(calendar_actions, "list_calendar_events", events)
+    payload, _ = await calendar_actions.prepare_calendar_action(
+        None,
+        Settings(),
+        owner,
+        Intent(
+            intent="cancel_event",
+            event_query="созвон с Анастасией",
+            provider="microsoft",
+        ),
+    )
+    assert payload["event_id"] == "participant"

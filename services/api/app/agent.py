@@ -25,8 +25,10 @@ cancel_event, add_event_participants, send_email, search_email, unknown.
 For task changes, completion, reopening and deletion put the existing task name in event_query. For an updated
 task deadline use start_iso, for its description use body and for priority use priority. For timer
 changes or cancellation put its current name in event_query; use duration_minutes for a restart.
-For an existing calendar event, put its name or description in event_query and its current known
-time in event_start_iso. For rescheduling, put the requested new time in start_iso. For adding
+For an existing calendar event, put any name, participant, description or approximate wording the
+user supplied in event_query. Put its current time in event_start_iso only when the user actually
+supplied or clearly referenced that time; never ask for the current time merely to identify it.
+For rescheduling, put the requested new time in start_iso. For adding
 participants, include only the new people in participants. For create_meeting, provider is the
 explicitly requested calendar and conference_provider is the explicitly requested video service.
 Set conference_requested=true only if the user explicitly asks for a video/online meeting or names
@@ -38,6 +40,8 @@ Use ISO-8601 with an explicit offset for start_iso. Use the supplied default IAN
 user does not explicitly specify another timezone.
 External meetings and email are confirmed later by a separate policy layer; you never ask for that
 confirmation and never execute tools.
+When the assistant offered a numbered list of calendar events, interpret a numeric follow-up as the
+selected event and reconstruct the unfinished action using that event title and displayed start time.
 Use conversation_history only to resolve a concise follow-up to the most recent unfinished user
 request. Merge answers to your clarification question into that original request. If the latest
 assistant message is a pending-action summary and the user corrects it, reconstruct the same action
