@@ -95,6 +95,7 @@ async def prepare_calendar_action(
         "event_id": event.id,
         "event_title": event.title,
         "original_start_iso": event.start.astimezone(UTC).isoformat(),
+        "timezone": intent.timezone or user.timezone,
     }
     if intent.intent == "update_event":
         if not intent.start_iso:
@@ -115,6 +116,7 @@ async def prepare_calendar_action(
         if not intent.participants:
             raise ValueError("At least one participant is required")
         payload["attendees"] = list(dict.fromkeys([*event.attendees, *intent.participants]))
+        payload["added_attendees"] = intent.participants
         summary = f"{event.title}: add {', '.join(intent.participants)}"
     else:
         summary = f"Cancel {event.title} ({event.start.isoformat()})"

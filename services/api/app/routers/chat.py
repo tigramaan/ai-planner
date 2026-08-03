@@ -1,9 +1,11 @@
-from datetime import datetime, timedelta
+import re
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..action_summary import action_summary
 from ..adapters import ProviderError, search_email
 from ..agent import extract_intent, openai_config, pending_payload, risk_for_intent, transcribe
 from ..audit import audit
@@ -12,12 +14,45 @@ from ..config import Settings, get_settings
 from ..database import get_db
 from ..dependencies import current_user
 from ..integrations import valid_access_token
-from ..models import AgentMessage, LocalTask, Reminder, Timer, User
-from ..policy import create_pending_action
+from ..models import AgentMessage, LocalTask, PendingAction, Reminder, Timer, User
+from ..policy import action_status, create_pending_action
 from ..recipients import resolve_recipients
 from ..schemas import ChatRequest
 
 router = APIRouter(prefix="/api/v1", tags=["agent"])
+
+AFFIRMATIVE = {
+    "да",
+    "давай",
+    "подтверждаю",
+    "подтвердить",
+    "выполняй",
+    "выполни",
+    "yes",
+    "confirm",
+    "go ahead",
+    "do it",
+}
+NEGATIVE = {"нет", "не надо", "отмена", "отмени", "cancel", "no"}
+
+
+def decision(text: str) -> str | None:
+    normalized = re.sub(r"[^\w\s]", "", text.casefold()).strip()
+    if normalized in AFFIRMATIVE:
+        return "confirm"
+    if normalized in NEGATIVE:
+        return "cancel"
+    return None
+
+
+def pending_drafts(db: Session, user: User) -> list[PendingAction]:
+    rows = db.scalars(
+        select(PendingAction)
+        .where(PendingAction.user_id == user.id)
+        .order_by(PendingAction.expires_at.desc())
+        .limit(10)
+    ).all()
+    return [row for row in rows if action_status(row) == "pending"]
 
 
 def browser_locale(request: Request) -> str:
@@ -49,6 +84,29 @@ async def chat(
 ):
     locale = browser_locale(request)
     ru = locale == "ru"
+    drafts = pending_drafts(db, user)
+    active_pending = drafts[0] if drafts else None
+    requested_decision = decision(body.text)
+    if active_pending and requested_decision:
+        from .planner import cancel as cancel_pending
+        from .planner import confirm as confirm_pending
+
+        user_message = AgentMessage(user_id=user.id, role="user", text=body.text)
+        db.add(user_message)
+        if requested_decision == "confirm":
+            for stale in drafts[1:]:
+                stale.cancelled_at = datetime.now(UTC)
+            result = await confirm_pending(active_pending.id, request, user, db, settings)
+            link = (result.get("result") or {}).get("link")
+            answer = "Действие выполнено." if ru else "Action completed."
+            if link:
+                answer += (" Ссылка: " if ru else " Link: ") + link
+        else:
+            cancel_pending(active_pending.id, request, user, db)
+            answer = "Черновик отменён." if ru else "Draft cancelled."
+        db.add(AgentMessage(user_id=user.id, role="assistant", text=answer))
+        db.commit()
+        return {"intent": None, "message": answer, "pending_action_id": None}
     config = openai_config(db, settings, user)
     recent = db.scalars(
         select(AgentMessage)
@@ -145,20 +203,20 @@ async def chat(
             "Уточните параметры команды." if ru else "Please clarify the command parameters."
         )
     elif risk_for_intent(intent) == "confirmation_required":
-        summary = prepared_summary or (
-            f"{intent.title or intent.intent}. Проверьте участников, дату и время перед выполнением."
-            if ru
-            else f"{intent.title or intent.intent}. Check participants, date and time before execution."
-        )
         try:
             payload = prepared_payload or pending_payload(intent)
         except (ValueError, TypeError) as exc:
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+        summary = action_summary(intent.intent, payload, locale)
+        if prepared_summary and not summary:
+            summary = prepared_summary
+        for draft in drafts:
+            draft.cancelled_at = datetime.now(UTC)
         pending = create_pending_action(db, settings, user, intent.intent, summary, payload)
-        answer = (
-            "Подготовил действие. Выполню только после вашего подтверждения."
+        answer = summary + (
+            "\nЕсли всё верно, ответьте «Подтверждаю» или нажмите кнопку. Чтобы исправить — напишите изменение."
             if ru
-            else "The action is ready. I will execute it only after your confirmation."
+            else "\nIf this is correct, reply “Confirm” or press the button. To revise it, send the correction."
         )
     elif intent.intent == "create_task":
         task = LocalTask(

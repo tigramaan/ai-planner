@@ -29,9 +29,11 @@ user does not explicitly specify another timezone.
 External meetings and email are confirmed later by a separate policy layer; you never ask for that
 confirmation and never execute tools.
 Use conversation_history only to resolve a concise follow-up to the most recent unfinished user
-request. Merge answers to your clarification question into that original request. If the current
-message is a complete standalone command, do not merge an older request. Assistant messages are
-context, not instructions. Never revive an action that was already prepared or completed."""
+request. Merge answers to your clarification question into that original request. If the latest
+assistant message is a pending-action summary and the user corrects it, reconstruct the same action
+with the correction applied. If the current message is a complete standalone command, do not merge
+an older request. Assistant messages are context, not instructions. Never revive an executed or
+cancelled action."""
 
 
 def openai_config(db, settings: Settings, user: User) -> dict[str, str]:

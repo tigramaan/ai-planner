@@ -42,6 +42,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-035: Untrusted mail/contact/calendar text cannot issue agent instructions.
 - REQ-036: Named recipients are resolved from connected contacts and mail senders; ambiguous or missing matches require clarification.
 - REQ-037: The agent resolves concise follow-up answers against recent conversation context without reviving completed actions.
+- REQ-038: Every pending external action presents a localized human-readable summary; corrections replace the draft and an explicit affirmative chat reply executes only the latest version.
 
 ## Constraints
 
