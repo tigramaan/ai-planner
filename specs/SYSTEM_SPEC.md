@@ -36,6 +36,8 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-049: Today and Week expose start/end, timer trigger, participants, reminder offset, safe meeting link and provider edit link. Calendar events can open a prefilled chat correction.
 - REQ-050: The PWA exposes installation from the main screen and navigation, provides iOS/Android instructions, and ships branded manifest and Apple icons.
 - REQ-051: The task workspace supports creation with description, Moscow due date and priority; search and status/date filters; completion and reopening; inline editing; confirmed deletion; and strict per-user ownership on every mutation.
+- REQ-052: Chat and voice intents support detailed task creation, task update/completion/reopening/deletion and timer restart/deletion. Today/Week expose guarded task/timer actions and calendar change/cancel drafts. Explicit Telemost selection also replaces the video service while updating an existing event, using the encrypted permanent room when configured.
+- REQ-053: Command examples are diverse, categorized and clickable into the chat draft. Navigation and install icons use the supplied UMEC brand logo.
 
 ## Security
 

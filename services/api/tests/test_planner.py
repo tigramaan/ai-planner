@@ -51,6 +51,22 @@ def test_task_can_be_edited_completed_reopened_and_deleted(logged_in):
     )
 
 
+def test_timer_can_be_restarted_renamed_and_deleted(logged_in):
+    created = logged_in.post(
+        "/api/v1/timers", json={"title": "Фокус", "duration_seconds": 300}
+    )
+    timer_id = created.json()["id"]
+    updated = logged_in.put(
+        f"/api/v1/timers/{timer_id}",
+        json={"title": "Перерыв", "duration_seconds": 600},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["title"] == "Перерыв"
+    assert updated.json()["status"] == "active"
+    assert logged_in.delete(f"/api/v1/timers/{timer_id}").status_code == 204
+    assert logged_in.delete(f"/api/v1/timers/{timer_id}").status_code == 404
+
+
 def test_google_agenda_event_keeps_time_links_attendees_and_reminder():
     item = provider_event("google", {
         "id": "event-1", "summary": "Встреча", "status": "confirmed",

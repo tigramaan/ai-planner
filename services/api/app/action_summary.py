@@ -46,7 +46,7 @@ def action_summary(action_type: str, payload: dict, locale: str) -> str:
     if start:
         interval = start.strftime("%d.%m.%Y, %H:%M")
         if end:
-            interval += f"–{end.strftime('%H:%M')}"
+            interval += f"-{end.strftime('%H:%M')}"
         when = interval
 
     if action_type == "create_meeting":
@@ -87,6 +87,12 @@ def action_summary(action_type: str, payload: dict, locale: str) -> str:
             if ru
             else [f'Reschedule "{title}".', f"New time: {when}.", f"Timezone: {timezone}."]
         )
+        if conference and conference != "none":
+            lines.append(
+                f"Видеосвязь: {conference_name}."
+                if ru
+                else f"Video service: {conference_name}."
+            )
     elif action_type == "add_event_participants":
         lines = (
             [f"Добавить участников во встречу «{title}»: {people}."]

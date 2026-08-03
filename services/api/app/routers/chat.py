@@ -1,5 +1,5 @@
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from sqlalchemy import select
@@ -15,7 +15,8 @@ from ..config import Settings, get_settings
 from ..database import get_db
 from ..dependencies import current_user
 from ..integrations import valid_access_token
-from ..models import AgentMessage, Integration, LocalTask, PendingAction, Reminder, Timer, User
+from ..local_chat_actions import LOCAL_INTENTS, handle_local_intent
+from ..models import AgentMessage, Integration, PendingAction, Reminder, User
 from ..policy import action_status, create_pending_action
 from ..recipient_aliases import remembered_recipient_request, save_recipient_alias
 from ..recipients import resolve_recipients
@@ -54,12 +55,12 @@ def decision(text: str) -> str | None:
 
 def mail_access_granted(db: Session, user: User, provider: str) -> bool:
     integration = db.scalar(
-        select(Integration).where(
-            Integration.user_id == user.id, Integration.provider == provider
-        )
+        select(Integration).where(Integration.user_id == user.id, Integration.provider == provider)
     )
     required = MAIL_READ_SCOPE.get(provider)
-    return bool(integration and integration.status == "connected" and required in integration.scopes)
+    return bool(
+        integration and integration.status == "connected" and required in integration.scopes
+    )
 
 
 def pending_drafts(db: Session, user: User) -> list[PendingAction]:
@@ -75,7 +76,18 @@ def pending_drafts(db: Session, user: User) -> list[PendingAction]:
 def references_recent_draft(text: str) -> bool:
     normalized = text.casefold()
     references = ("эту", "этой", "чернов", "предыдущ", "встреч", "it", "this", "draft", "previous")
-    changes = ("измени", "поменя", "перенес", "добав", "ещё", "еще", "correct", "change", "move", "add")
+    changes = (
+        "измени",
+        "поменя",
+        "перенес",
+        "добав",
+        "ещё",
+        "еще",
+        "correct",
+        "change",
+        "move",
+        "add",
+    )
     return any(value in normalized for value in references) and any(
         value in normalized for value in changes
     )
@@ -189,10 +201,7 @@ async def chat(
         .limit(8)
     ).all()
     remembered = remembered_recipient_request(body.text, recent)
-    history = [
-        {"role": row.role, "text": row.text[:2000]}
-        for row in reversed(recent)
-    ]
+    history = [{"role": row.role, "text": row.text[:2000]} for row in reversed(recent)]
     cancelled_context = cancelled_draft_context(db, settings, user, body.text)
     if cancelled_context:
         history.append(cancelled_context)
@@ -208,10 +217,15 @@ async def chat(
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
     explicit_conference = explicit_conference_provider(body.text)
-    if intent.intent == "create_meeting" and explicit_conference:
+    if intent.intent in {"create_meeting", "update_event"} and explicit_conference:
         intent.conference_requested = True
         intent.conference_provider = explicit_conference
-    if intent.intent in {"create_meeting", "update_event", "cancel_event", "add_event_participants"}:
+    if intent.intent in {
+        "create_meeting",
+        "update_event",
+        "cancel_event",
+        "add_event_participants",
+    }:
         intent.provider = intent.provider or user.default_calendar
     if intent.intent in {"send_email", "search_email"}:
         intent.provider = intent.provider or user.default_mail
@@ -232,13 +246,14 @@ async def chat(
     if intent.intent == "create_meeting" and not intent.title:
         participant_names = ", ".join(intent.participants)
         if ru:
-            intent.title = (
-                f"Встреча с {participant_names}" if participant_names else "Встреча"
-            )
+            intent.title = f"Встреча с {participant_names}" if participant_names else "Встреча"
         else:
             intent.title = f"Meeting with {participant_names}" if participant_names else "Meeting"
     resolution_answer = None
-    if intent.intent in {"create_meeting", "add_event_participants", "send_email"} and intent.participants:
+    if (
+        intent.intent in {"create_meeting", "add_event_participants", "send_email"}
+        and intent.participants
+    ):
         provider = (
             intent.provider
             if intent.provider in {"google", "microsoft", "yandex"}
@@ -267,7 +282,11 @@ async def chat(
     prepared_summary = None
     action_error = None
     calendar_actions = {"update_event", "cancel_event", "add_event_participants"}
-    if intent.intent in calendar_actions and not resolution_answer and not intent.requires_clarification:
+    if (
+        intent.intent in calendar_actions
+        and not resolution_answer
+        and not intent.requires_clarification
+    ):
         try:
             prepared_payload, prepared_summary = await prepare_calendar_action(
                 db, settings, user, intent
@@ -314,18 +333,12 @@ async def chat(
             draft.cancelled_at = datetime.now(UTC)
         pending = create_pending_action(db, settings, user, intent.intent, summary, payload)
         answer = summary + (
-            "\nЕсли всё верно, ответьте «Подтверждаю» или нажмите кнопку. Чтобы исправить — напишите изменение."
+            "\nЕсли всё верно, ответьте «Подтверждаю» или нажмите кнопку. Чтобы исправить, напишите изменение."
             if ru
             else "\nIf this is correct, reply “Confirm” or press the button. To revise it, send the correction."
         )
-    elif intent.intent == "create_task":
-        task = LocalTask(
-            user_id=user.id,
-            title=intent.title or body.text,
-            timezone=intent.timezone or user.timezone,
-        )
-        db.add(task)
-        answer = f"Задача «{task.title}» создана." if ru else f'Task "{task.title}" created.'
+    elif intent.intent in LOCAL_INTENTS:
+        answer = handle_local_intent(db, user, intent, body.text, ru)
     elif intent.intent == "create_reminder":
         if not intent.start_iso or not intent.timezone:
             raise HTTPException(
@@ -351,19 +364,6 @@ async def chat(
             if ru
             else f'Reminder "{reminder.title}" scheduled.'
         )
-    elif intent.intent == "start_timer":
-        seconds = (intent.duration_minutes or 25) * 60
-        timer = Timer(
-            user_id=user.id,
-            title=intent.title or ("Таймер" if ru else "Timer"),
-            ends_at=datetime.now().astimezone() + timedelta(seconds=seconds),
-        )
-        db.add(timer)
-        answer = (
-            f"Таймер запущен на {seconds // 60} минут."
-            if ru
-            else f"Timer started for {seconds // 60} minutes."
-        )
     elif intent.intent == "show_today":
         answer = (
             "Откройте экран «Сегодня»: данные уже обновляются из подключённых источников."
@@ -376,8 +376,8 @@ async def chat(
             answer = (
                 f"Для чтения писем нужно отдельно разрешить доступ к {provider}. "
                 "Откройте «Настройки», нажмите кнопку авторизации почты и повторите запрос."
-                if ru else
-                f"Mail read access for {provider} is not authorized. Open Settings, "
+                if ru
+                else f"Mail read access for {provider} is not authorized. Open Settings, "
                 "authorize mail access, and retry."
             )
         else:
@@ -385,20 +385,26 @@ async def chat(
                 token = await valid_access_token(db, settings, user, provider)
                 rows = await search_email(provider, token, intent.body or intent.title or body.text)
             except LookupError:
-                answer = f"Сначала подключите {provider} в настройках." if ru else f"Connect {provider} in Settings first."
+                answer = (
+                    f"Сначала подключите {provider} в настройках."
+                    if ru
+                    else f"Connect {provider} in Settings first."
+                )
             except ProviderError as exc:
                 answer = (
                     "Gmail отклонил доступ. Повторно авторизуйте Gmail в настройках."
-                    if ru and provider == "google" else
-                    "Gmail rejected access. Reauthorize Gmail in Settings."
-                    if provider == "google" else
-                    f"{provider} отклонил запрос ({exc.status_code})."
-                    if ru else f"{provider} rejected the request ({exc.status_code})."
+                    if ru and provider == "google"
+                    else "Gmail rejected access. Reauthorize Gmail in Settings."
+                    if provider == "google"
+                    else f"{provider} отклонил запрос ({exc.status_code})."
+                    if ru
+                    else f"{provider} rejected the request ({exc.status_code})."
                 )
             else:
                 answer = (
                     ("Писем не найдено." if ru else "No emails found.")
-                    if not rows else "\n".join(
+                    if not rows
+                    else "\n".join(
                         f"{index + 1}. {row['subject']} | {row['from']}"
                         for index, row in enumerate(rows)
                     )

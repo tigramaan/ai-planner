@@ -4,7 +4,7 @@ import "./globals.css";
 import { Providers } from "@/components/Providers";
 
 const geist = Geist({ subsets: ["latin", "cyrillic"], variable: "--font-geist" });
-export const metadata: Metadata = { title: "UMEC AI Planner", description: "Personal command center", icons: {icon:"/icon.svg",apple:"/apple-touch-icon.png"}, appleWebApp: { capable: true, title: "AI Planner" } };
+export const metadata: Metadata = { title: "UMEC AI Planner", description: "Personal command center", icons: {icon:"/icon-192.png",apple:"/apple-touch-icon.png"}, appleWebApp: { capable: true, title: "AI Planner" } };
 export const viewport: Viewport = { themeColor: "#0f6cbd", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: Readonly<{children: React.ReactNode}>) {

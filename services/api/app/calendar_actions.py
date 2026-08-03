@@ -98,19 +98,33 @@ async def prepare_calendar_action(
         "timezone": intent.timezone or user.timezone,
     }
     if intent.intent == "update_event":
-        if not intent.start_iso:
-            raise ValueError("New event time is required")
-        new_start = datetime.fromisoformat(intent.start_iso)
-        if new_start.tzinfo is None:
-            raise ValueError("New event time requires UTC offset")
-        duration = event.end - event.start
-        payload.update(
-            {
-                "start_iso": new_start.astimezone(UTC).isoformat(),
-                "end_iso": (new_start + duration).astimezone(UTC).isoformat(),
-                "timezone": intent.timezone or user.timezone,
-            }
-        )
+        if not intent.start_iso and not intent.conference_requested:
+            raise ValueError("Event update requires a new time or video service")
+        new_start = event.start
+        if intent.start_iso:
+            new_start = datetime.fromisoformat(intent.start_iso)
+            if new_start.tzinfo is None:
+                raise ValueError("New event time requires UTC offset")
+            duration = event.end - event.start
+            payload.update(
+                {
+                    "start_iso": new_start.astimezone(UTC).isoformat(),
+                    "end_iso": (new_start + duration).astimezone(UTC).isoformat(),
+                    "timezone": intent.timezone or user.timezone,
+                }
+            )
+        if intent.conference_requested:
+            payload["conference"] = (
+                "yandex_telemost"
+                if intent.conference_provider == "yandex"
+                else "microsoft_teams"
+                if intent.conference_provider == "microsoft"
+                else "zoom"
+                if intent.conference_provider == "zoom"
+                else "google_meet"
+                if intent.conference_provider == "google"
+                else "none"
+            )
         summary = f"{event.title}: {event.start.isoformat()} -> {new_start.isoformat()}"
     elif intent.intent == "add_event_participants":
         if not intent.participants:

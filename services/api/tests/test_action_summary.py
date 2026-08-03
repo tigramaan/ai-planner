@@ -16,7 +16,7 @@ def test_meeting_summary_explains_every_external_effect():
         },
         "ru",
     )
-    assert "03.08.2026, 11:25–11:55" in summary
+    assert "03.08.2026, 11:25-11:55" in summary
     assert "Europe/Moscow" in summary
     assert "anastasia@example.com" in summary
     assert "Календарь: Microsoft" in summary

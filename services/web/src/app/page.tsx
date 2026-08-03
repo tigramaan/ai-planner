@@ -1,3 +1,31 @@
 "use client";
 import { Chat } from "@/components/Chat"; import { InstallApp } from "@/components/InstallApp"; import { Shell } from "@/components/Shell"; import { useI18n } from "@/lib/i18n";
-export default function Home(){const {locale,t}=useI18n();const examples=locale==="ru"?["Покажи планы на сегодня","Найди свободный час завтра","Поставь таймер на 25 минут","Покажи непрочитанные письма"]:["Show my plans for today","Find a free hour tomorrow","Set a timer for 25 minutes","Show my unread emails"];return <Shell><header className="pageHead"><div><h1>{t("Командный центр","Command center")}</h1><p className="muted">{t("Календарь, письма и задачи в одном диалоге.","Calendar, email and tasks in one conversation.")}</p></div><InstallApp/></header><div className="grid"><Chat/><aside className="panel stack"><h2>{t("Примеры команд","Example commands")}</h2>{examples.map(x=><div className="integration" key={x}>{x}</div>)}</aside></div></Shell>}
+export default function Home(){const {locale,t}=useI18n();const examples=locale==="ru"?[
+  ["Задачи","Создай важную задачу подготовить договор к завтра 18:00"],
+  ["Задачи","Перенеси срок задачи «Подготовить договор» на пятницу 12:00"],
+  ["Задачи","Отметь задачу «Подготовить договор» выполненной"],
+  ["Задачи","Верни задачу «Подготовить договор» в работу"],
+  ["Задачи","Удали задачу «Подготовить договор»"],
+  ["Календарь","Создай завтра в 15:00 встречу с Анной в Яндекс Телемосте на 45 минут"],
+  ["Календарь","Перенеси встречу с Анной на 16:30 и замени видеосвязь на Яндекс Телемост"],
+  ["Календарь","Отмени встречу с Анной завтра в 15:00"],
+  ["Таймер","Поставь таймер «Фокус» на 25 минут"],
+  ["Таймер","Перезапусти таймер «Фокус» на 10 минут"],
+  ["Таймер","Удали таймер «Фокус»"],
+  ["Почта","Покажи непрочитанные письма за последние 3 дня"],
+  ["Почта","Найди последнее письмо от Анастасии"],
+]:[
+  ["Tasks","Create a high-priority task to prepare the contract by tomorrow at 6 PM"],
+  ["Tasks","Move the due date of “Prepare contract” to Friday at noon"],
+  ["Tasks","Mark the “Prepare contract” task as completed"],
+  ["Tasks","Reopen the “Prepare contract” task"],
+  ["Tasks","Delete the “Prepare contract” task"],
+  ["Calendar","Schedule a 45-minute meeting with Anna tomorrow at 3 PM in Yandex Telemost"],
+  ["Calendar","Move the meeting with Anna to 4:30 PM and switch video to Yandex Telemost"],
+  ["Calendar","Cancel the meeting with Anna tomorrow at 3 PM"],
+  ["Timer","Start a 25-minute timer named Focus"],
+  ["Timer","Restart the Focus timer for 10 minutes"],
+  ["Timer","Delete the Focus timer"],
+  ["Mail","Show unread emails from the last 3 days"],
+  ["Mail","Find the latest email from Anastasia"],
+];return <Shell><header className="pageHead"><div><h1>{t("Командный центр","Command center")}</h1><p className="muted">{t("Календарь, письма и задачи в одном диалоге.","Calendar, email and tasks in one conversation.")}</p></div><InstallApp/></header><div className="grid"><Chat/><aside className="panel commandExamples"><div><h2>{t("Примеры команд","Example commands")}</h2><p className="muted">{t("Нажмите, чтобы перенести команду в чат.","Select one to move it into chat.")}</p></div>{examples.map(([group,command])=><a className="commandExample" href={`/?draft=${encodeURIComponent(command)}`} key={command}><span>{group}</span><strong>{command}</strong></a>)}</aside></div></Shell>}

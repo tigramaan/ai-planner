@@ -53,6 +53,35 @@ async def test_prepare_reschedule_preserves_duration(monkeypatch, owner):
 
 
 @pytest.mark.anyio
+async def test_prepare_reschedule_can_replace_video_with_telemost(monkeypatch, owner):
+    async def token(*args):
+        return "token"
+
+    async def events(*args):
+        return [microsoft_event()]
+
+    monkeypatch.setattr(calendar_actions, "valid_access_token", token)
+    monkeypatch.setattr(calendar_actions, "list_calendar_events", events)
+    payload, _ = await calendar_actions.prepare_calendar_action(
+        None,
+        Settings(),
+        owner,
+        Intent(
+            intent="update_event",
+            event_query="Weekly sync",
+            event_start_iso="2026-08-03T12:30:00+03:00",
+            start_iso="2026-08-03T16:30:00+03:00",
+            timezone="Europe/Moscow",
+            provider="microsoft",
+            conference_provider="yandex",
+            conference_requested=True,
+        ),
+    )
+    assert payload["conference"] == "yandex_telemost"
+    assert payload["start_iso"] == "2026-08-03T13:30:00+00:00"
+
+
+@pytest.mark.anyio
 async def test_prepare_adds_participant_without_removing_existing(monkeypatch, owner):
     async def token(*args):
         return "token"

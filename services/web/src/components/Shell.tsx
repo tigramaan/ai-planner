@@ -11,5 +11,5 @@ const links = [
 
 export function Shell({children}:{children:React.ReactNode}) {
   const { locale, t } = useI18n();
-  return <div className="shell"><nav className="nav" aria-label={t("Основная навигация", "Main navigation")}><div className="brand"><img src="/icon.svg" alt=""/>UMEC Planner</div><div className="navlinks">{links.map(([href,ru,en,Icon])=><a className="navlink" href={href} key={href}><Icon size={22} weight="duotone"/><span>{locale === "ru" ? ru : en}</span></a>)}<InstallApp compact/></div></nav><main className="content">{children}</main></div>;
+  return <div className="shell"><nav className="nav" aria-label={t("Основная навигация", "Main navigation")}><a className="brand" href="/" aria-label="UMEC"><img className="brandLogo" src="/umec-space-logo.png" alt="UMEC"/></a><div className="navlinks">{links.map(([href,ru,en,Icon])=><a className="navlink" href={href} key={href}><Icon size={22} weight="duotone"/><span>{locale === "ru" ? ru : en}</span></a>)}<InstallApp compact/></div></nav><main className="content">{children}</main></div>;
 }

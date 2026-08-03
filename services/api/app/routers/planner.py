@@ -1,8 +1,8 @@
 import hashlib
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -26,11 +26,9 @@ from ..integrations import valid_access_token
 from ..models import (
     AgentMessage,
     AuditLog,
-    LocalTask,
     PendingAction,
     PushSubscription,
     Reminder,
-    Timer,
     User,
 )
 from ..policy import action_status
@@ -38,20 +36,20 @@ from ..schemas import (
     PendingActionView,
     PushSubscriptionWrite,
     ReminderCreate,
-    TaskCreate,
-    TaskUpdate,
-    TimerCreate,
     UserPreferences,
 )
 from ..security import decrypt_json, encrypt_json
 
 router = APIRouter(prefix="/api/v1", tags=["planner"])
 
+
 @router.get("/preferences", response_model=UserPreferences)
 def preferences(user: User = Depends(current_user), settings: Settings = Depends(get_settings)):
     return UserPreferences(
-        default_calendar=user.default_calendar, default_mail=user.default_mail,
-        default_conference=user.default_conference, default_reminder_minutes=user.default_reminder_minutes,
+        default_calendar=user.default_calendar,
+        default_mail=user.default_mail,
+        default_conference=user.default_conference,
+        default_reminder_minutes=user.default_reminder_minutes,
         fallback_teams_url=read_fallback_url(settings, user, "microsoft_teams"),
         fallback_telemost_url=read_fallback_url(settings, user, "yandex_telemost"),
     )
@@ -66,9 +64,16 @@ def update_preferences(
     settings: Settings = Depends(get_settings),
 ):
     user.default_calendar, user.default_mail = body.default_calendar, body.default_mail
-    user.default_conference, user.default_reminder_minutes = body.default_conference, body.default_reminder_minutes
-    user.fallback_teams_url_encrypted = store_fallback_url(settings, user, "microsoft_teams", body.fallback_teams_url)
-    user.fallback_telemost_url_encrypted = store_fallback_url(settings, user, "yandex_telemost", body.fallback_telemost_url)
+    user.default_conference, user.default_reminder_minutes = (
+        body.default_conference,
+        body.default_reminder_minutes,
+    )
+    user.fallback_teams_url_encrypted = store_fallback_url(
+        settings, user, "microsoft_teams", body.fallback_teams_url
+    )
+    user.fallback_telemost_url_encrypted = store_fallback_url(
+        settings, user, "yandex_telemost", body.fallback_telemost_url
+    )
     audit(
         db,
         user,
@@ -76,107 +81,17 @@ def update_preferences(
         "preferences.updated",
         "user",
         user.id,
-        {"default_calendar": body.default_calendar, "default_mail": body.default_mail,
-         "default_conference": body.default_conference, "default_reminder_minutes": body.default_reminder_minutes,
-         "fallback_teams_configured": bool(body.fallback_teams_url),
-         "fallback_telemost_configured": bool(body.fallback_telemost_url)},
+        {
+            "default_calendar": body.default_calendar,
+            "default_mail": body.default_mail,
+            "default_conference": body.default_conference,
+            "default_reminder_minutes": body.default_reminder_minutes,
+            "fallback_teams_configured": bool(body.fallback_teams_url),
+            "fallback_telemost_configured": bool(body.fallback_telemost_url),
+        },
     )
     db.commit()
     return body
-
-
-@router.get("/tasks")
-def tasks(user: User = Depends(current_user), db: Session = Depends(get_db)):
-    return db.scalars(
-        select(LocalTask).where(LocalTask.user_id == user.id)
-        .order_by(LocalTask.created_at.desc()).limit(500)
-    ).all()
-
-
-@router.post("/tasks")
-def create_task(
-    body: TaskCreate,
-    request: Request,
-    user: User = Depends(current_user),
-    db: Session = Depends(get_db),
-):
-    task = LocalTask(user_id=user.id, **body.model_dump())
-    db.add(task)
-    db.flush()
-    audit(db, user, request, "task.created", "task", task.id, {"title": task.title})
-    db.commit()
-    return task
-
-
-def owned_task(task_id: str, user: User, db: Session) -> LocalTask:
-    task = db.get(LocalTask, task_id)
-    if not task or task.user_id != user.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Task not found")
-    return task
-
-
-@router.put("/tasks/{task_id}")
-def update_task(
-    task_id: str,
-    body: TaskUpdate,
-    request: Request,
-    user: User = Depends(current_user),
-    db: Session = Depends(get_db),
-):
-    task = owned_task(task_id, user, db)
-    changes = body.model_dump(exclude_unset=True)
-    for field, value in changes.items():
-        setattr(task, field, value)
-    audit(
-        db, user, request, "task.updated", "task", task.id,
-        {"fields": sorted(changes), "status": task.status},
-    )
-    db.commit()
-    db.refresh(task)
-    return task
-
-
-@router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_task(
-    task_id: str,
-    request: Request,
-    user: User = Depends(current_user),
-    db: Session = Depends(get_db),
-):
-    task = owned_task(task_id, user, db)
-    audit(db, user, request, "task.deleted", "task", task.id, {"title": task.title})
-    db.delete(task)
-    db.commit()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@router.post("/timers")
-def create_timer(
-    body: TimerCreate,
-    request: Request,
-    user: User = Depends(current_user),
-    db: Session = Depends(get_db),
-):
-    start = datetime.now(UTC)
-    timer = Timer(
-        user_id=user.id,
-        title=body.title,
-        starts_at=start,
-        ends_at=start + timedelta(seconds=body.duration_seconds),
-    )
-    db.add(timer)
-    db.flush()
-    audit(
-        db,
-        user,
-        request,
-        "timer.started",
-        "timer",
-        timer.id,
-        {"duration_seconds": body.duration_seconds},
-    )
-    db.commit()
-    return timer
 
 
 @router.get("/reminders")
@@ -280,8 +195,12 @@ async def week(
     settings: Settings = Depends(get_settings),
 ):
     start, end, items = await collect_agenda(db, settings, user, 7)
-    return {"start_date": start.date(), "end_date": end.date(),
-            "timezone": user.timezone, "items": items}
+    return {
+        "start_date": start.date(),
+        "end_date": end.date(),
+        "timezone": user.timezone,
+        "items": items,
+    }
 
 
 @router.get("/pending-actions", response_model=list[PendingActionView])
@@ -403,7 +322,17 @@ async def confirm(
         elif action.action_type in {"update_event", "add_event_participants"}:
             provider = payload.get("provider", "google")
             token = await valid_access_token(db, settings, user, provider)
+            if payload.get("conference") == "yandex_telemost":
+                fallback_url = read_fallback_url(settings, user, "yandex_telemost")
+                payload["external_join_url"] = fallback_url or None
+                warnings.append(
+                    "Permanent Yandex Telemost room used"
+                    if fallback_url
+                    else "Yandex Telemost room is not configured"
+                )
             result = await update_calendar_event(provider, token, payload)
+            if payload.get("external_join_url"):
+                result["onlineMeeting"] = {"joinUrl": payload["external_join_url"]}
         elif action.action_type == "cancel_event":
             provider = payload.get("provider", "google")
             token = await valid_access_token(db, settings, user, provider)

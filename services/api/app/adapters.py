@@ -251,6 +251,8 @@ async def update_calendar_event(provider: str, token: str, payload: dict[str, An
             body["end"] = {"dateTime": payload["end_iso"], "timeZone": payload["timezone"]}
         if "attendees" in payload:
             body["attendees"] = [{"email": email} for email in attendees]
+        if payload.get("external_join_url"):
+            body["location"] = payload["external_join_url"]
         await provider_request(
             "PATCH",
             f"https://www.googleapis.com/calendar/v3/calendars/primary/events/{event_id}",
@@ -271,6 +273,8 @@ async def update_calendar_event(provider: str, token: str, payload: dict[str, An
         body["attendees"] = [
             {"emailAddress": {"address": email}, "type": "required"} for email in attendees
         ]
+    if payload.get("external_join_url"):
+        body["location"] = {"displayName": payload["external_join_url"]}
     await provider_request(
         "PATCH", f"https://graph.microsoft.com/v1.0/me/events/{event_id}", token, json=body
     )

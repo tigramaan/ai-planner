@@ -19,8 +19,12 @@ participants and do not ask for an email address. If a clarification follow-up e
 an email for a named recipient, replace that name with the supplied email in participants. Ask only
 when the human request itself is unclear.
 Do not use requires_clarification to ask for confirmation when all required details are present.
-Supported intents: show_today, create_task, create_reminder, start_timer, create_meeting,
-update_event, cancel_event, add_event_participants, send_email, search_email, unknown.
+Supported intents: show_today, create_task, update_task, complete_task, reopen_task, delete_task,
+create_reminder, start_timer, update_timer, cancel_timer, create_meeting, update_event,
+cancel_event, add_event_participants, send_email, search_email, unknown.
+For task changes, completion, reopening and deletion put the existing task name in event_query. For an updated
+task deadline use start_iso, for its description use body and for priority use priority. For timer
+changes or cancellation put its current name in event_query; use duration_minutes for a restart.
 For an existing calendar event, put its name or description in event_query and its current known
 time in event_start_iso. For rescheduling, put the requested new time in start_iso. For adding
 participants, include only the new people in participants. For create_meeting, provider is the

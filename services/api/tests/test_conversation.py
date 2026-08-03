@@ -6,7 +6,7 @@ from sqlalchemy import select
 from app import agent
 from app.config import get_settings
 from app.database import SessionLocal
-from app.models import Integration, PendingAction, User
+from app.models import Integration, LocalTask, PendingAction, Timer, User
 from app.policy import create_pending_action
 from app.routers import chat as chat_router
 from app.schemas import Intent
@@ -76,6 +76,66 @@ def test_mail_access_requires_incremental_scope(logged_in):
         integration.scopes = ["https://www.googleapis.com/auth/gmail.readonly"]
         db.commit()
         assert chat_router.mail_access_granted(db, user, "google")
+
+
+def test_task_can_be_created_with_details_and_completed_through_chat(logged_in, monkeypatch):
+    responses = iter(
+        [
+            Intent(
+                intent="create_task",
+                title="Подготовить договор",
+                body="Проверить приложение",
+                start_iso="2026-08-05T18:00:00+03:00",
+                timezone="Europe/Moscow",
+                priority="high",
+            ),
+            Intent(
+                intent="complete_task",
+                event_query="Подготовить договор",
+            ),
+            Intent(
+                intent="reopen_task",
+                event_query="Подготовить договор",
+            ),
+        ]
+    )
+
+    async def intent(*args, **kwargs):
+        return next(responses)
+
+    monkeypatch.setattr(chat_router, "extract_intent", intent)
+    assert logged_in.post("/api/v1/chat/messages", json={"text": "Создай задачу"}).status_code == 200
+    assert logged_in.post("/api/v1/chat/messages", json={"text": "Задача сделана"}).status_code == 200
+    reopened = logged_in.post("/api/v1/chat/messages", json={"text": "Верни задачу в работу"})
+    assert reopened.status_code == 200
+    with SessionLocal() as db:
+        task = db.scalar(select(LocalTask).where(LocalTask.title == "Подготовить договор"))
+        assert task.status == "open"
+        assert task.priority == "high"
+        assert task.description == "Проверить приложение"
+        assert task.due_at is not None
+
+
+def test_timer_can_be_restarted_and_deleted_through_chat(logged_in, monkeypatch):
+    with SessionLocal() as db:
+        user = db.scalar(select(User))
+        db.add(Timer(user_id=user.id, title="Фокус", ends_at=user.created_at))
+        db.commit()
+    responses = iter(
+        [
+            Intent(intent="update_timer", event_query="Фокус", duration_minutes=10),
+            Intent(intent="cancel_timer", event_query="Фокус"),
+        ]
+    )
+
+    async def intent(*args, **kwargs):
+        return next(responses)
+
+    monkeypatch.setattr(chat_router, "extract_intent", intent)
+    restarted = logged_in.post("/api/v1/chat/messages", json={"text": "Перезапусти Фокус"})
+    assert "10 minutes" in restarted.json()["message"]
+    deleted = logged_in.post("/api/v1/chat/messages", json={"text": "Удали Фокус"})
+    assert "deleted" in deleted.json()["message"]
 
 
 def test_correction_replaces_pending_draft(logged_in, monkeypatch):
@@ -170,3 +230,39 @@ def test_current_telemost_request_overrides_stale_teams_intent(logged_in, monkey
         )
         assert payload["conference"] == "yandex_telemost"
         assert payload["reminder_minutes"] == 5
+
+
+def test_current_telemost_request_overrides_video_on_event_update(logged_in, monkeypatch):
+    async def updated_event(*args, **kwargs):
+        return Intent(
+            intent="update_event",
+            event_query="Встреча с Анастасией",
+            event_start_iso="2026-08-03T15:30:00+03:00",
+            start_iso="2026-08-03T16:30:00+03:00",
+            timezone="Europe/Moscow",
+            provider="google",
+            conference_provider="microsoft",
+            conference_requested=True,
+        )
+
+    async def prepared(*args, **kwargs):
+        intent = args[-1]
+        return {
+            "schema_version": 1,
+            "provider": "google",
+            "event_id": "event-1",
+            "event_title": "Встреча с Анастасией",
+            "start_iso": "2026-08-03T13:30:00+00:00",
+            "end_iso": "2026-08-03T14:00:00+00:00",
+            "timezone": "Europe/Moscow",
+            "conference": "yandex_telemost" if intent.conference_provider == "yandex" else "none",
+        }, "updated"
+
+    monkeypatch.setattr(chat_router, "extract_intent", updated_event)
+    monkeypatch.setattr(chat_router, "prepare_calendar_action", prepared)
+    response = logged_in.post(
+        "/api/v1/chat/messages",
+        json={"text": "Перенеси на 16:30 и сделай видеовстречу в Яндекс Телемосте"},
+    )
+    assert response.status_code == 200
+    assert "Video service: Яндекс Телемост" in response.json()["message"]

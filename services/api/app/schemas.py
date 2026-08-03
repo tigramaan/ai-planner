@@ -72,6 +72,11 @@ class TimerCreate(BaseModel):
     duration_seconds: int = Field(ge=1, le=86400)
 
 
+class TimerUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=300)
+    duration_seconds: int | None = Field(default=None, ge=1, le=86400)
+
+
 class ReminderCreate(BaseModel):
     title: str = Field(min_length=1, max_length=300)
     due_at: datetime
@@ -123,8 +128,14 @@ class Intent(BaseModel):
     intent: Literal[
         "show_today",
         "create_task",
+        "update_task",
+        "complete_task",
+        "reopen_task",
+        "delete_task",
         "create_reminder",
         "start_timer",
+        "update_timer",
+        "cancel_timer",
         "create_meeting",
         "update_event",
         "cancel_event",
@@ -139,6 +150,7 @@ class Intent(BaseModel):
     start_iso: str | None = None
     timezone: str | None = None
     duration_minutes: int | None = Field(default=None, ge=1, le=1440)
+    priority: Literal["low", "normal", "high"] | None = None
     participants: list[str] = Field(default_factory=list, max_length=50)
     provider: Literal["google", "microsoft", "yandex", "local"] | None = None
     conference_provider: Literal["google", "microsoft", "yandex", "zoom", "none"] | None = None

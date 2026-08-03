@@ -20,6 +20,7 @@
 | REQ-047..048 | shared bounded agenda collector, Week Web route and localized mail-provider recovery | planner/API auth tests, Web build and provider-error tests |
 | REQ-049..050 | normalized agenda metadata, safe provider links, chat correction draft and PWA install surface/icons | agenda unit test, manifest test and Web production build |
 | REQ-051 | task creation, search/filtering, inline editing, completion/reopening and deletion | task lifecycle and ownership API tests, Web production build |
+| REQ-052..053 | local planner mutations, Telemost update override, agenda controls, interactive examples and UMEC logo assets | conversation, calendar action, planner and Web/manifest tests |
 | REQ-030..035 | password, cipher, OAuth state, redaction | security tests |
 | REQ-036 | recipient resolver and Google/Microsoft contact adapters | recipient and adapter unit tests |
 | REQ-037 | bounded per-user conversation history passed to intent extraction | conversation continuation tests |
