@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Microphone, PaperPlaneRight, Stop } from "@phosphor-icons/react";
 import { api, uploadAudio } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -24,6 +24,7 @@ export function Chat() {
   const audioContext = useRef<AudioContext | null>(null);
   const animationFrame = useRef<number | null>(null);
   const messageList = useRef<HTMLDivElement | null>(null);
+  const composerInput = useRef<HTMLTextAreaElement | null>(null);
   const stickToBottom = useRef(true);
 
   function loadPending() {
@@ -42,6 +43,20 @@ export function Chat() {
     const list = messageList.current;
     if (list && stickToBottom.current) list.scrollTop = list.scrollHeight;
   }, [messages, pending]);
+
+  useLayoutEffect(() => {
+    const input = composerInput.current;
+    if (!input) return;
+    input.style.height = "0px";
+    input.style.height = `${Math.min(input.scrollHeight, 240)}px`;
+  }, [text]);
+
+  function composerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      void send();
+    }
+  }
 
   function trackScroll() {
     const list = messageList.current;
@@ -180,9 +195,12 @@ export function Chat() {
       {recording && <canvas ref={waveform} className="waveform" aria-hidden="true"/>}
     </div>}
     <form className="composer" onSubmit={send}>
-      <button type="button" className={`button secondary iconButton${recording ? " recordingButton" : ""}`} disabled={transcribing} onClick={toggleRecording} aria-pressed={recording} aria-label={recording ? t("Остановить запись", "Stop recording") : t("Записать голос", "Record voice")}>{recording ? <Stop size={21}/> : <Microphone size={21}/>}</button>
-      <textarea className="field" lang={locale} rows={2} value={text} onChange={(event) => setText(event.target.value)} aria-label={t("Команда", "Command")} placeholder={t("Например: поставь встречу завтра в 15:00", "For example: schedule a meeting tomorrow at 3 PM")}/>
-      <button className="button iconButton" disabled={busy || !text.trim()} aria-label={t("Отправить", "Send")}><PaperPlaneRight size={21}/></button>
+      <textarea ref={composerInput} className="composerInput" lang={locale} rows={1} value={text} onChange={(event) => setText(event.target.value)} onKeyDown={composerKeyDown} aria-label={t("Команда", "Command")} placeholder={t("Напишите команду планировщику", "Write a command to the planner")}/>
+      <div className="composerActions">
+        <button type="button" className={`composerButton voiceButton${recording ? " recordingButton" : ""}`} disabled={transcribing} onClick={toggleRecording} aria-pressed={recording} aria-label={recording ? t("Остановить запись", "Stop recording") : t("Записать голос", "Record voice")}>{recording ? <Stop size={25}/> : <Microphone size={25}/>}</button>
+        <span className="composerHint">{t("Ctrl + Enter, чтобы отправить", "Ctrl + Enter to send")}</span>
+        <button className="composerButton sendButton" disabled={busy || !text.trim()} aria-label={t("Отправить", "Send")}><PaperPlaneRight size={25} weight="bold"/></button>
+      </div>
     </form>
   </section>;
 }

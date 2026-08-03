@@ -37,7 +37,18 @@ h1 { font-size:clamp(30px,4vw,46px); line-height:1.05; letter-spacing:-.045em; m
 .message.assistant { background:var(--surface-2); }
 .confirmation { align-self:stretch; padding:14px; border:1px solid var(--accent); border-radius:var(--radius); background:var(--surface-2); }
 .confirmation p { margin:8px 0 14px; }
-.composer { border-top:1px solid var(--line); padding-top:14px; display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:end; }
+.composer { margin-top:14px; display:grid; overflow:hidden; border:1px solid var(--line); border-radius:20px; background:var(--bg); }
+.composer:focus-within { border-color:var(--accent); outline:3px solid color-mix(in srgb,var(--accent) 35%,transparent); }
+.composerInput { display:block; width:100%; min-height:58px; max-height:240px; padding:17px 18px 8px; overflow-y:auto; resize:none; border:0; outline:0; background:transparent; color:var(--text); line-height:1.45; }
+.composerInput::placeholder { color:var(--muted); }
+.composerActions { min-height:58px; display:flex; align-items:center; gap:10px; padding:6px 10px 10px; }
+.composerButton { flex:0 0 auto; width:46px; height:46px; display:grid; place-items:center; padding:0; border:0; border-radius:50%; background:transparent; color:var(--text); cursor:pointer; }
+.composerButton:hover,.composerButton:focus-visible { background:var(--surface-2); outline:2px solid var(--accent); outline-offset:1px; }
+.composerButton:active { transform:scale(.96); }
+.composerButton:disabled { opacity:.42; cursor:not-allowed; }
+.composerHint { margin:auto; color:var(--muted); font-size:12px; }
+.sendButton { margin-left:auto; background:var(--accent); color:#f7f9fc; }
+.sendButton:hover,.sendButton:focus-visible { background:var(--accent); color:#f7f9fc; }
 .voiceStatus { min-height:38px; display:flex; align-items:center; gap:14px; border-top:1px solid var(--line); padding:9px 0 0; color:var(--danger); font-size:14px; font-weight:650; }
 .waveform { display:block; width:min(180px,45vw); height:28px; color:var(--danger); }
 .recordingButton { border-color:var(--danger) !important; color:var(--danger) !important; }
@@ -135,6 +146,11 @@ h1 { font-size:clamp(30px,4vw,46px); line-height:1.05; letter-spacing:-.045em; m
   .pageHead { align-items:start; flex-direction:column; }
   .grid { grid-template-columns:1fr; }
   .chat { min-height:66dvh; }
+  .composer { border-radius:24px; }
+  .composerInput { min-height:72px; padding:18px 18px 8px; font-size:17px; }
+  .composerActions { min-height:64px; padding:4px 10px 10px; }
+  .composerButton { width:50px; height:50px; }
+  .composerHint { display:none; }
   .message { max-width:92%; }
   .agendaItem { grid-template-columns:1fr; gap:10px; padding:16px; }
   .agendaTime .muted { width:auto; padding-left:0; }
