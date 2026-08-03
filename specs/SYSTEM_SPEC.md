@@ -9,7 +9,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-001: `tigramaan@gmail.com` is the bootstrap family administrator.
 - REQ-002: Family members register only with a server-side invitation code and use local email/password authentication independently of Google and Microsoft.
 - REQ-003: Every user can change their password after confirming the current password.
-- REQ-004: Sessions use HttpOnly, Secure-in-production, SameSite=Strict cookies and can be revoked.
+- REQ-004: Sessions use HttpOnly, Secure-in-production, SameSite=Lax cookies so OAuth top-level GET callbacks retain login while cross-site POSTs remain excluded; sessions can be revoked.
 - REQ-005: Every integration, secret, task, message, pending action and audit row is owned by one user and inaccessible to other users.
 - REQ-006: Every account has independent credentials, sessions, preferences, provider identities, OAuth tokens, fallback links, planner items, chat history and external calendar/mail views. Only application infrastructure and server-level API configuration are shared.
 

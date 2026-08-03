@@ -71,7 +71,9 @@ def initial_setup(
 
 
 def set_auth_cookies(response: Response, settings: Settings, access: str, refresh: str) -> None:
-    common = {"httponly": True, "secure": settings.cookie_secure, "samesite": "strict", "path": "/"}
+    # OAuth providers return through a top-level cross-site GET. Lax keeps cookies
+    # available for that safe navigation while still excluding cross-site POSTs.
+    common = {"httponly": True, "secure": settings.cookie_secure, "samesite": "lax", "path": "/"}
     response.set_cookie(
         "access_token", access, max_age=settings.access_token_minutes * 60, **common
     )

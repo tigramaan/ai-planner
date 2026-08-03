@@ -14,6 +14,7 @@ def test_health_and_owner_login(client):
     assert response.status_code == 200
     assert response.json()["email"] == "tigramaan@gmail.com"
     assert response.cookies.get("access_token")
+    assert all("SameSite=lax" in value for value in response.headers.get_list("set-cookie"))
     assert client.get("/api/v1/me").status_code == 200
 
 

@@ -2,7 +2,7 @@
 
 | Requirement | Implementation | Verification |
 | --- | --- | --- |
-| REQ-001..005 | auth routes, family invite, session cookies, user ownership | auth/isolation tests |
+| REQ-001..005 | auth routes, family invite, OAuth-compatible session cookies, user ownership | auth/isolation and cookie-attribute tests |
 | REQ-010..014 | service directories, contracts, Compose | file guard, health tests |
 | REQ-020 | web PWA | web build and browser tests |
 | REQ-021 | OpenAI adapter and agent route | agent unit tests |
