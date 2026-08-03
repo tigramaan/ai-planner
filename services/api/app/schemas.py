@@ -159,6 +159,7 @@ class Intent(BaseModel):
     priority: Literal["low", "normal", "high"] | None = None
     participants: list[str] = Field(default_factory=list, max_length=50)
     provider: Literal["google", "microsoft", "yandex", "local"] | None = None
+    mail_mode: Literal["search", "summarize", "triage"] = "search"
     conference_provider: Literal["google", "microsoft", "yandex", "zoom", "none"] | None = None
     conference_requested: bool = False
     body: str | None = None

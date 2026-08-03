@@ -7,9 +7,7 @@ from .mail_queries import MAIL_READ_SCOPE, mail_access_granted, provider_mail_qu
 from .mail_summary import (
     mail_search_answer,
     summarize_google_email,
-    summary_requested,
     triage_mail_answer,
-    triage_requested,
 )
 from .models import User
 from .schemas import Intent
@@ -37,7 +35,7 @@ async def handle_mail_search(
     try:
         token = await valid_access_token(db, settings, user, provider)
         query = provider_mail_query(provider, intent, text, user.timezone)
-        wants_triage = triage_requested(text)
+        wants_triage = intent.mail_mode == "triage"
         rows = await search_email(provider, token, query, limit=20 if wants_triage else 10)
     except LookupError:
         return (
@@ -68,7 +66,7 @@ async def handle_mail_search(
                 else "Emails were found, but they could not be reliably triaged right now. "
                 "Please retry."
             )
-    if rows and summary_requested(text) and provider == "google":
+    if rows and intent.mail_mode == "summarize" and provider == "google":
         try:
             return await summarize_google_email(token, rows[0], ai_config, locale)
         except (ProviderError, RuntimeError):

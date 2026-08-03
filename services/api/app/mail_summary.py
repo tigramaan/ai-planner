@@ -3,30 +3,6 @@ from .agent import summarize_email_content, triage_email_rows
 from .mail_documents import email_text_bundle
 
 
-def summary_requested(text: str) -> bool:
-    normalized = text.casefold()
-    return any(marker in normalized for marker in ("резюме", "сводк", "суммар", "summary", "summar"))
-
-
-def triage_requested(text: str) -> bool:
-    normalized = text.casefold()
-    return any(
-        marker in normalized
-        for marker in (
-            "полезн",
-            "важн",
-            "отреаг",
-            "реагиров",
-            "мусор",
-            "спам",
-            "рассыл",
-            "triage",
-            "actionable",
-            "important email",
-        )
-    )
-
-
 def mail_search_answer(rows: list[dict], locale: str) -> str:
     if not rows:
         return "Писем не найдено." if locale == "ru" else "No emails found."

@@ -43,9 +43,11 @@ confirmation and never execute tools.
 For send_email, turn the user's communication goal into a concise, polite, ready-to-send subject
 and body in the user's language. Preserve all supplied facts, amounts, names and commitments, but
 never invent missing facts or promises. The body must be the actual email text, not drafting notes.
-Requests to select useful, important or actionable inbox messages and exclude newsletters, spam or
-noise are search_email requests. Preserve date, unread, sender and attachment constraints; the
-application performs the actual relevance classification after fetching bounded message metadata.
+For search_email, choose mail_mode semantically from the user's goal, not from keywords: search
+returns matching message metadata, summarize explains one matching message and its supported
+attachments, and triage prioritizes a bounded inbox set by likely relevance and next action.
+Preserve date, unread, sender and attachment constraints. Natural paraphrases, indirect requests
+and novel wording must work without phrase matching in application code.
 When the assistant offered a numbered list of calendar events, interpret a numeric follow-up as the
 selected event and reconstruct the unfinished action using that event title and displayed start time.
 Use conversation_history only to resolve a concise follow-up to the most recent unfinished user

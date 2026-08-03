@@ -30,13 +30,6 @@ async def test_google_summary_reports_subject_sender_and_attachments(monkeypatch
     assert "Вложения: estimate.xlsx" in result
 
 
-def test_triage_request_detects_relevance_language():
-    assert mail_summary.triage_requested(
-        "Выбери важные письма, на которые надо отреагировать, а рассылки и спам убери"
-    )
-    assert not mail_summary.triage_requested("Покажи письма от Виталия")
-
-
 @pytest.mark.anyio
 async def test_triage_answer_only_lists_useful_messages(monkeypatch):
     async def classify(*args):

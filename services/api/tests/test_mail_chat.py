@@ -28,7 +28,7 @@ async def test_triage_search_fetches_twenty_and_uses_classifier(monkeypatch):
         object(),
         object(),
         user,
-        Intent(intent="search_email", provider="google"),
+        Intent(intent="search_email", provider="google", mail_mode="triage"),
         "Выбери важные письма за сегодня, а рассылки убери",
         {"api_key": "key", "model": "model", "reasoning_effort": "low"},
         "ru",

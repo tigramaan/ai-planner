@@ -132,6 +132,40 @@ async def test_email_triage_is_bounded_structured_and_not_stored(monkeypatch):
     assert captured["text"]["format"]["type"] == "json_schema"
 
 
+@pytest.mark.anyio
+async def test_intent_schema_delegates_mail_strategy_to_model(monkeypatch):
+    captured = {}
+
+    class Responses:
+        async def create(self, **kwargs):
+            captured.update(kwargs)
+            payload = {key: None for key in Intent.model_json_schema()["properties"]}
+            payload.update(
+                intent="search_email",
+                mail_mode="triage",
+                participants=[],
+                conference_requested=False,
+                requires_clarification=False,
+            )
+            return type("Response", (), {"output_text": json.dumps(payload)})()
+
+    class Client:
+        def __init__(self, **kwargs):
+            self.responses = Responses()
+
+    monkeypatch.setattr(agent, "AsyncOpenAI", Client)
+    intent = await agent.extract_intent(
+        "key",
+        "model",
+        "Разбери входящие и оставь то, что заслуживает моего времени",
+        "ru",
+    )
+
+    assert intent.mail_mode == "triage"
+    assert "choose mail_mode semantically" in captured["instructions"]
+    assert "mail_mode" in captured["text"]["format"]["schema"]["required"]
+
+
 def test_mail_access_requires_incremental_scope(logged_in):
     with SessionLocal() as db:
         user = db.scalar(select(User))
