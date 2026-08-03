@@ -12,6 +12,8 @@ def register(client, email):
 
 
 def test_planner_and_integrations_are_isolated_per_user(client):
+    from app.config import get_settings
+
     register(client, "first@example.com")
     assert client.post("/api/v1/tasks", json={"title": "Только для первого"}).status_code == 200
     assert (
@@ -31,7 +33,7 @@ def test_planner_and_integrations_are_isolated_per_user(client):
     register(client, "second@example.com")
     assert client.get("/api/v1/tasks").json() == []
     integrations = client.get("/api/v1/integrations").json()
-    assert integrations == [
+    server_fallback = [
         {
             "provider": "openai",
             "status": "connected",
@@ -40,6 +42,7 @@ def test_planner_and_integrations_are_isolated_per_user(client):
             "source": "server",
         }
     ]
+    assert integrations == (server_fallback if get_settings().openai_api_key else [])
     assert "api_key" not in str(integrations)
     assert client.get("/api/v1/reminders").json() == []
     assert client.get("/api/v1/chat/messages").json() == []
