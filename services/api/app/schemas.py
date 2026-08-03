@@ -84,11 +84,16 @@ class Intent(BaseModel):
         "create_reminder",
         "start_timer",
         "create_meeting",
+        "update_event",
+        "cancel_event",
+        "add_event_participants",
         "send_email",
         "search_email",
         "unknown",
     ]
     title: str | None = None
+    event_query: str | None = None
+    event_start_iso: str | None = None
     start_iso: str | None = None
     timezone: str | None = None
     duration_minutes: int | None = Field(default=None, ge=1, le=1440)

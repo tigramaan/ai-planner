@@ -8,10 +8,12 @@ from sqlalchemy.orm import Session
 
 from ..adapters import (
     ProviderError,
+    cancel_calendar_event,
     create_calendar_event,
     default_event_window,
     list_calendar_events,
     send_email,
+    update_calendar_event,
 )
 from ..audit import audit
 from ..config import Settings, get_settings
@@ -283,6 +285,14 @@ async def confirm(
         token = await valid_access_token(db, settings, user, provider)
         payload["idempotency_key"] = action.idempotency_key
         result = await create_calendar_event(provider, token, payload)
+    elif action.action_type in {"update_event", "add_event_participants"}:
+        provider = payload.get("provider", "google")
+        token = await valid_access_token(db, settings, user, provider)
+        result = await update_calendar_event(provider, token, payload)
+    elif action.action_type == "cancel_event":
+        provider = payload.get("provider", "google")
+        token = await valid_access_token(db, settings, user, provider)
+        result = await cancel_calendar_event(provider, token, payload["event_id"])
     elif action.action_type == "send_email":
         provider = payload.get("provider", "google")
         token = await valid_access_token(db, settings, user, provider)

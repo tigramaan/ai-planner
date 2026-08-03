@@ -8,4 +8,6 @@
 4. Sign in as `tigramaan@gmail.com`, invite family members with the registration code, and let each user connect their own Google/Microsoft accounts from Settings.
 5. Run the live acceptance checklist with sandbox contacts only.
 
+OpenAI API billing is managed separately from ChatGPT subscriptions. Production uses the existing server API key; configure project usage limits and alerts in the OpenAI Platform billing settings because ChatGPT Plus/Pro credits cannot be applied to API traffic.
+
 Provider client secrets and OAuth tokens are runtime data. They must never be committed.

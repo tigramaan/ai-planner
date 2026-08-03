@@ -10,6 +10,7 @@
 | REQ-023 | Microsoft OAuth/adapter | OAuth state and mocked adapter tests |
 | REQ-024..026 | policy/pending action/idempotency | policy and confirmation tests |
 | REQ-027 | browser locale resolver, bilingual Web/PWA and localized agent route | locale unit tests and Web build |
+| REQ-028 | calendar action matcher, pending actions and provider PATCH/DELETE adapters | calendar action and mutation tests |
 | REQ-030..035 | password, cipher, OAuth state, redaction | security tests |
 | REQ-036 | recipient resolver and Google/Microsoft contact adapters | recipient and adapter unit tests |
 | REQ-037 | bounded per-user conversation history passed to intent extraction | conversation continuation tests |

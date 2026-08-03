@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from ..adapters import ProviderError, search_email
 from ..agent import extract_intent, openai_config, pending_payload, risk_for_intent, transcribe
 from ..audit import audit
+from ..calendar_actions import EventAmbiguous, EventNotFound, prepare_calendar_action
 from ..config import Settings, get_settings
 from ..database import get_db
 from ..dependencies import current_user
@@ -85,7 +86,7 @@ async def chat(
         else:
             intent.title = f"Meeting with {participant_names}" if participant_names else "Meeting"
     resolution_answer = None
-    if intent.intent in {"create_meeting", "send_email"} and intent.participants:
+    if intent.intent in {"create_meeting", "add_event_participants", "send_email"} and intent.participants:
         provider = intent.provider if intent.provider in {"google", "microsoft"} else "google"
         resolution = await resolve_recipients(db, settings, user, intent.participants, provider)
         intent.participants = resolution.recipients
@@ -106,20 +107,51 @@ async def chat(
                 if ru
                 else f"No address found for: {names}. Provide an email or add the contact."
             )
+    prepared_payload = None
+    prepared_summary = None
+    action_error = None
+    calendar_actions = {"update_event", "cancel_event", "add_event_participants"}
+    if intent.intent in calendar_actions and not resolution_answer and not intent.requires_clarification:
+        try:
+            prepared_payload, prepared_summary = await prepare_calendar_action(
+                db, settings, user, intent
+            )
+        except EventNotFound:
+            action_error = (
+                "Не нашёл подходящее событие. Уточните название и текущее время."
+                if ru
+                else "No matching event found. Specify its title and current time."
+            )
+        except EventAmbiguous as exc:
+            action_error = (
+                "Нашёл несколько событий: " if ru else "I found multiple events: "
+            ) + "; ".join(exc.choices)
+        except LookupError:
+            action_error = (
+                "Сначала подключите нужный календарь в настройках."
+                if ru
+                else "Connect the required calendar in Settings first."
+            )
+        except ValueError as exc:
+            action_error = str(exc)
+        except ProviderError as exc:
+            raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(exc)) from exc
     if resolution_answer:
         answer = resolution_answer
+    elif action_error:
+        answer = action_error
     elif intent.requires_clarification:
         answer = intent.clarification_question or (
             "Уточните параметры команды." if ru else "Please clarify the command parameters."
         )
     elif risk_for_intent(intent) == "confirmation_required":
-        summary = (
+        summary = prepared_summary or (
             f"{intent.title or intent.intent}. Проверьте участников, дату и время перед выполнением."
             if ru
             else f"{intent.title or intent.intent}. Check participants, date and time before execution."
         )
         try:
-            payload = pending_payload(intent)
+            payload = prepared_payload or pending_payload(intent)
         except (ValueError, TypeError) as exc:
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
         pending = create_pending_action(db, settings, user, intent.intent, summary, payload)

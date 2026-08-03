@@ -20,7 +20,10 @@ an email for a named recipient, replace that name with the supplied email in par
 when the human request itself is unclear.
 Do not use requires_clarification to ask for confirmation when all required details are present.
 Supported intents: show_today, create_task, create_reminder, start_timer, create_meeting,
-send_email, search_email, unknown.
+update_event, cancel_event, add_event_participants, send_email, search_email, unknown.
+For an existing calendar event, put its name or description in event_query and its current known
+time in event_start_iso. For rescheduling, put the requested new time in start_iso. For adding
+participants, include only the new people in participants. Preserve the requested provider.
 Use ISO-8601 with an explicit offset for start_iso. Use the supplied default IANA timezone when the
 user does not explicitly specify another timezone.
 External meetings and email are confirmed later by a separate policy layer; you never ask for that
@@ -100,7 +103,13 @@ async def transcribe(api_key: str, model: str, filename: str, content: bytes) ->
 
 
 def risk_for_intent(intent: Intent) -> str:
-    if intent.intent in {"create_meeting", "send_email"}:
+    if intent.intent in {
+        "create_meeting",
+        "update_event",
+        "cancel_event",
+        "add_event_participants",
+        "send_email",
+    }:
         return "confirmation_required"
     return "low"
 

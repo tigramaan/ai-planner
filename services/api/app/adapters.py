@@ -7,7 +7,13 @@ import httpx
 
 
 class ProviderError(RuntimeError):
-    pass
+    def __init__(self, message: str, status_code: int | None = None):
+        super().__init__(message)
+        self.status_code = status_code
+
+
+def graph_datetime(value: str) -> str:
+    return datetime.fromisoformat(value).astimezone(UTC).replace(tzinfo=None).isoformat()
 
 
 async def provider_request(
@@ -34,7 +40,7 @@ async def provider_request(
             method, url, headers=request_headers, json=json, params=params
         )
     if response.status_code >= 400:
-        raise ProviderError(f"Provider request failed ({response.status_code})")
+        raise ProviderError(f"Provider request failed ({response.status_code})", response.status_code)
     return response.json() if response.content else {}
 
 
@@ -109,6 +115,7 @@ async def list_calendar_events(
             "endDateTime": end.isoformat(),
             "$orderby": "start/dateTime",
         },
+        headers={"Prefer": 'outlook.timezone="UTC"'},
     )
     return data.get("value", [])
 
@@ -143,8 +150,8 @@ async def create_calendar_event(provider: str, token: str, payload: dict[str, An
         )
     body = {
         "subject": payload["title"],
-        "start": {"dateTime": payload["start_iso"], "timeZone": payload["timezone"]},
-        "end": {"dateTime": payload["end_iso"], "timeZone": payload["timezone"]},
+        "start": {"dateTime": graph_datetime(payload["start_iso"]), "timeZone": "UTC"},
+        "end": {"dateTime": graph_datetime(payload["end_iso"]), "timeZone": "UTC"},
         "attendees": [
             {"emailAddress": {"address": email}, "type": "required"} for email in attendees
         ],
@@ -158,6 +165,61 @@ async def create_calendar_event(provider: str, token: str, payload: dict[str, An
     return await provider_request(
         "GET", f"https://graph.microsoft.com/v1.0/me/events/{created['id']}", token
     )
+
+
+async def update_calendar_event(provider: str, token: str, payload: dict[str, Any]) -> dict:
+    event_id = payload["event_id"]
+    attendees = payload.get("attendees", [])
+    if provider == "google":
+        body: dict[str, Any] = {}
+        if payload.get("start_iso"):
+            body["start"] = {"dateTime": payload["start_iso"], "timeZone": payload["timezone"]}
+            body["end"] = {"dateTime": payload["end_iso"], "timeZone": payload["timezone"]}
+        if "attendees" in payload:
+            body["attendees"] = [{"email": email} for email in attendees]
+        await provider_request(
+            "PATCH",
+            f"https://www.googleapis.com/calendar/v3/calendars/primary/events/{event_id}",
+            token,
+            json=body,
+            params={"sendUpdates": "all"},
+        )
+        return await provider_request(
+            "GET",
+            f"https://www.googleapis.com/calendar/v3/calendars/primary/events/{event_id}",
+            token,
+        )
+    body = {}
+    if payload.get("start_iso"):
+        body["start"] = {"dateTime": graph_datetime(payload["start_iso"]), "timeZone": "UTC"}
+        body["end"] = {"dateTime": graph_datetime(payload["end_iso"]), "timeZone": "UTC"}
+    if "attendees" in payload:
+        body["attendees"] = [
+            {"emailAddress": {"address": email}, "type": "required"} for email in attendees
+        ]
+    await provider_request(
+        "PATCH", f"https://graph.microsoft.com/v1.0/me/events/{event_id}", token, json=body
+    )
+    return await provider_request(
+        "GET", f"https://graph.microsoft.com/v1.0/me/events/{event_id}", token
+    )
+
+
+async def cancel_calendar_event(provider: str, token: str, event_id: str) -> dict:
+    url = (
+        f"https://www.googleapis.com/calendar/v3/calendars/primary/events/{event_id}"
+        if provider == "google"
+        else f"https://graph.microsoft.com/v1.0/me/events/{event_id}"
+    )
+    params = {"sendUpdates": "all"} if provider == "google" else None
+    await provider_request("DELETE", url, token, params=params)
+    try:
+        await provider_request("GET", url, token)
+    except ProviderError as exc:
+        if exc.status_code == 404:
+            return {"id": event_id, "status": "cancelled"}
+        raise
+    raise ProviderError("Calendar event still exists after cancellation")
 
 
 async def search_email(provider: str, token: str, query: str, limit: int = 10) -> list[dict]:

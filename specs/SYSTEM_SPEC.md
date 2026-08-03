@@ -28,8 +28,9 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-023: Microsoft OAuth supports Outlook Calendar, Teams meetings, directory and mail.
 - REQ-024: External writes require an immutable pending action and explicit confirmation by default.
 - REQ-025: Local tasks and timers can be created without external confirmation.
-- REQ-026: All external writes are idempotent and verified by reading the created resource.
+- REQ-026: All external writes are idempotent and verified by reading the created, updated or deleted resource state.
 - REQ-027: The Web/PWA and assistant responses support Russian and English. Locale is derived only from browser language preferences; unsupported preferences fall back to English and no manual override is stored.
+- REQ-028: Existing Google/Microsoft events can be rescheduled, cancelled or extended with participants only after unique matching and explicit confirmation.
 
 ## Security
 
