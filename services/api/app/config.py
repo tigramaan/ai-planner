@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     cookie_secure: bool = False
     cors_origins: str = "http://localhost:3000"
     allowed_hosts: str = "planner.umec.space,localhost,127.0.0.1,testserver,api"
-    access_token_minutes: int = Field(15, ge=5, le=60)
+    access_token_minutes: int = Field(1440, ge=5, le=10080)
     refresh_token_days: int = Field(30, ge=1, le=90)
     openai_api_key: str = ""
     openai_planner_model: str = "gpt-5-mini"

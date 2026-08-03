@@ -1,5 +1,6 @@
 from sqlalchemy import delete
 
+from app.config import get_settings
 from app.database import SessionLocal
 from app.models import User
 
@@ -14,6 +15,10 @@ def test_health_and_owner_login(client):
     assert response.json()["email"] == "tigramaan@gmail.com"
     assert response.cookies.get("access_token")
     assert client.get("/api/v1/me").status_code == 200
+
+
+def test_default_access_token_lifetime_is_one_day():
+    assert get_settings().access_token_minutes == 1440
 
 
 def test_single_use_initial_setup(client):
