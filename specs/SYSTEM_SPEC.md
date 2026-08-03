@@ -79,6 +79,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-069: The model selects supported tool strategies semantically from the user's goal and conversation rather than application phrase lists. Reasoning and paraphrasing remain model-directed; deterministic code is limited to tool contracts, ownership, permissions, resource bounds, external-response validation and explicit confirmation of side effects.
 - REQ-070: A semantic model router sends clear single-operation commands to the configured junior model and escalates novel, unknown, ambiguous, strategic or multi-operation goals to the configured senior model. Routing is based on task shape declared by the junior model, never application keyword lists; the selected tier is audited without storing hidden reasoning.
 - REQ-071: The senior path owns a bounded non-stored Responses API tool loop of at most six sequential rounds. It may inspect connected mail and perform guarded local task/timer operations, receives actual tool outputs before choosing later calls, never receives provider credentials, and never claims unavailable external writes occurred.
+- REQ-072: The senior loop may prepare at most one email or calendar mutation per request as an encrypted immutable pending action. Recipient resolution, provider permissions, calendar matching and payload validation run before draft creation; execution remains impossible until the user explicitly confirms through the existing policy boundary.
 
 ## Constraints
 

@@ -199,9 +199,9 @@ async def chat(
             config["junior_reasoning_effort"],
         )
         model_tier = "junior"
-        senior_answer = None
+        senior_result = None
         if intent.intent == "unknown":
-            senior_answer = await run_senior_agent(
+            senior_result = await run_senior_agent(
                 db, settings, user, config, body.text, history, locale
             )
             model_tier = "senior"
@@ -243,7 +243,7 @@ async def chat(
     db.add(user_message)
     if remembered:
         save_recipient_alias(db, settings, user, *remembered)
-    pending = None
+    pending = senior_result.pending_action if senior_result else None
     intent.timezone = intent.timezone or user.timezone
     if intent.intent == "create_meeting" and not intent.title:
         participant_names = ", ".join(intent.participants)
@@ -336,8 +336,8 @@ async def chat(
             action_error = str(exc)
         except ProviderError as exc:
             raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(exc)) from exc
-    if senior_answer:
-        answer = senior_answer
+    if senior_result:
+        answer = senior_result.answer
     elif resolution_answer:
         answer = resolution_answer
     elif action_error:
