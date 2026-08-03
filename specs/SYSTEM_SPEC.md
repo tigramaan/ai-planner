@@ -39,9 +39,10 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-033: OAuth state is single-use, time-limited and bound to the authenticated user who started authorization.
 - REQ-034: Logs and audit records redact credentials, tokens and message bodies where required.
 - REQ-035: Untrusted mail/contact/calendar text cannot issue agent instructions.
+- REQ-036: Named recipients are resolved from connected contacts and mail senders; ambiguous or missing matches require clarification.
 
 ## Constraints
 
-- Store timestamps in UTC and retain the source IANA timezone.
+- Store timestamps in UTC and retain the source IANA timezone. The default user timezone is `Europe/Moscow`.
 - Do not commit secrets or production credentials.
 - Automated tests must not contact real recipients or create real events.

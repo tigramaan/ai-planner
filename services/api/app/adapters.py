@@ -44,6 +44,46 @@ async def account_profile(provider: str, token: str) -> dict:
     return await provider_request("GET", "https://graph.microsoft.com/v1.0/me", token)
 
 
+async def search_contacts(provider: str, token: str, query: str, limit: int = 10) -> list[dict]:
+    if provider == "google":
+        data = await provider_request(
+            "GET",
+            "https://people.googleapis.com/v1/people/me/connections",
+            token,
+            params={"personFields": "names,emailAddresses", "pageSize": 1000},
+        )
+        rows = []
+        normalized_query = " ".join(query.casefold().split())
+        for person in data.get("connections", []):
+            names = person.get("names", [])
+            name = names[0].get("displayName", "") if names else ""
+            if normalized_query not in " ".join(name.casefold().split()):
+                continue
+            for email in person.get("emailAddresses", []):
+                if email.get("value"):
+                    rows.append({"name": name, "email": email["value"]})
+                    if len(rows) >= limit:
+                        return rows
+        return rows
+    escaped = query.replace("'", "''")
+    data = await provider_request(
+        "GET",
+        "https://graph.microsoft.com/v1.0/me/contacts",
+        token,
+        params={
+            "$filter": f"contains(displayName,'{escaped}')",
+            "$top": min(limit, 20),
+            "$select": "displayName,emailAddresses",
+        },
+    )
+    return [
+        {"name": row.get("displayName", ""), "email": email.get("address", "")}
+        for row in data.get("value", [])
+        for email in row.get("emailAddresses", [])
+        if email.get("address")
+    ]
+
+
 async def list_calendar_events(
     provider: str, token: str, start: datetime, end: datetime
 ) -> list[dict]:

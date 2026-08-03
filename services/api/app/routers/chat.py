@@ -13,6 +13,7 @@ from ..dependencies import current_user
 from ..integrations import valid_access_token
 from ..models import AgentMessage, LocalTask, Reminder, Timer, User
 from ..policy import create_pending_action
+from ..recipients import resolve_recipients
 from ..schemas import ChatRequest
 
 router = APIRouter(prefix="/api/v1", tags=["agent"])
@@ -49,7 +50,9 @@ async def chat(
     ru = locale == "ru"
     config = openai_config(db, settings, user)
     try:
-        intent = await extract_intent(config["api_key"], config["model"], body.text, locale)
+        intent = await extract_intent(
+            config["api_key"], config["model"], body.text, locale, user.timezone
+        )
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
     user_message = AgentMessage(
@@ -57,7 +60,40 @@ async def chat(
     )
     db.add(user_message)
     pending = None
-    if intent.requires_clarification:
+    intent.timezone = intent.timezone or user.timezone
+    if intent.intent == "create_meeting" and not intent.title:
+        participant_names = ", ".join(intent.participants)
+        if ru:
+            intent.title = (
+                f"Встреча с {participant_names}" if participant_names else "Встреча"
+            )
+        else:
+            intent.title = f"Meeting with {participant_names}" if participant_names else "Meeting"
+    resolution_answer = None
+    if intent.intent in {"create_meeting", "send_email"} and intent.participants:
+        provider = intent.provider if intent.provider in {"google", "microsoft"} else "google"
+        resolution = await resolve_recipients(db, settings, user, intent.participants, provider)
+        intent.participants = resolution.recipients
+        if resolution.ambiguous:
+            choices = "; ".join(
+                f"{name}: {', '.join(addresses)}"
+                for name, addresses in resolution.ambiguous.items()
+            )
+            resolution_answer = (
+                f"Нашёл несколько адресов. Уточните нужный: {choices}"
+                if ru
+                else f"I found multiple addresses. Choose one: {choices}"
+            )
+        elif resolution.unresolved:
+            names = ", ".join(resolution.unresolved)
+            resolution_answer = (
+                f"Не нашёл адрес для: {names}. Укажите email или добавьте контакт."
+                if ru
+                else f"No address found for: {names}. Provide an email or add the contact."
+            )
+    if resolution_answer:
+        answer = resolution_answer
+    elif intent.requires_clarification:
         answer = intent.clarification_question or (
             "Уточните параметры команды." if ru else "Please clarify the command parameters."
         )

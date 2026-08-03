@@ -46,7 +46,7 @@ class TaskCreate(BaseModel):
     title: str = Field(min_length=1, max_length=300)
     description: str = Field(default="", max_length=5000)
     due_at: datetime | None = None
-    timezone: str = Field(default="UTC", max_length=64)
+    timezone: str = Field(default="Europe/Moscow", max_length=64)
     priority: Literal["low", "normal", "high"] = "normal"
 
 
@@ -58,7 +58,7 @@ class TimerCreate(BaseModel):
 class ReminderCreate(BaseModel):
     title: str = Field(min_length=1, max_length=300)
     due_at: datetime
-    timezone: str = Field(default="UTC", max_length=64)
+    timezone: str = Field(default="Europe/Moscow", max_length=64)
     channel: Literal["push", "in_app"] = "push"
 
 

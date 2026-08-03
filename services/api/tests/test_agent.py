@@ -49,3 +49,18 @@ def test_email_intent_becomes_confirmable_provider_payload():
     assert payload["body"] == "Подтверждаю встречу завтра."
     assert payload["recipients"] == ["family@example.com"]
     assert payload["provider"] == "google"
+
+
+def test_meeting_uses_moscow_time_with_explicit_offset():
+    payload = pending_payload(
+        Intent(
+            intent="create_meeting",
+            title="Встреча с Анастасией Сорокиной",
+            start_iso="2026-08-03T11:25:00+03:00",
+            timezone="Europe/Moscow",
+            participants=["anastasia@example.com"],
+            provider="microsoft",
+        )
+    )
+    assert payload["start_iso"] == "2026-08-03T08:25:00+00:00"
+    assert payload["timezone"] == "Europe/Moscow"

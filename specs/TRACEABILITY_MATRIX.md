@@ -11,3 +11,4 @@
 | REQ-024..026 | policy/pending action/idempotency | policy and confirmation tests |
 | REQ-027 | browser locale resolver, bilingual Web/PWA and localized agent route | locale unit tests and Web build |
 | REQ-030..035 | password, cipher, OAuth state, redaction | security tests |
+| REQ-036 | recipient resolver and Google/Microsoft contact adapters | recipient and adapter unit tests |
