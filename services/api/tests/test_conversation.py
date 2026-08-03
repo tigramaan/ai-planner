@@ -65,6 +65,30 @@ async def test_intent_extraction_includes_bounded_conversation_context(monkeypat
     assert intent.participants == ["sorokina@example.com"]
 
 
+@pytest.mark.anyio
+async def test_email_summary_is_not_stored_by_openai(monkeypatch):
+    captured = {}
+
+    class Responses:
+        async def create(self, **kwargs):
+            captured.update(kwargs)
+            return type("Response", (), {"output_text": "Краткое резюме"})()
+
+    class Client:
+        def __init__(self, **kwargs):
+            self.responses = Responses()
+
+    monkeypatch.setattr(agent, "AsyncOpenAI", Client)
+    result = await agent.summarize_email_content(
+        "test-key", "test-model", "low", "Содержание письма", "ru"
+    )
+
+    assert result == "Краткое резюме"
+    assert captured["store"] is False
+    assert captured["reasoning"] == {"effort": "low"}
+    assert "untrusted data" in captured["instructions"]
+
+
 def test_mail_access_requires_incremental_scope(logged_in):
     with SessionLocal() as db:
         user = db.scalar(select(User))

@@ -56,6 +56,8 @@ Use sandbox contacts only. For each family member:
 OpenAI latency acceptance (2026-08-03): the default planner model is `gpt-5.6-luna`; intent extraction sends explicit `reasoning.effort=low` through the Responses API. Unit tests must assert the reasoning request contract, while existing structured-intent and conversation tests guard behavior.
 
 Gmail natural-search acceptance (2026-08-03): authorize Gmail read access, then verify «непрочитанные письма за сегодня» maps to `is:unread` plus local-day bounds and «письма от <имя> с документами» maps to sender plus attachment filters. Confirm the real mailbox returns the same records as Gmail UI without exposing tokens or message bodies in logs.
+
+Gmail summary acceptance (2026-08-03): explicitly request a summary for a matching message with TXT/HTML/CSV/PDF/DOCX/XLSX attachments. Verify the response identifies the message, lists processed attachment names, reports facts/prices/deadlines, caps attachments at five and total input at 20 MiB, and sends extracted content to OpenAI only for that explicit request with `store=false`. OAuth tokens, raw content and attachment bytes must not appear in application logs or audit records.
 4. Authorize Google Calendar/Contacts, then Gmail read/compose/send incrementally.
 5. Authorize Microsoft Calendar/Contacts/Teams, verify granted scopes.
 6. Create a pending meeting action; cancel once and confirm a new one once.

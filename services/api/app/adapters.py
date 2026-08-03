@@ -357,6 +357,28 @@ async def search_email(provider: str, token: str, query: str, limit: int = 10) -
     ]
 
 
+async def gmail_message(token: str, message_id: str) -> dict:
+    return await provider_request(
+        "GET",
+        f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{quote(message_id, safe='')}",
+        token,
+        params={"format": "full"},
+    )
+
+
+async def gmail_attachment(
+    token: str, message_id: str, attachment_id: str
+) -> bytes:
+    payload = await provider_request(
+        "GET",
+        f"https://gmail.googleapis.com/gmail/v1/users/me/messages/"
+        f"{quote(message_id, safe='')}/attachments/{quote(attachment_id, safe='')}",
+        token,
+    )
+    encoded = payload.get("data", "")
+    return base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4)) if encoded else b""
+
+
 async def send_email(provider: str, token: str, payload: dict[str, Any]) -> dict:
     recipients = payload["recipients"]
     if provider == "google":

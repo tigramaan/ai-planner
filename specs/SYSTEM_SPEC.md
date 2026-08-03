@@ -26,6 +26,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-020: A responsive Web/PWA provides chat, voice capture with visible live recording feedback, Today, a seven-day agenda, tasks, timers, integration settings and audit. Voice upload supports browser-produced WebM and MP4/M4A variants.
 - REQ-021: OpenAI performs transcription and structured intent extraction; secrets and OAuth tokens are never sent to the model. The default planner route uses `gpt-5.6-luna` with explicit low reasoning effort for latency-sensitive structured extraction.
 - REQ-022: Natural-language mail requests are translated into provider-native search filters, including unread state, local-day bounds, attachments and named senders; provider tokens remain outside the model.
+- REQ-023: On an explicit summary request, the first matching Gmail message and up to five supported attachments are fetched with bounded sizes, locally converted to text and summarized by the configured model with storage disabled and prompt-injection isolation. Supported attachment extraction includes text, HTML, CSV, PDF, DOCX and XLSX.
 - REQ-022: Google OAuth supports incremental Calendar, Contacts and Gmail scopes.
 - REQ-023: Microsoft OAuth supports Outlook Calendar, Teams meetings, directory and mail.
 - REQ-024: External writes require an immutable pending action and explicit confirmation by default.

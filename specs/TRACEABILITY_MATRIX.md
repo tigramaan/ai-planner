@@ -7,6 +7,7 @@
 | REQ-020 | web PWA | web build and browser tests |
 | REQ-021 | OpenAI adapter and agent route; explicit Luna low-reasoning request | agent and conversation unit tests |
 | REQ-022 | Provider-native mail query builder and chat mail-search route | mail query unit tests; live Gmail acceptance |
+| REQ-023 | Gmail content adapters, bounded document extraction and non-stored AI summary service | mail document, summary and agent privacy tests |
 | REQ-022 | Google OAuth/adapter | OAuth state and mocked adapter tests |
 | REQ-023 | Microsoft OAuth/adapter | OAuth state and mocked adapter tests |
 | REQ-024..026 | policy/pending action/idempotency | policy and confirmation tests |

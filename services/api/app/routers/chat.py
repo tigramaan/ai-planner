@@ -7,7 +7,13 @@ from sqlalchemy.orm import Session
 
 from ..action_summary import action_summary
 from ..adapters import ProviderError, search_email
-from ..agent import extract_intent, openai_config, pending_payload, risk_for_intent, transcribe
+from ..agent import (
+    extract_intent,
+    openai_config,
+    pending_payload,
+    risk_for_intent,
+    transcribe,
+)
 from ..audit import audit
 from ..calendar_actions import EventAmbiguous, EventNotFound, prepare_calendar_action
 from ..conference_intent import explicit_conference_provider
@@ -17,6 +23,7 @@ from ..dependencies import current_user
 from ..integrations import valid_access_token
 from ..local_chat_actions import LOCAL_INTENTS, handle_local_intent
 from ..mail_queries import provider_mail_query
+from ..mail_summary import mail_search_answer, summarize_google_email, summary_requested
 from ..models import AgentMessage, Integration, PendingAction, Reminder, User
 from ..policy import action_status, create_pending_action
 from ..recipient_aliases import remembered_recipient_request, save_recipient_alias
@@ -405,14 +412,17 @@ async def chat(
                     else f"{provider} rejected the request ({exc.status_code})."
                 )
             else:
-                answer = (
-                    ("Писем не найдено." if ru else "No emails found.")
-                    if not rows
-                    else "\n".join(
-                        f"{index + 1}. {row['subject']} | {row['from']}"
-                        for index, row in enumerate(rows)
-                    )
-                )
+                if rows and summary_requested(body.text) and provider == "google":
+                    try:
+                        answer = await summarize_google_email(token, rows[0], config, locale)
+                    except (ProviderError, RuntimeError):
+                        answer = (
+                            "Письмо найдено, но подготовить резюме сейчас не удалось."
+                            if ru
+                            else "The email was found, but its summary could not be prepared."
+                        )
+                else:
+                    answer = mail_search_answer(rows, locale)
     else:
         answer = (
             "Я понял команду, но для этого действия пока нет безопасного инструмента."
