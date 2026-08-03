@@ -6,7 +6,7 @@ from sqlalchemy import select
 from app import agent
 from app.config import get_settings
 from app.database import SessionLocal
-from app.models import Integration, LocalTask, PendingAction, Timer, User
+from app.models import Integration, LocalTask, PendingAction, Reminder, Timer, User
 from app.policy import create_pending_action
 from app.routers import chat as chat_router
 from app.schemas import Intent
@@ -210,6 +210,11 @@ def test_timer_can_be_restarted_and_deleted_through_chat(logged_in, monkeypatch)
     monkeypatch.setattr(chat_router, "extract_intent", intent)
     restarted = logged_in.post("/api/v1/chat/messages", json={"text": "Перезапусти Фокус"})
     assert "10 minutes" in restarted.json()["message"]
+    assert "Enable push notifications" in restarted.json()["message"]
+    with SessionLocal() as db:
+        timer = db.scalar(select(Timer).where(Timer.title == "Фокус"))
+        reminder = db.scalar(select(Reminder).where(Reminder.timer_id == timer.id))
+        assert reminder is not None
     deleted = logged_in.post("/api/v1/chat/messages", json={"text": "Удали Фокус"})
     assert "deleted" in deleted.json()["message"]
 

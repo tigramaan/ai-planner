@@ -72,6 +72,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-062: The public repository provides a Russian-first README, responsive GitHub Pages product/install site with real screenshots, private vulnerability reporting guidance, full-history secret scanning in CI, and a validated agent skill for secure self-hosted deployment and provider onboarding.
 - REQ-063: Public documentation contains no personal mailbox/chat data, uses a purpose-built capability infographic, and is distributed under the MIT license. Successful interactive Web actions expose a localized, accessible, transient outcome notification.
 - REQ-064: The agent can draft a ready-to-send Gmail message from a natural-language communication goal, resolve its recipients, preview the exact subject and body in a mandatory pending confirmation, and send only after explicit confirmation with Gmail compose/send scope and read-after-write verification.
+- REQ-065: Starting or restarting a timer schedules exactly one linked Web Push delivery at its end time; renaming resynchronizes the notification, deletion removes it, and active timers are backfilled during migration. Timer delivery is not duplicated in Today/Week. If no browser subscription exists, chat gives actionable setup guidance and the worker uses bounded retries instead of falsely marking the push delivered.
 
 ## Constraints
 

@@ -9,6 +9,7 @@ from ..database import get_db
 from ..dependencies import current_user
 from ..models import LocalTask, Timer, User
 from ..schemas import TaskCreate, TaskUpdate, TimerCreate, TimerUpdate
+from ..timer_notifications import delete_timer_notification, schedule_timer_notification
 
 router = APIRouter(prefix="/api/v1", tags=["local-planner"])
 
@@ -101,6 +102,7 @@ def create_timer(
     )
     db.add(timer)
     db.flush()
+    schedule_timer_notification(db, user, timer)
     audit(
         db,
         user,
@@ -129,6 +131,7 @@ def update_timer(
         timer.starts_at = datetime.now(UTC)
         timer.ends_at = timer.starts_at + timedelta(seconds=body.duration_seconds)
         timer.status = "active"
+    schedule_timer_notification(db, user, timer)
     audit(db, user, request, "timer.updated", "timer", timer.id)
     db.commit()
     db.refresh(timer)
@@ -144,6 +147,7 @@ def delete_timer(
 ):
     timer = owned(Timer, timer_id, user, db)
     audit(db, user, request, "timer.deleted", "timer", timer.id, {"title": timer.title})
+    delete_timer_notification(db, timer)
     db.delete(timer)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

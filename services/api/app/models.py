@@ -119,6 +119,9 @@ class Reminder(Base):
     __tablename__ = "reminders"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    timer_id: Mapped[str | None] = mapped_column(
+        ForeignKey("timers.id", ondelete="CASCADE"), unique=True, index=True
+    )
     title: Mapped[str] = mapped_column(String(300))
     due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     timezone: Mapped[str] = mapped_column(String(64), default="Europe/Moscow")

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from .models import LocalTask, Timer, User
 from .schemas import Intent
+from .timer_notifications import delete_timer_notification, schedule_timer_notification
 
 LOCAL_INTENTS = {
     "create_task",
@@ -96,11 +97,20 @@ def timer_action(db: Session, user: User, intent: Intent, ru: bool) -> str:
             ends_at=datetime.now(UTC) + timedelta(seconds=seconds),
         )
         db.add(timer)
-        return (
+        db.flush()
+        push_ready = schedule_timer_notification(db, user, timer)
+        answer = (
             f"Таймер запущен на {seconds // 60} минут."
             if ru
             else f"Timer started for {seconds // 60} minutes."
         )
+        if not push_ready:
+            answer += (
+                " Чтобы получить сигнал, включите push-уведомления в Настройках."
+                if ru
+                else " Enable push notifications in Settings to receive the alert."
+            )
+        return answer
     query = (intent.event_query or intent.title or "").casefold().strip()
     timer = recent_match(db, Timer, user, query) if query else None
     if not timer:
@@ -111,6 +121,7 @@ def timer_action(db: Session, user: User, intent: Intent, ru: bool) -> str:
         )
     if intent.intent == "cancel_timer":
         title = timer.title
+        delete_timer_notification(db, timer)
         db.delete(timer)
         return f"Таймер «{title}» удалён." if ru else f'Timer "{title}" deleted.'
     seconds = (intent.duration_minutes or 25) * 60
@@ -118,11 +129,19 @@ def timer_action(db: Session, user: User, intent: Intent, ru: bool) -> str:
     timer.starts_at = datetime.now(UTC)
     timer.ends_at = timer.starts_at + timedelta(seconds=seconds)
     timer.status = "active"
-    return (
+    push_ready = schedule_timer_notification(db, user, timer)
+    answer = (
         f"Таймер «{timer.title}» перезапущен на {seconds // 60} минут."
         if ru
         else f'Timer "{timer.title}" restarted for {seconds // 60} minutes.'
     )
+    if not push_ready:
+        answer += (
+            " Чтобы получить сигнал, включите push-уведомления в Настройках."
+            if ru
+            else " Enable push notifications in Settings to receive the alert."
+        )
+    return answer
 
 
 def handle_local_intent(db: Session, user: User, intent: Intent, raw: str, ru: bool) -> str:

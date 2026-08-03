@@ -40,6 +40,7 @@ async def collect_agenda(
     reminders = db.scalars(
         select(Reminder).where(
             Reminder.user_id == user.id,
+            Reminder.timer_id.is_(None),
             Reminder.status.in_(["scheduled", "retry", "processing"]),
             Reminder.due_at >= start,
             Reminder.due_at < end,

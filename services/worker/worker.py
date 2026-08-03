@@ -65,8 +65,11 @@ class Worker:
         return delivered, errors
 
     def process(self, reminder: dict) -> None:
-        if reminder["channel"] == "in_app" or not reminder["subscriptions"]:
+        if reminder["channel"] == "in_app":
             self.complete(reminder["id"], "delivered")
+            return
+        if not reminder["subscriptions"]:
+            self.complete(reminder["id"], "retry", "no push subscription")
             return
         delivered, errors = self.send_push(reminder)
         if delivered:

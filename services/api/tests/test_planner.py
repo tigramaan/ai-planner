@@ -1,4 +1,8 @@
+from sqlalchemy import select
+
 from app.agenda import provider_event
+from app.database import SessionLocal
+from app.models import Reminder
 
 
 def test_local_task_and_timer(logged_in):
@@ -7,6 +11,11 @@ def test_local_task_and_timer(logged_in):
     assert task.json()["title"] == "Подготовить план"
     timer = logged_in.post("/api/v1/timers", json={"title": "Фокус", "duration_seconds": 1500})
     assert timer.status_code == 200
+    with SessionLocal() as db:
+        reminder = db.scalar(select(Reminder).where(Reminder.timer_id == timer.json()["id"]))
+        assert reminder is not None
+        assert reminder.due_at == reminder.next_attempt_at
+        assert "Фокус" in reminder.title
     today = logged_in.get("/api/v1/today")
     assert today.status_code == 200
     assert {item["kind"] for item in today.json()["items"]} == {"task", "timer"}
@@ -63,7 +72,14 @@ def test_timer_can_be_restarted_renamed_and_deleted(logged_in):
     assert updated.status_code == 200
     assert updated.json()["title"] == "Перерыв"
     assert updated.json()["status"] == "active"
+    with SessionLocal() as db:
+        reminder = db.scalar(select(Reminder).where(Reminder.timer_id == timer_id))
+        assert reminder is not None
+        assert "Перерыв" in reminder.title
+        assert reminder.status == "scheduled"
     assert logged_in.delete(f"/api/v1/timers/{timer_id}").status_code == 204
+    with SessionLocal() as db:
+        assert db.scalar(select(Reminder).where(Reminder.timer_id == timer_id)) is None
     assert logged_in.delete(f"/api/v1/timers/{timer_id}").status_code == 404
 
 

@@ -37,6 +37,16 @@ def test_in_app_delivery_does_not_call_push():
     worker.complete.assert_called_once_with("reminder-1", "delivered")
 
 
+def test_missing_push_subscription_schedules_retry():
+    worker = make_worker()
+
+    worker.process(reminder())
+
+    worker.complete.assert_called_once_with(
+        "reminder-1", "retry", "no push subscription"
+    )
+
+
 def test_malformed_subscription_isolated_from_healthy_subscription():
     worker = make_worker()
 
