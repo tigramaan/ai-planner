@@ -18,6 +18,15 @@ from ..schemas import ChatRequest
 router = APIRouter(prefix="/api/v1", tags=["agent"])
 
 
+def browser_locale(request: Request) -> str:
+    languages = request.headers.get("accept-language", "").lower().split(",")
+    for language in languages:
+        primary = language.strip().split(";")[0].split("-")[0]
+        if primary in {"ru", "en"}:
+            return primary
+    return "en"
+
+
 @router.get("/chat/messages")
 def messages(user: User = Depends(current_user), db: Session = Depends(get_db)):
     return db.scalars(
@@ -36,9 +45,11 @@ async def chat(
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ):
+    locale = browser_locale(request)
+    ru = locale == "ru"
     config = openai_config(db, settings, user)
     try:
-        intent = await extract_intent(config["api_key"], config["model"], body.text)
+        intent = await extract_intent(config["api_key"], config["model"], body.text, locale)
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
     user_message = AgentMessage(
@@ -47,15 +58,25 @@ async def chat(
     db.add(user_message)
     pending = None
     if intent.requires_clarification:
-        answer = intent.clarification_question or "Уточните параметры команды."
+        answer = intent.clarification_question or (
+            "Уточните параметры команды." if ru else "Please clarify the command parameters."
+        )
     elif risk_for_intent(intent) == "confirmation_required":
-        summary = f"{intent.title or intent.intent}. Проверьте участников, дату и время перед выполнением."
+        summary = (
+            f"{intent.title or intent.intent}. Проверьте участников, дату и время перед выполнением."
+            if ru
+            else f"{intent.title or intent.intent}. Check participants, date and time before execution."
+        )
         try:
             payload = pending_payload(intent)
         except (ValueError, TypeError) as exc:
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
         pending = create_pending_action(db, settings, user, intent.intent, summary, payload)
-        answer = "Подготовил действие. Выполню только после вашего подтверждения."
+        answer = (
+            "Подготовил действие. Выполню только после вашего подтверждения."
+            if ru
+            else "The action is ready. I will execute it only after your confirmation."
+        )
     elif intent.intent == "create_task":
         task = LocalTask(
             user_id=user.id,
@@ -63,7 +84,7 @@ async def chat(
             timezone=intent.timezone or user.timezone,
         )
         db.add(task)
-        answer = f"Задача «{task.title}» создана."
+        answer = f"Задача «{task.title}» создана." if ru else f'Task "{task.title}" created.'
     elif intent.intent == "create_reminder":
         if not intent.start_iso or not intent.timezone:
             raise HTTPException(
@@ -84,30 +105,46 @@ async def chat(
             timezone=intent.timezone,
         )
         db.add(reminder)
-        answer = f"Напоминание «{reminder.title}» запланировано."
+        answer = (
+            f"Напоминание «{reminder.title}» запланировано."
+            if ru
+            else f'Reminder "{reminder.title}" scheduled.'
+        )
     elif intent.intent == "start_timer":
         seconds = (intent.duration_minutes or 25) * 60
         timer = Timer(
             user_id=user.id,
-            title=intent.title or "Таймер",
+            title=intent.title or ("Таймер" if ru else "Timer"),
             ends_at=datetime.now().astimezone() + timedelta(seconds=seconds),
         )
         db.add(timer)
-        answer = f"Таймер запущен на {seconds // 60} минут."
+        answer = (
+            f"Таймер запущен на {seconds // 60} минут."
+            if ru
+            else f"Timer started for {seconds // 60} minutes."
+        )
     elif intent.intent == "show_today":
-        answer = "Откройте экран «Сегодня»: данные уже обновляются из подключённых источников."
+        answer = (
+            "Откройте экран «Сегодня»: данные уже обновляются из подключённых источников."
+            if ru
+            else "Open Today. Data is already updating from connected sources."
+        )
     elif intent.intent == "search_email":
         provider = intent.provider if intent.provider in {"google", "microsoft"} else "google"
         try:
             token = await valid_access_token(db, settings, user, provider)
             rows = await search_email(provider, token, intent.body or intent.title or body.text)
         except LookupError:
-            answer = f"Сначала подключите {provider} в настройках."
+            answer = (
+                f"Сначала подключите {provider} в настройках."
+                if ru
+                else f"Connect {provider} in Settings first."
+            )
         except ProviderError as exc:
             raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(exc)) from exc
         else:
             answer = (
-                "Писем не найдено."
+                ("Писем не найдено." if ru else "No emails found.")
                 if not rows
                 else "\n".join(
                     f"{index + 1}. {row['subject']} | {row['from']}"
@@ -115,7 +152,11 @@ async def chat(
                 )
             )
     else:
-        answer = "Я понял команду, но для этого действия пока нет безопасного инструмента."
+        answer = (
+            "Я понял команду, но для этого действия пока нет безопасного инструмента."
+            if ru
+            else "I understood the command, but no safe tool is available for this action yet."
+        )
     assistant = AgentMessage(user_id=user.id, role="assistant", text=answer)
     db.add(assistant)
     audit(

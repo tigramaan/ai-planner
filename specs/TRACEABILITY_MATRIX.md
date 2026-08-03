@@ -9,4 +9,5 @@
 | REQ-022 | Google OAuth/adapter | OAuth state and mocked adapter tests |
 | REQ-023 | Microsoft OAuth/adapter | OAuth state and mocked adapter tests |
 | REQ-024..026 | policy/pending action/idempotency | policy and confirmation tests |
+| REQ-027 | browser locale resolver, bilingual Web/PWA and localized agent route | locale unit tests and Web build |
 | REQ-030..035 | password, cipher, OAuth state, redaction | security tests |

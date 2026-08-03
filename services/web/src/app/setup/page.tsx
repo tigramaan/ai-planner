@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 
 type SetupStatus = { setup_required: boolean; owner_email: string };
 
@@ -9,6 +10,7 @@ export default function SetupPage() {
   const [status, setStatus] = useState<SetupStatus | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     api<SetupStatus>("/auth/setup-status").then(setStatus).catch((value) => setError(value.message));
@@ -30,7 +32,7 @@ export default function SetupPage() {
       });
       location.href = "/";
     } catch (value) {
-      setError(value instanceof Error ? value.message : "Не удалось завершить настройку");
+      setError(value instanceof Error ? value.message : t("Не удалось завершить настройку", "Setup failed"));
       setBusy(false);
     }
   }
@@ -38,16 +40,16 @@ export default function SetupPage() {
   return (
     <main className="loginWrap">
       <section className="panel login">
-        <h1>Первый вход</h1>
+        <h1>{t("Первый вход", "First sign-in")}</h1>
         {status?.setup_required === false ? (
-          <><p className="muted">Настройка уже завершена.</p><a className="button" href="/login">Войти</a></>
+          <><p className="muted">{t("Настройка уже завершена.", "Setup is already complete.")}</p><a className="button" href="/login">{t("Войти", "Sign in")}</a></>
         ) : (
           <form className="form" onSubmit={submit}>
-            <p className="muted">Создайте пароль администратора {status?.owner_email ?? "семьи"}.</p>
-            <label className="label">Одноразовый код<input className="field" name="token" type="password" autoComplete="one-time-code" required minLength={32}/></label>
-            <label className="label">Новый пароль<input className="field" name="password" type="password" autoComplete="new-password" required minLength={12}/></label>
+            <p className="muted">{t("Создайте пароль администратора", "Create an administrator password for")} {status?.owner_email ?? t("семьи", "the family")}.</p>
+            <label className="label">{t("Одноразовый код", "One-time code")}<input className="field" name="token" type="password" autoComplete="one-time-code" required minLength={32}/></label>
+            <label className="label">{t("Новый пароль", "New password")}<input className="field" name="password" type="password" autoComplete="new-password" required minLength={12}/></label>
             {error && <p className="error" role="alert">{error}</p>}
-            <button className="button" disabled={busy}>{busy ? "Настраиваю..." : "Создать аккаунт"}</button>
+            <button className="button" disabled={busy}>{busy ? t("Настраиваю...", "Setting up...") : t("Создать аккаунт", "Create account")}</button>
           </form>
         )}
       </section>

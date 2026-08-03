@@ -30,7 +30,17 @@ def test_planner_and_integrations_are_isolated_per_user(client):
 
     register(client, "second@example.com")
     assert client.get("/api/v1/tasks").json() == []
-    assert client.get("/api/v1/integrations").json() == []
+    integrations = client.get("/api/v1/integrations").json()
+    assert integrations == [
+        {
+            "provider": "openai",
+            "status": "connected",
+            "scopes": [],
+            "configured": True,
+            "source": "server",
+        }
+    ]
+    assert "api_key" not in str(integrations)
     assert client.get("/api/v1/reminders").json() == []
     assert client.get("/api/v1/chat/messages").json() == []
     assert client.get("/api/v1/pending-actions").json() == []

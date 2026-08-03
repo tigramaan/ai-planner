@@ -19,11 +19,26 @@ router = APIRouter(prefix="/api/v1/integrations", tags=["integrations"])
 
 
 @router.get("")
-def list_integrations(user: User = Depends(current_user), db: Session = Depends(get_db)):
+def list_integrations(
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+):
     rows = db.scalars(
         select(Integration).where(Integration.user_id == user.id).order_by(Integration.provider)
     ).all()
-    return [integration_view(row) for row in rows]
+    result = [integration_view(row) for row in rows]
+    if settings.openai_api_key and not any(row.provider == "openai" for row in rows):
+        result.append(
+            {
+                "provider": "openai",
+                "status": "connected",
+                "scopes": [],
+                "configured": True,
+                "source": "server",
+            }
+        )
+    return result
 
 
 @router.post("/openai")
@@ -52,16 +67,24 @@ def configure_openai(
 def oauth_start(
     provider: str,
     body: OAuthStart,
+    request: Request,
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ):
+    ru = request.headers.get("accept-language", "").lower().startswith("ru")
     if provider not in {"google", "microsoft"}:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Unsupported provider")
     if provider == "google" and not settings.google_client_id:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Google OAuth client is not configured")
+        detail = "Клиент Google OAuth не настроен" if ru else "Google OAuth client is not configured"
+        raise HTTPException(status.HTTP_409_CONFLICT, detail)
     if provider == "microsoft" and not settings.microsoft_client_id:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Microsoft OAuth client is not configured")
+        detail = (
+            "Клиент Microsoft OAuth не настроен"
+            if ru
+            else "Microsoft OAuth client is not configured"
+        )
+        raise HTTPException(status.HTTP_409_CONFLICT, detail)
     try:
         scopes = resolve_scopes(provider, body.scopes)
     except ValueError as exc:

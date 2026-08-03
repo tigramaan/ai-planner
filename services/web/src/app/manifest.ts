@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "UMEC AI Planner",
     short_name: "AI Planner",
-    description: "Персональный командный центр",
+    description: "Personal command center",
     start_url: "/",
     display: "standalone",
     background_color: "#f6f8fb",

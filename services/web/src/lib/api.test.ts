@@ -14,7 +14,7 @@ describe("api client", () => {
     await expect(api<{ email: string }>("/me")).resolves.toEqual({ email: "family@example.com" });
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/me",
-      expect.objectContaining({ credentials: "include" }),
+      expect.objectContaining({ credentials: "include", headers: expect.objectContaining({"Accept-Language":"en"}) }),
     );
   });
 

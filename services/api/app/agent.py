@@ -35,7 +35,7 @@ def openai_config(db, settings: Settings, user: User) -> dict[str, str]:
     }
 
 
-async def extract_intent(api_key: str, model: str, text: str) -> Intent:
+async def extract_intent(api_key: str, model: str, text: str, locale: str = "en") -> Intent:
     if not api_key:
         raise RuntimeError("OpenAI is not configured")
     client = AsyncOpenAI(api_key=api_key, timeout=30, max_retries=2)
@@ -45,7 +45,7 @@ async def extract_intent(api_key: str, model: str, text: str) -> Intent:
     try:
         response = await client.responses.create(
             model=model,
-            instructions=SYSTEM_PROMPT,
+            instructions=f"{SYSTEM_PROMPT}\nWrite clarification_question in {'Russian' if locale == 'ru' else 'English'}.",
             input=text,
             text={
                 "format": {
