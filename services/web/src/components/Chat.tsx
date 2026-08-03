@@ -20,6 +20,7 @@ export function Chat() {
   const [pending, setPending] = useState<Pending[]>([]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [replyPending, setReplyPending] = useState(false);
   const [error, setError] = useState("");
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
@@ -47,7 +48,7 @@ export function Chat() {
   useLayoutEffect(() => {
     const list = messageList.current;
     if (list && stickToBottom.current) list.scrollTop = list.scrollHeight;
-  }, [messages, pending]);
+  }, [messages, pending, replyPending]);
 
   useLayoutEffect(() => {
     const input = composerInput.current;
@@ -123,6 +124,7 @@ export function Chat() {
     setMessages((items) => appendMessage(items, { role: "user", text: value }));
     setText("");
     setBusy(true);
+    setReplyPending(true);
     setError("");
     try {
       const result = await api<{ message: string; pending_action_id?: string }>("/chat/messages", {
@@ -134,6 +136,7 @@ export function Chat() {
     } catch (value) {
       setError(value instanceof Error ? value.message : t("Команда не выполнена", "Command failed"));
     } finally {
+      setReplyPending(false);
       setBusy(false);
     }
   }
@@ -191,6 +194,7 @@ export function Chat() {
   return <section className="panel chat" aria-label={t("Чат с планировщиком", "Planner chat")}>
     <div className="messages" ref={messageList} onScroll={trackScroll} aria-live="polite">
       {messages.length === 0 ? <p className="muted">{t("Напишите команду или запишите голосовое сообщение.", "Type a command or record a voice message.")}</p> : messages.map((message, index) => <div className={`message ${message.role}`} key={message.id ?? index}><MessageText text={message.text}/></div>)}
+      {replyPending && <div className="message assistant typingIndicator" role="status" aria-label={t("Планировщик печатает", "Planner is typing")}><span>{t("Печатает", "Typing")}</span><i/><i/><i/></div>}
       {pending.filter((action) => action.status === "pending").map((action) => <div className="confirmation" key={action.id}><strong>{t("Требуется подтверждение", "Confirmation required")}</strong><p>{action.display_summary}</p><div className="row"><button className="button" disabled={busy} onClick={() => decide(action.id, "confirm")}>{t("Подтвердить", "Confirm")}</button><button className="button secondary" disabled={busy} onClick={() => decide(action.id, "cancel")}>{t("Отменить", "Cancel")}</button></div></div>)}
     </div>
     {error && <p className="error" role="alert">{error}</p>}

@@ -42,6 +42,7 @@
 | REQ-070 | Luna junior routing with automatic Sol escalation and distinct reasoning effort | simple/complex route tests, config validation and audit inspection |
 | REQ-071 | bounded senior Responses tool loop over mail and local planner contracts | multi-round output propagation, storage, call-limit and tool validation tests |
 | REQ-072 | senior external-action preparation routed into the existing encrypted confirmation boundary | senior pending-action propagation, conversation, policy, recipient and calendar-action tests |
+| REQ-073 | in-stream chat response status, explicit mail result limit and deterministic automated-mail exclusion | Chat component lifecycle test, intent-schema, mail-summary and mail-chat tests |
 | REQ-030..035 | password, cipher, OAuth state, redaction | security tests |
 | REQ-036 | recipient resolver and Google/Microsoft contact adapters | recipient and adapter unit tests |
 | REQ-037 | bounded per-user conversation history passed to intent extraction | conversation continuation tests |

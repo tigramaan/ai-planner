@@ -129,6 +129,7 @@ async def test_email_triage_is_bounded_structured_and_not_stored(monkeypatch):
     assert len(json.loads(captured["input"])) == 20
     assert len(json.loads(captured["input"])[0]["snippet"]) == 1200
     assert "untrusted data" in captured["instructions"]
+    assert "every automated message" in captured["instructions"]
     assert captured["text"]["format"]["type"] == "json_schema"
 
 
@@ -143,6 +144,7 @@ async def test_intent_schema_delegates_mail_strategy_to_model(monkeypatch):
             payload.update(
                 intent="search_email",
                 mail_mode="triage",
+                mail_limit=3,
                 participants=[],
                 conference_requested=False,
                 requires_senior=False,
@@ -163,9 +165,9 @@ async def test_intent_schema_delegates_mail_strategy_to_model(monkeypatch):
     )
 
     assert intent.mail_mode == "triage"
+    assert intent.mail_limit == 3
     assert "choose mail_mode semantically" in captured["instructions"]
     assert "mail_mode" in captured["text"]["format"]["schema"]["required"]
-
 
 def test_mail_access_requires_incremental_scope(logged_in):
     with SessionLocal() as db:

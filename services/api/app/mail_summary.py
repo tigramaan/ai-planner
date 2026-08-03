@@ -3,6 +3,19 @@ from .agent import summarize_email_content, triage_email_rows
 from .mail_documents import email_text_bundle
 
 
+def automated_mail(row: dict) -> bool:
+    sender = str(row.get("from", "")).casefold()
+    local_part = sender.rsplit("<", 1)[-1].split("@", 1)[0]
+    automated_names = ("noreply", "no-reply", "do-not-reply", "donotreply", "mailer-daemon")
+    return bool(
+        row.get("list_unsubscribe")
+        or row.get("list_id")
+        or str(row.get("precedence", "")).casefold() in {"bulk", "list", "junk"}
+        or str(row.get("auto_submitted", "")).casefold() not in {"", "no"}
+        or any(name in local_part for name in automated_names)
+    )
+
+
 def mail_search_answer(rows: list[dict], locale: str) -> str:
     if not rows:
         return "Писем не найдено." if locale == "ru" else "No emails found."
@@ -12,19 +25,22 @@ def mail_search_answer(rows: list[dict], locale: str) -> str:
 
 
 async def triage_mail_answer(
-    rows: list[dict], ai_config: dict[str, str], locale: str
+    rows: list[dict], ai_config: dict[str, str], locale: str, limit: int | None = None
 ) -> str:
     if not rows:
         return mail_search_answer(rows, locale)
+    human_rows = [row for row in rows if not automated_mail(row)]
     classified = await triage_email_rows(
         ai_config["api_key"],
         ai_config["model"],
         ai_config["reasoning_effort"],
-        rows,
+        human_rows,
         locale,
     )
     selected = [item for item in classified if item["category"] != "ignore"]
-    ignored = len(classified) - len(selected)
+    if limit is not None:
+        selected = selected[:limit]
+    ignored = len(rows) - len(selected)
     if not selected:
         return (
             f"Среди {len(classified)} писем не нашёл требующих реакции или явно важных. Отсеяно как рассылки и шум: {ignored}."
@@ -38,7 +54,7 @@ async def triage_mail_answer(
         "important": ("важно прочитать", "worth reading"),
     }
     for number, item in enumerate(selected, 1):
-        row = rows[item["index"]]
+        row = human_rows[item["index"]]
         label = labels[item["category"]][0 if locale == "ru" else 1]
         lines.append(f"{number}. {row['subject']} | {row['from']} — {label}")
         if item["reason"]:

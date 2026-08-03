@@ -57,7 +57,7 @@ async def handle_mail_search(
         )
     if wants_triage:
         try:
-            return await triage_mail_answer(rows, ai_config, locale)
+            return await triage_mail_answer(rows, ai_config, locale, intent.mail_limit)
         except RuntimeError:
             return (
                 "Письма найдены, но сейчас не удалось надёжно отделить важные от рассылок. "

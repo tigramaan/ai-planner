@@ -160,6 +160,7 @@ class Intent(BaseModel):
     participants: list[str] = Field(default_factory=list, max_length=50)
     provider: Literal["google", "microsoft", "yandex", "local"] | None = None
     mail_mode: Literal["search", "summarize", "triage"] = "search"
+    mail_limit: int | None = Field(default=None, ge=1, le=20)
     conference_provider: Literal["google", "microsoft", "yandex", "zoom", "none"] | None = None
     conference_requested: bool = False
     body: str | None = None

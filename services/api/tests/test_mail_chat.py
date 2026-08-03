@@ -15,8 +15,8 @@ async def test_triage_search_fetches_twenty_and_uses_classifier(monkeypatch):
         captured.update(provider=provider, token=access_token, query=query, limit=limit)
         return [{"subject": "Budget", "from": "manager@example.com", "snippet": "Review"}]
 
-    async def triage(rows, config, locale):
-        captured.update(rows=rows, config=config, locale=locale)
+    async def triage(rows, config, locale, limit):
+        captured.update(rows=rows, config=config, locale=locale, result_limit=limit)
         return "Needs attention"
 
     monkeypatch.setattr(mail_chat, "mail_access_granted", lambda *args: True)
@@ -36,4 +36,5 @@ async def test_triage_search_fetches_twenty_and_uses_classifier(monkeypatch):
 
     assert result == "Needs attention"
     assert captured["limit"] == 20
+    assert captured["result_limit"] is None
     assert "after:" in captured["query"]

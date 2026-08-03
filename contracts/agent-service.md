@@ -6,6 +6,7 @@ Intent extraction receives at most eight recent messages for the authenticated u
 
 For `send_email`, the model converts the user's communication goal into a complete subject and ready-to-send body without inventing facts or commitments. The exact generated text remains an encrypted pending payload and is displayed to the user before execution; the model never receives provider credentials or sends directly.
 Explicit mail-triage requests may classify at most twenty search results using bounded sender, subject and snippet fields. Classification is read-only, uses model storage disabled, treats all mail fields as untrusted data, and returns only action-required or important-to-read messages with reasons and suggested next steps plus an aggregate ignored count.
+An explicit requested result count is preserved as `mail_limit` and caps the rendered ranking. Before classification, deterministic metadata guards remove no-reply senders, mailing-list traffic, bulk precedence and auto-submitted messages. These messages can never be promoted as important; importance is reserved for personal or work mail written by a specific human.
 
 The model chooses declared strategies from user meaning and conversation context. Application code must not route strategies by maintaining phrase or keyword lists. Deterministic enforcement begins at the tool boundary: schemas, identity and ownership, provider permissions, bounded resources, validated upstream results, and confirmation of side effects.
 

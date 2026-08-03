@@ -40,8 +40,9 @@ TOOLS = [
             "properties": {
                 "request": {"type": "string", "maxLength": 1000},
                 "mode": {"type": "string", "enum": ["search", "summarize", "triage"]},
+                "result_limit": {"type": ["integer", "null"], "minimum": 1, "maximum": 20},
             },
-            "required": ["request", "mode"],
+            "required": ["request", "mode", "result_limit"],
         },
     },
     {
@@ -204,6 +205,7 @@ async def _execute_tool(
             intent="search_email",
             provider=user.default_mail,
             mail_mode=arguments["mode"],
+            mail_limit=arguments.get("result_limit"),
             event_query=arguments["request"],
         )
         result = await handle_mail_search(

@@ -80,6 +80,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-070: A semantic model router sends clear single-operation commands to the configured junior model and escalates novel, unknown, ambiguous, strategic or multi-operation goals to the configured senior model. Routing is based on task shape declared by the junior model, never application keyword lists; the selected tier is audited without storing hidden reasoning.
 - REQ-071: The senior path owns a bounded non-stored Responses API tool loop of at most six sequential rounds. It may inspect connected mail and perform guarded local task/timer operations, receives actual tool outputs before choosing later calls, never receives provider credentials, and never claims unavailable external writes occurred.
 - REQ-072: The senior loop may prepare at most one email or calendar mutation per request as an encrypted immutable pending action. Recipient resolution, provider permissions, calendar matching and payload validation run before draft creation; execution remains impossible until the user explicitly confirms through the existing policy boundary.
+- REQ-073: Chat visibly exposes an accessible in-stream typing state from request dispatch until response or failure. Mail triage obeys an explicit requested result limit and excludes automated senders, mailing-list headers and bulk/auto-submitted messages before model ranking; only human-written personal or work mail may be returned as important.
 
 ## Constraints
 

@@ -62,3 +62,39 @@ async def test_triage_answer_only_lists_useful_messages(monkeypatch):
     assert "Проверить сумму и ответить" in result
     assert "Скидки недели" not in result
     assert "Отсеяно как рассылки, промо или несущественное: 1" in result
+
+
+@pytest.mark.anyio
+async def test_triage_excludes_automated_mail_and_obeys_requested_limit(monkeypatch):
+    captured = {}
+
+    async def classify(api_key, model, effort, rows, locale):
+        captured["rows"] = rows
+        return [
+            {
+                "index": index,
+                "category": "important",
+                "reason": "Личное рабочее письмо.",
+                "suggested_action": "Прочитать.",
+            }
+            for index in range(len(rows))
+        ]
+
+    monkeypatch.setattr(mail_summary, "triage_email_rows", classify)
+    result = await mail_summary.triage_mail_answer(
+        [
+            {"subject": "Акция", "from": "noreply@shop.example"},
+            {"subject": "Проект A", "from": "anna@example.com"},
+            {"subject": "Дайджест", "from": "news@example.com", "list_id": "weekly"},
+            {"subject": "Проект B", "from": "boris@example.com"},
+            {"subject": "Проект C", "from": "clara@example.com"},
+        ],
+        {"api_key": "key", "model": "model", "reasoning_effort": "low"},
+        "ru",
+        limit=2,
+    )
+
+    assert [row["subject"] for row in captured["rows"]] == ["Проект A", "Проект B", "Проект C"]
+    assert "Проект A" in result and "Проект B" in result
+    assert "Проект C" not in result and "Акция" not in result and "Дайджест" not in result
+    assert result.count("Личное рабочее письмо.") == 2

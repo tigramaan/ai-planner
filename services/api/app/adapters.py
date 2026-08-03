@@ -318,7 +318,18 @@ async def search_email(provider: str, token: str, query: str, limit: int = 10) -
                 "GET",
                 f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{item['id']}",
                 token,
-                params={"format": "metadata", "metadataHeaders": ["From", "Subject", "Date"]},
+                params={
+                    "format": "metadata",
+                    "metadataHeaders": [
+                        "From",
+                        "Subject",
+                        "Date",
+                        "List-Unsubscribe",
+                        "List-Id",
+                        "Precedence",
+                        "Auto-Submitted",
+                    ],
+                },
             )
             headers = {
                 row["name"].casefold(): row["value"]
@@ -331,6 +342,10 @@ async def search_email(provider: str, token: str, query: str, limit: int = 10) -
                     "subject": headers.get("subject", "(без темы)"),
                     "received_at": headers.get("date"),
                     "snippet": message.get("snippet", ""),
+                    "list_unsubscribe": headers.get("list-unsubscribe", ""),
+                    "list_id": headers.get("list-id", ""),
+                    "precedence": headers.get("precedence", ""),
+                    "auto_submitted": headers.get("auto-submitted", ""),
                 }
             )
         return rows
