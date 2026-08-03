@@ -16,4 +16,10 @@ describe("protected routes", () => {
     });
     expect(proxy(request).status).toBe(200);
   });
+
+  it("allows install icons without a session", () => {
+    for (const path of ["/icon.svg", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png"]) {
+      expect(proxy(new NextRequest(`https://planner.umec.space${path}`)).status).toBe(200);
+    }
+  });
 });
