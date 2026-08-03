@@ -64,6 +64,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-056: Calendar mutations identify events flexibly by partial title, participant name/address and approximate wording. Current time is an optional ranking hint, never a required identifier. Ambiguous or weak matches return numbered local-time choices that can be selected in the next chat reply.
 - REQ-057: Every external create/update/delete/send action requires an explicit Confirm/Cancel pending action. After execution, chat reports the exact completed operation, title, local date/time, provider, participants, calendar link, video link and any partial-success warning; safe HTTPS links are clickable.
 - REQ-058: An active user session survives access-token expiry through a transparent, deduplicated refresh and one retry of the original Web request. The refresh session has a sliding bounded lifetime; logout, password change, revocation or refresh expiry still require a new login.
+- REQ-059: The navigation brand logo remains legible in the browser's light and dark color schemes, using the original black mark on light surfaces and an automatic white rendering on dark surfaces.
 
 ## Constraints
 

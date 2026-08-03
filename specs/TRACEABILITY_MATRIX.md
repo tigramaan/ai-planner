@@ -26,6 +26,7 @@
 | REQ-056 | ranked fuzzy calendar lookup across titles and attendees with numbered disambiguation | calendar action and conversation tests |
 | REQ-057 | mandatory external-write confirmation and structured post-execution reports with separate links | action policy, summary, calendar mutation and Web build tests |
 | REQ-058 | transparent Web access-token refresh, retry, refresh-cookie route admission and sliding server session | auth refresh, API client and proxy tests |
+| REQ-059 | adaptive black/white navigation logo selected by the browser color scheme | Web production build and visual acceptance |
 | REQ-030..035 | password, cipher, OAuth state, redaction | security tests |
 | REQ-036 | recipient resolver and Google/Microsoft contact adapters | recipient and adapter unit tests |
 | REQ-037 | bounded per-user conversation history passed to intent extraction | conversation continuation tests |

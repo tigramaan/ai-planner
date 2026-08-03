@@ -20,7 +20,8 @@ a { color:inherit; text-decoration:none; }
 .shell { min-height:100dvh; display:grid; grid-template-columns:248px minmax(0,1fr); }
 .nav { padding:24px 18px; border-right:1px solid var(--line); background:var(--surface); position:sticky; top:0; height:100dvh; }
 .brand { font-size:20px; font-weight:700; letter-spacing:-.03em; margin:0 10px 28px; display:flex; align-items:center; gap:10px; }
-.brandLogo { width:150px; height:auto; max-height:50px; object-fit:contain; object-position:left center; }
+.brandLogo { width:150px; height:auto; max-height:50px; object-fit:contain; object-position:left center; transition:filter .15s ease; }
+@media (prefers-color-scheme: dark) { .brandLogo { filter:invert(1); } }
 .navlinks { display:grid; gap:6px; }
 .navlink { display:flex; gap:12px; align-items:center; padding:11px 12px; border-radius:var(--radius); color:var(--muted); }
 .navlink:hover, .navlink:focus-visible { background:var(--surface-2); color:var(--text); outline:2px solid transparent; }
