@@ -168,11 +168,12 @@ def refresh(
         clear_auth_cookies(response)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Refresh session expired")
     user = db.get(User, session.user_id)
-    replacement = new_refresh_token()
-    session.refresh_token_hash = token_hash(replacement)
+    # Keep the high-entropy refresh token stable during normal renewal. Rotating it here
+    # makes simultaneous requests from several tabs invalidate each other.
+    session.expires_at = now + timedelta(days=settings.refresh_token_days)
     db.commit()
     set_auth_cookies(
-        response, settings, create_access_token(settings, user.id, session.id), replacement
+        response, settings, create_access_token(settings, user.id, session.id), raw
     )
     return user
 

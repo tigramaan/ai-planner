@@ -70,6 +70,23 @@ def test_family_registration_and_isolated_login(client):
     assert client.get("/api/v1/me").status_code == 200
 
 
+def test_expired_access_is_refreshed_without_ending_session(client):
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "tigramaan@gmail.com", "password": "correct-horse-battery-staple"},
+    )
+    assert login.status_code == 200
+    refresh_token = client.cookies.get("refresh_token")
+    client.cookies.delete("access_token")
+
+    refreshed = client.post("/api/v1/auth/refresh")
+
+    assert refreshed.status_code == 200
+    assert client.cookies.get("refresh_token") == refresh_token
+    assert client.cookies.get("access_token")
+    assert client.get("/api/v1/me").status_code == 200
+
+
 def test_registration_requires_family_code(client):
     response = client.post(
         "/api/v1/auth/register",

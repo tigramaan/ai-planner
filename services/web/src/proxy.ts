@@ -16,7 +16,7 @@ export function proxy(request: NextRequest) {
   ) {
     return NextResponse.next();
   }
-  if (!request.cookies.get("access_token")?.value) {
+  if (!request.cookies.get("access_token")?.value && !request.cookies.get("refresh_token")?.value) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
   return NextResponse.next();
