@@ -23,12 +23,10 @@ type Preferences = {
   fallback_teams_url: string;
   fallback_telemost_url: string;
 };
-type Profile = { is_admin: boolean };
 
 export default function Settings() {
   const { locale, t } = useI18n();
   const [items, setItems] = useState<Integration[]>([]);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [preferences, setPreferences] = useState<Preferences>({
@@ -52,12 +50,10 @@ export default function Settings() {
     Promise.all([
       api<Integration[]>("/integrations"),
       api<Preferences>("/preferences"),
-      api<Profile>("/me"),
     ])
-      .then(([connected, saved, current]) => {
+      .then(([connected, saved]) => {
         setItems(connected);
         setPreferences(saved);
-        setProfile(current);
       })
       .catch((value) => setError(value.message));
   }
@@ -438,7 +434,7 @@ export default function Settings() {
           </form>
         </section>
         <section className="panel stack">
-          <FamilyInvite isAdmin={Boolean(profile?.is_admin)} />
+          <FamilyInvite />
           <PushSetup />
           <form className="form" onSubmit={password}>
             <h2>{t("Смена пароля", "Change password")}</h2>

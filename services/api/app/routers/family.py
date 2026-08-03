@@ -1,7 +1,7 @@
 import secrets
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
 from ..audit import audit
@@ -22,8 +22,6 @@ def create_invite(
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ):
-    if not user.is_admin:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Only an administrator can invite members")
     raw = secrets.token_urlsafe(32)
     expires_at = datetime.now(UTC) + timedelta(days=7)
     invite = FamilyInvite(

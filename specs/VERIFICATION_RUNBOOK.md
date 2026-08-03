@@ -29,7 +29,7 @@ Adaptive logo acceptance (2026-08-03): navigation shows the supplied black UMEC 
 
 Gmail OAuth callback acceptance (2026-08-03): Google denial, omitted Gmail permissions and a failed Gmail profile capability check redirect back to Settings with localized recovery instructions. The integration is persisted as connected only after the token's granted scopes cover the request and the Gmail API accepts the access token; a rejected callback never leaves a false connected record.
 
-Family invitation and logout acceptance (2026-08-03): navigation provides an explicit logout action that revokes the current refresh session before returning to login. An administrator can create and copy a high-entropy invitation URL from Settings; the raw token is never stored, expires after seven days and can register exactly one isolated non-admin account. Non-admin invite creation and invite replay return forbidden.
+Family invitation and logout acceptance (2026-08-03): navigation provides an explicit logout action that revokes the current refresh session before returning to login. Every authenticated member can create and copy unlimited high-entropy invitation URLs from Settings; raw tokens are never stored, each expires after seven days and registers exactly one isolated non-admin account. Invite replay returns forbidden.
 
 Public project acceptance (2026-08-03): Gitleaks reports zero findings across all 30 existing commits and zero findings in the new README, Pages, skill, workflows and security policy. CI checks out full history and blocks future leaks. The responsive GitHub Pages landing was rendered at 1440 px and includes real desktop/mobile screenshots, installation steps, provider support and an open contributor call. The repository `deploy-aiplanner` skill passes the official skill validator and explicitly prevents secret disclosure while configuring OpenAI, Google, Microsoft, Zoom, Yandex 360 and web push.
 
@@ -47,7 +47,7 @@ The `backup` service creates a custom-format `pg_dump`, validates its catalog, w
 
 Use sandbox contacts only. For each family member:
 
-1. Create an administrator invite link, register through it, verify it cannot be reused, and verify another member's tasks/integrations are absent.
+1. Create multiple member invite links, register through one, verify it cannot be reused, and verify another member's tasks/integrations are absent.
 2. Create a task with a due date and priority; edit, complete, reopen and delete it, then verify a second user cannot mutate it.
 3. Save an OpenAI key, transcribe a voice sample, and verify no key appears in API/log/audit output.
 4. Authorize Google Calendar/Contacts, then Gmail read/compose/send incrementally.
