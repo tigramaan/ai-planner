@@ -10,6 +10,7 @@ from ..adapters import ProviderError, search_email
 from ..agent import extract_intent, openai_config, pending_payload, risk_for_intent, transcribe
 from ..audit import audit
 from ..calendar_actions import EventAmbiguous, EventNotFound, prepare_calendar_action
+from ..conference_intent import explicit_conference_provider
 from ..config import Settings, get_settings
 from ..database import get_db
 from ..dependencies import current_user
@@ -192,6 +193,10 @@ async def chat(
         )
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+    explicit_conference = explicit_conference_provider(body.text)
+    if intent.intent == "create_meeting" and explicit_conference:
+        intent.conference_requested = True
+        intent.conference_provider = explicit_conference
     if intent.intent in {"create_meeting", "update_event", "cancel_event", "add_event_participants"}:
         intent.provider = intent.provider or user.default_calendar
     if intent.intent in {"send_email", "search_email"}:
@@ -284,6 +289,8 @@ async def chat(
     elif risk_for_intent(intent) == "confirmation_required":
         try:
             payload = prepared_payload or pending_payload(intent)
+            if intent.intent == "create_meeting":
+                payload["reminder_minutes"] = user.default_reminder_minutes
         except (ValueError, TypeError) as exc:
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
         summary = action_summary(intent.intent, payload, locale)

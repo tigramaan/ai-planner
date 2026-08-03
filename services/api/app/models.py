@@ -25,6 +25,7 @@ class User(Base):
     default_calendar: Mapped[str] = mapped_column(String(32), default="google")
     default_mail: Mapped[str] = mapped_column(String(32), default="google")
     default_conference: Mapped[str] = mapped_column(String(32), default="none")
+    default_reminder_minutes: Mapped[int] = mapped_column(Integer, default=5)
     fallback_teams_url_encrypted: Mapped[str | None] = mapped_column(Text)
     fallback_telemost_url_encrypted: Mapped[str | None] = mapped_column(Text)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)

@@ -5,6 +5,7 @@ def test_user_can_select_default_providers(logged_in):
             "default_calendar": "yandex",
             "default_mail": "yandex",
             "default_conference": "zoom",
+            "default_reminder_minutes": 10,
             "fallback_teams_url": "https://teams.microsoft.com/l/meetup-join/example",
             "fallback_telemost_url": "https://telemost.yandex.ru/j/example",
         },
@@ -14,6 +15,7 @@ def test_user_can_select_default_providers(logged_in):
         "default_calendar": "yandex",
         "default_mail": "yandex",
         "default_conference": "zoom",
+        "default_reminder_minutes": 10,
         "fallback_teams_url": "https://teams.microsoft.com/l/meetup-join/example",
         "fallback_telemost_url": "https://telemost.yandex.ru/j/example",
     }

@@ -161,6 +161,12 @@ async def create_calendar_event(provider: str, token: str, payload: dict[str, An
             "end": {"dateTime": payload["end_iso"], "timeZone": payload["timezone"]},
             "attendees": [{"email": email} for email in attendees],
         }
+        reminder_minutes = int(payload.get("reminder_minutes", 5))
+        body["reminders"] = (
+            {"useDefault": False, "overrides": [{"method": "popup", "minutes": reminder_minutes}]}
+            if reminder_minutes > 0
+            else {"useDefault": False, "overrides": []}
+        )
         if payload.get("external_join_url"):
             body["location"] = payload["external_join_url"]
             body["description"] = f"Join online: {payload['external_join_url']}"
@@ -193,6 +199,8 @@ async def create_calendar_event(provider: str, token: str, payload: dict[str, An
         "isOnlineMeeting": payload.get("conference") == "microsoft_teams",
         "onlineMeetingProvider": "teamsForBusiness",
         "transactionId": payload["idempotency_key"],
+        "isReminderOn": int(payload.get("reminder_minutes", 5)) > 0,
+        "reminderMinutesBeforeStart": int(payload.get("reminder_minutes", 5)),
     }
     if payload.get("external_join_url"):
         body["location"] = {"displayName": payload["external_join_url"]}

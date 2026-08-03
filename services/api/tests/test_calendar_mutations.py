@@ -100,6 +100,35 @@ async def test_zoom_meeting_is_created_and_verified(monkeypatch):
     assert result["join_url"] == "https://zoom.example/j/42"
 
 
+@pytest.mark.anyio
+async def test_calendar_event_uses_configured_five_minute_reminder(monkeypatch):
+    calls = []
+
+    async def request(method, url, token, **kwargs):
+        calls.append((method, kwargs.get("json")))
+        return {"id": "event-1"}
+
+    monkeypatch.setattr(adapters, "provider_request", request)
+    await adapters.create_calendar_event(
+        "google",
+        "token",
+        {
+            "title": "Meeting",
+            "start_iso": "2026-08-03T12:30:00+00:00",
+            "end_iso": "2026-08-03T13:00:00+00:00",
+            "timezone": "Europe/Moscow",
+            "attendees": [],
+            "conference": "none",
+            "idempotency_key": "action-1",
+            "reminder_minutes": 5,
+        },
+    )
+    assert calls[0][1]["reminders"] == {
+        "useDefault": False,
+        "overrides": [{"method": "popup", "minutes": 5}],
+    }
+
+
 def test_confirm_creates_teams_link_inside_google_event(logged_in, monkeypatch):
     calls = []
 

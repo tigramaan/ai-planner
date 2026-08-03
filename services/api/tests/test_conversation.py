@@ -10,6 +10,7 @@ from app.models import PendingAction, User
 from app.policy import create_pending_action
 from app.routers import chat as chat_router
 from app.schemas import Intent
+from app.security import decrypt_json
 
 
 @pytest.mark.anyio
@@ -126,3 +127,32 @@ def test_explicit_correction_recovers_cancelled_unexecuted_draft(logged_in):
             )
             is None
         )
+
+
+def test_current_telemost_request_overrides_stale_teams_intent(logged_in, monkeypatch):
+    async def stale_teams_intent(*args, **kwargs):
+        return Intent(
+            intent="create_meeting",
+            title="Встреча",
+            start_iso="2026-08-03T15:30:00+03:00",
+            timezone="Europe/Moscow",
+            provider="google",
+            conference_provider="microsoft",
+            conference_requested=True,
+        )
+
+    monkeypatch.setattr(chat_router, "extract_intent", stale_teams_intent)
+    response = logged_in.post(
+        "/api/v1/chat/messages", json={"text": "Время 15:30 и встреча в Телемосте"}
+    )
+    assert response.status_code == 200
+    assert "Video service: Яндекс Телемост" in response.json()["message"]
+    with SessionLocal() as db:
+        action = db.scalar(select(PendingAction).order_by(PendingAction.expires_at.desc()))
+        payload = decrypt_json(
+            get_settings(),
+            action.payload_encrypted,
+            f"pending:{action.id}:{action.payload_hash}",
+        )
+        assert payload["conference"] == "yandex_telemost"
+        assert payload["reminder_minutes"] == 5

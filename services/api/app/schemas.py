@@ -82,6 +82,7 @@ class UserPreferences(BaseModel):
     default_calendar: Literal["google", "microsoft", "yandex", "local"]
     default_mail: Literal["google", "microsoft", "yandex"]
     default_conference: Literal["none", "google", "microsoft", "yandex", "zoom"]
+    default_reminder_minutes: int = Field(default=5, ge=0, le=10080)
     fallback_teams_url: str = Field(default="", max_length=2000)
     fallback_telemost_url: str = Field(default="", max_length=2000)
 

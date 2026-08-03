@@ -58,6 +58,7 @@ def action_summary(action_type: str, payload: dict, locale: str) -> str:
                 f"Участники: {people}.",
                 f"Календарь: {calendar_name}.",
                 f"Видеосвязь: {conference_name}.",
+                f"Напоминание: за {payload.get('reminder_minutes', 5)} мин.",
                 (
                     "После подтверждения создам событие и отправлю календарные приглашения."
                     if conference == "none"
@@ -72,6 +73,7 @@ def action_summary(action_type: str, payload: dict, locale: str) -> str:
                 f"Participants: {people}.",
                 f"Calendar: {calendar_name}.",
                 f"Video service: {conference_name}.",
+                f"Reminder: {payload.get('reminder_minutes', 5)} min before.",
                 (
                     "After confirmation I will create the event and send calendar invitations."
                     if conference == "none"

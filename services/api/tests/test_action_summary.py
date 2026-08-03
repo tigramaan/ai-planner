@@ -21,6 +21,7 @@ def test_meeting_summary_explains_every_external_effect():
     assert "anastasia@example.com" in summary
     assert "Календарь: Microsoft" in summary
     assert "Видеосвязь: Microsoft Teams" in summary
+    assert "Напоминание: за 5 мин." in summary
     assert "календарные приглашения" in summary
 
 

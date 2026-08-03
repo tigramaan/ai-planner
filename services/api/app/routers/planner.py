@@ -51,7 +51,7 @@ router = APIRouter(prefix="/api/v1", tags=["planner"])
 def preferences(user: User = Depends(current_user), settings: Settings = Depends(get_settings)):
     return UserPreferences(
         default_calendar=user.default_calendar, default_mail=user.default_mail,
-        default_conference=user.default_conference,
+        default_conference=user.default_conference, default_reminder_minutes=user.default_reminder_minutes,
         fallback_teams_url=read_fallback_url(settings, user, "microsoft_teams"),
         fallback_telemost_url=read_fallback_url(settings, user, "yandex_telemost"),
     )
@@ -66,7 +66,7 @@ def update_preferences(
     settings: Settings = Depends(get_settings),
 ):
     user.default_calendar, user.default_mail = body.default_calendar, body.default_mail
-    user.default_conference = body.default_conference
+    user.default_conference, user.default_reminder_minutes = body.default_conference, body.default_reminder_minutes
     user.fallback_teams_url_encrypted = store_fallback_url(settings, user, "microsoft_teams", body.fallback_teams_url)
     user.fallback_telemost_url_encrypted = store_fallback_url(settings, user, "yandex_telemost", body.fallback_telemost_url)
     audit(
@@ -77,7 +77,7 @@ def update_preferences(
         "user",
         user.id,
         {"default_calendar": body.default_calendar, "default_mail": body.default_mail,
-         "default_conference": body.default_conference,
+         "default_conference": body.default_conference, "default_reminder_minutes": body.default_reminder_minutes,
          "fallback_teams_configured": bool(body.fallback_teams_url),
          "fallback_telemost_configured": bool(body.fallback_telemost_url)},
     )

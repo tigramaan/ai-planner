@@ -18,6 +18,7 @@ type Preferences = {
   default_calendar: string;
   default_mail: string;
   default_conference: string;
+  default_reminder_minutes: number;
   fallback_teams_url: string;
   fallback_telemost_url: string;
 };
@@ -31,6 +32,7 @@ export default function Settings() {
     default_calendar: "google",
     default_mail: "google",
     default_conference: "none",
+    default_reminder_minutes: 5,
     fallback_teams_url: "",
     fallback_telemost_url: "",
   });
@@ -124,6 +126,7 @@ export default function Settings() {
           default_calendar: data.get("default_calendar"),
           default_mail: data.get("default_mail"),
           default_conference: data.get("default_conference"),
+          default_reminder_minutes: Number(data.get("default_reminder_minutes")),
           fallback_teams_url: data.get("fallback_teams_url"),
           fallback_telemost_url: data.get("fallback_telemost_url"),
         }),
@@ -312,6 +315,26 @@ export default function Settings() {
                 "Видеосвязь используется только если вы явно попросили онлайн-встречу.",
                 "Video is used only when you explicitly request an online meeting.",
               )}
+            </p>
+            <label className="label">
+              {t("Напоминание до события, минут", "Reminder before event, minutes")}
+              <input
+                className="field"
+                name="default_reminder_minutes"
+                type="number"
+                min="0"
+                max="10080"
+                value={preferences.default_reminder_minutes}
+                onChange={(e) =>
+                  setPreferences({
+                    ...preferences,
+                    default_reminder_minutes: Number(e.target.value),
+                  })
+                }
+              />
+            </label>
+            <p className="muted">
+              {t("0 отключает напоминание.", "Use 0 to disable reminders.")}
             </p>
             <label className="label">
               {t("Постоянная ссылка Teams", "Permanent Teams link")}

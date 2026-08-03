@@ -1,4 +1,5 @@
 from app.agent import pending_payload
+from app.conference_intent import explicit_conference_provider
 from app.schemas import Intent
 
 
@@ -81,3 +82,9 @@ def test_google_calendar_can_use_teams_conference():
     )
     assert payload["provider"] == "google"
     assert payload["conference"] == "microsoft_teams"
+
+
+def test_explicit_telemost_replaces_teams_from_old_context():
+    assert explicit_conference_provider("Время 15:30 и встреча в Телемосте") == "yandex"
+    assert explicit_conference_provider("Сделай встречу в Яндексе") == "yandex"
+    assert explicit_conference_provider("Добавь встречу в Яндекс Календарь") is None
