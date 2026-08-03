@@ -22,9 +22,14 @@ from ..database import get_db
 from ..dependencies import current_user
 from ..integrations import valid_access_token
 from ..local_chat_actions import LOCAL_INTENTS, handle_local_intent
-from ..mail_queries import provider_mail_query
+from ..mail_queries import (
+    MAIL_READ_SCOPE,
+    mail_access_granted,
+    mail_send_access_granted,
+    provider_mail_query,
+)
 from ..mail_summary import mail_search_answer, summarize_google_email, summary_requested
-from ..models import AgentMessage, Integration, PendingAction, Reminder, User
+from ..models import AgentMessage, PendingAction, Reminder, User
 from ..policy import action_status, create_pending_action
 from ..recipient_aliases import remembered_recipient_request, save_recipient_alias
 from ..recipients import resolve_recipients
@@ -32,7 +37,6 @@ from ..schemas import ChatRequest
 from ..security import decrypt_json
 
 router = APIRouter(prefix="/api/v1", tags=["agent"])
-
 AFFIRMATIVE = {
     "да",
     "давай",
@@ -46,10 +50,6 @@ AFFIRMATIVE = {
     "do it",
 }
 NEGATIVE = {"нет", "не надо", "отмена", "отмени", "cancel", "no"}
-MAIL_READ_SCOPE = {
-    "google": "https://www.googleapis.com/auth/gmail.readonly",
-    "microsoft": "Mail.Read",
-}
 
 
 def decision(text: str) -> str | None:
@@ -59,16 +59,6 @@ def decision(text: str) -> str | None:
     if normalized in NEGATIVE:
         return "cancel"
     return None
-
-
-def mail_access_granted(db: Session, user: User, provider: str) -> bool:
-    integration = db.scalar(
-        select(Integration).where(Integration.user_id == user.id, Integration.provider == provider)
-    )
-    required = MAIL_READ_SCOPE.get(provider)
-    return bool(
-        integration and integration.status == "connected" and required in integration.scopes
-    )
 
 
 def pending_drafts(db: Session, user: User) -> list[PendingAction]:
@@ -277,6 +267,18 @@ async def chat(
                 if ru
                 else f"No address found for: {names}. Provide an email or add the contact."
             )
+    if (
+        intent.intent == "send_email"
+        and not resolution_answer
+        and not mail_send_access_granted(db, user, intent.provider or user.default_mail)
+    ):
+        resolution_answer = (
+            "Для отправки письма нужно разрешение Gmail. Откройте «Настройки», "
+            "нажмите «Авторизовать Gmail» и разрешите создание и отправку писем."
+            if ru
+            else "Email sending is not authorized. Open Settings, authorize Gmail, "
+            "and allow composing and sending email."
+        )
     prepared_payload = None
     prepared_summary = None
     action_error = None

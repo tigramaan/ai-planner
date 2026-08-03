@@ -103,6 +103,57 @@ def test_mail_access_requires_incremental_scope(logged_in):
         assert chat_router.mail_access_granted(db, user, "google")
 
 
+def test_mail_send_requires_compose_or_send_scope(logged_in):
+    with SessionLocal() as db:
+        user = db.scalar(select(User))
+        integration = Integration(
+            user_id=user.id,
+            provider="google",
+            status="connected",
+            scopes=["https://www.googleapis.com/auth/gmail.readonly"],
+        )
+        db.add(integration)
+        db.commit()
+        assert not chat_router.mail_send_access_granted(db, user, "google")
+        integration.scopes = [*integration.scopes, "https://www.googleapis.com/auth/gmail.send"]
+        db.commit()
+        assert chat_router.mail_send_access_granted(db, user, "google")
+
+
+def test_email_draft_shows_exact_text_and_requires_confirmation(logged_in, monkeypatch):
+    async def intent(*args, **kwargs):
+        return Intent(
+            intent="send_email",
+            title="Итоги проекта",
+            body="Добрый день! Подтвердите, пожалуйста, итоговую стоимость проекта.",
+            participants=["recipient@example.com"],
+            provider="google",
+        )
+
+    monkeypatch.setattr(chat_router, "extract_intent", intent)
+    with SessionLocal() as db:
+        user = db.scalar(select(User))
+        db.add(
+            Integration(
+                user_id=user.id,
+                provider="google",
+                status="connected",
+                scopes=["https://www.googleapis.com/auth/gmail.send"],
+            )
+        )
+        db.commit()
+
+    response = logged_in.post(
+        "/api/v1/chat/messages",
+        json={"text": "Напиши вежливое письмо с просьбой подтвердить стоимость"},
+    )
+    assert response.status_code == 200
+    assert response.json()["pending_action_id"] is not None
+    assert "Итоги проекта" in response.json()["message"]
+    assert "recipient@example.com" in response.json()["message"]
+    assert "Подтвердите, пожалуйста" in response.json()["message"]
+
+
 def test_task_can_be_created_with_details_and_completed_through_chat(logged_in, monkeypatch):
     responses = iter(
         [

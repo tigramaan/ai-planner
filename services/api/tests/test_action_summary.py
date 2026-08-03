@@ -62,6 +62,37 @@ def test_all_external_writes_require_confirmation():
         assert risk_for_intent(Intent(intent=name)) == "confirmation_required"
 
 
+def test_email_confirmation_previews_exact_body():
+    summary = action_summary(
+        "send_email",
+        {
+            "subject": "Смета проекта",
+            "body": "Здравствуйте! Подтвердите, пожалуйста, итоговую стоимость.",
+            "recipients": ["recipient@example.com"],
+            "provider": "google",
+        },
+        "ru",
+    )
+    assert "Смета проекта" in summary
+    assert "recipient@example.com" in summary
+    assert "Текст письма:" in summary
+    assert "Подтвердите, пожалуйста" in summary
+
+
+def test_email_confirmation_does_not_truncate_normal_long_body():
+    body = "Подробность проекта. " * 120
+    summary = action_summary(
+        "send_email",
+        {
+            "subject": "Подробное предложение",
+            "body": body,
+            "recipients": ["recipient@example.com"],
+        },
+        "ru",
+    )
+    assert body in summary
+
+
 def test_completed_meeting_report_contains_details_and_both_links():
     result = action_result_summary(
         "create_meeting",

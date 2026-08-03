@@ -12,7 +12,7 @@ Create a Google Cloud project and OAuth consent screen. Enable Calendar API, Peo
 
 `https://planner.example.com/api/v1/integrations/google/oauth/callback`
 
-Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. In Testing mode add every account under Test users. Gmail scopes can require Google verification for a public production app. After login, authorize Calendar and Gmail separately from Settings.
+Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. In Testing mode add every account under Test users. Gmail scopes can require Google verification for a public production app. After login, authorize Calendar and Gmail separately from Settings. Read scope powers natural-language search and explicit summaries of messages and supported attachments; compose/send scopes let the agent draft exact subject/body text for review and send only after Confirm.
 
 ## Microsoft and Teams
 

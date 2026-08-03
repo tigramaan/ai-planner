@@ -8,6 +8,8 @@ Google incremental scopes: `openid email`, Calendar read/write, Contacts read, G
 
 All calls have explicit timeouts. OAuth state is one-time. External writes require a confirmed pending action and read-after-write verification.
 
+Gmail sending requires a connected user-owned integration with `gmail.compose` or `gmail.send`. The API builds an RFC email from the confirmed recipients, subject and body, calls Gmail only after confirmation, then verifies the returned message identifier. Missing write scope fails before a pending send action is created.
+
 Calendar and conference providers are independent for new meetings. A Google Calendar event may carry a standalone Microsoft Teams URL: the Teams meeting is created idempotently and verified first, then the Google event is created with invitations and the join URL; a failed calendar write triggers deletion of the standalone Teams meeting.
 
 Meeting and mail recipients may be supplied as names. The agent resolves names against connected provider contacts first and mail senders second, preferring the requested event provider and then other connected providers. A unique address is used in the pending confirmation; zero or multiple matches require user clarification.

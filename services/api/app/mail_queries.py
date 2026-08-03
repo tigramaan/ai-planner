@@ -1,7 +1,47 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from .models import Integration, User
 from .schemas import Intent
+
+MAIL_READ_SCOPE = {
+    "google": "https://www.googleapis.com/auth/gmail.readonly",
+    "microsoft": "Mail.Read",
+}
+MAIL_SEND_SCOPE = {
+    "google": {
+        "https://www.googleapis.com/auth/gmail.compose",
+        "https://www.googleapis.com/auth/gmail.send",
+    },
+    "microsoft": {"Mail.Send"},
+}
+
+
+def _integration(db: Session, user: User, provider: str) -> Integration | None:
+    return db.scalar(
+        select(Integration).where(Integration.user_id == user.id, Integration.provider == provider)
+    )
+
+
+def mail_access_granted(db: Session, user: User, provider: str) -> bool:
+    integration = _integration(db, user, provider)
+    required = MAIL_READ_SCOPE.get(provider)
+    return bool(
+        integration and integration.status == "connected" and required in integration.scopes
+    )
+
+
+def mail_send_access_granted(db: Session, user: User, provider: str) -> bool:
+    integration = _integration(db, user, provider)
+    required = MAIL_SEND_SCOPE.get(provider, set())
+    return bool(
+        integration
+        and integration.status == "connected"
+        and required.intersection(integration.scopes)
+    )
 
 
 def provider_mail_query(

@@ -69,6 +69,8 @@ h1 { font-size:clamp(30px,4vw,46px); line-height:1.05; letter-spacing:-.045em; m
 .integration:last-child { border-bottom:0; }
 .status { font-size:13px; color:var(--muted); }
 .error { color:var(--danger); margin:8px 0; }
+.actionToast { position:fixed; z-index:40; right:22px; bottom:22px; max-width:min(420px,calc(100vw - 32px)); display:flex; align-items:center; gap:9px; padding:12px 16px; border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); border-radius:12px; background:var(--surface); color:var(--text); box-shadow:0 16px 45px rgba(0,0,0,.24); font-weight:650; }
+.actionToast svg { flex:none; color:var(--accent); }
 .loginWrap { min-height:100dvh; display:grid; place-items:center; padding:20px; }
 .login { width:min(420px,100%); }
 .login h1 { margin-bottom:10px; }
@@ -170,5 +172,6 @@ h1 { font-size:clamp(30px,4vw,46px); line-height:1.05; letter-spacing:-.045em; m
   .taskActions { flex-direction:column; }
   .taskEditRow { grid-template-columns:1fr; }
   .taskEditActions .button { flex:1; justify-content:center; }
+  .actionToast { right:16px; bottom:82px; }
 }
 @media (prefers-reduced-motion:no-preference) { .button,.navlink { transition:background-color .18s ease,transform .12s ease,color .18s ease; } }

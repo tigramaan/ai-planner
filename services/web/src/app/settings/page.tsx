@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { FamilyInvite } from "@/components/FamilyInvite";
+import { ActionToast } from "@/components/ActionToast";
 import { PushSetup } from "@/components/PushSetup";
 import { Shell } from "@/components/Shell";
 import { api } from "@/lib/api";
@@ -63,22 +64,31 @@ export default function Settings() {
     const connected = params.get("connected");
     const oauthError = params.get("oauth_error");
     if (connected) {
-      setNotice(t(
-        connected === "google" ? "Google успешно подключён." : "Интеграция успешно подключена.",
-        connected === "google" ? "Google connected successfully." : "Integration connected successfully.",
-      ));
+      setNotice(
+        t(
+          connected === "google"
+            ? "Google успешно подключён."
+            : "Интеграция успешно подключена.",
+          connected === "google"
+            ? "Google connected successfully."
+            : "Integration connected successfully.",
+        ),
+      );
     }
     if (oauthError) {
-      setError(t(
-        oauthError === "gmail_access_denied"
-          ? "Google не предоставил доступ к Gmail. Убедитесь, что Gmail API включён в Google Cloud, приложение опубликовано или ваш адрес добавлен в тестовые пользователи, затем нажмите «Авторизовать Gmail» ещё раз и разрешите все запрошенные права."
-          : "Провайдер отклонил авторизацию. Повторите подключение и разрешите запрошенные права.",
-        oauthError === "gmail_access_denied"
-          ? "Google did not grant Gmail access. Ensure the Gmail API is enabled, the app is published or your address is a test user, then authorize Gmail again and allow every requested permission."
-          : "The provider declined authorization. Reconnect and allow the requested permissions.",
-      ));
+      setError(
+        t(
+          oauthError === "gmail_access_denied"
+            ? "Google не предоставил доступ к Gmail. Убедитесь, что Gmail API включён в Google Cloud, приложение опубликовано или ваш адрес добавлен в тестовые пользователи, затем нажмите «Авторизовать Gmail» ещё раз и разрешите все запрошенные права."
+            : "Провайдер отклонил авторизацию. Повторите подключение и разрешите запрошенные права.",
+          oauthError === "gmail_access_denied"
+            ? "Google did not grant Gmail access. Ensure the Gmail API is enabled, the app is published or your address is a test user, then authorize Gmail again and allow every requested permission."
+            : "The provider declined authorization. Reconnect and allow the requested permissions.",
+        ),
+      );
     }
-    if (connected || oauthError) history.replaceState({}, "", location.pathname);
+    if (connected || oauthError)
+      history.replaceState({}, "", location.pathname);
   }, [locale]);
 
   async function connect(provider: string, scopes: string[]) {
@@ -149,7 +159,9 @@ export default function Settings() {
           default_calendar: data.get("default_calendar"),
           default_mail: data.get("default_mail"),
           default_conference: data.get("default_conference"),
-          default_reminder_minutes: Number(data.get("default_reminder_minutes")),
+          default_reminder_minutes: Number(
+            data.get("default_reminder_minutes"),
+          ),
           fallback_teams_url: data.get("fallback_teams_url"),
           fallback_telemost_url: data.get("fallback_telemost_url"),
         }),
@@ -177,7 +189,7 @@ export default function Settings() {
           </p>
         </div>
       </header>
-      {notice && <p>{notice}</p>}
+      <ActionToast message={notice} onDismiss={() => setNotice("")} />
       {error && (
         <p className="error" role="alert">
           {error}
@@ -246,7 +258,9 @@ export default function Settings() {
           <div className="integration stack">
             <div>
               <strong>Zoom</strong>
-              <div className="status">{providerState("zoom") || disconnected}</div>
+              <div className="status">
+                {providerState("zoom") || disconnected}
+              </div>
             </div>
             <button
               className="button secondary"
@@ -340,7 +354,10 @@ export default function Settings() {
               )}
             </p>
             <label className="label">
-              {t("Напоминание до события, минут", "Reminder before event, minutes")}
+              {t(
+                "Напоминание до события, минут",
+                "Reminder before event, minutes",
+              )}
               <input
                 className="field"
                 name="default_reminder_minutes"

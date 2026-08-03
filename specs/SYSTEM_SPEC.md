@@ -70,6 +70,8 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-060: An OAuth callback marks Gmail connected only after checking the actually granted scopes and a live Gmail capability request. Declines, missing permissions and disabled Gmail API return the user to Settings with localized recovery guidance and never store a false connected state.
 - REQ-061: Every signed-in user can explicitly sign out and revoke the current session. Every authenticated member can create unlimited family/friend invitation links; each link contains a high-entropy token stored only as a hash, expires after seven days, is single-use, and creates an otherwise fully isolated non-admin account.
 - REQ-062: The public repository provides a Russian-first README, responsive GitHub Pages product/install site with real screenshots, private vulnerability reporting guidance, full-history secret scanning in CI, and a validated agent skill for secure self-hosted deployment and provider onboarding.
+- REQ-063: Public documentation contains no personal mailbox/chat data, uses a purpose-built capability infographic, and is distributed under the MIT license. Successful interactive Web actions expose a localized, accessible, transient outcome notification.
+- REQ-064: The agent can draft a ready-to-send Gmail message from a natural-language communication goal, resolve its recipients, preview the exact subject and body in a mandatory pending confirmation, and send only after explicit confirmation with Gmail compose/send scope and read-after-write verification.
 
 ## Constraints
 

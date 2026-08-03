@@ -16,7 +16,7 @@ def action_summary(action_type: str, payload: dict, locale: str) -> str:
     timezone = payload.get("timezone") or "Europe/Moscow"
     start = _local(payload.get("start_iso"), timezone)
     end = _local(payload.get("end_iso") or payload.get("original_end_iso"), timezone)
-    title = payload.get("title") or payload.get("event_title") or (
+    title = payload.get("title") or payload.get("event_title") or payload.get("subject") or (
         "Без названия" if ru else "Untitled"
     )
     provider = payload.get("provider", "google")
@@ -109,14 +109,16 @@ def action_summary(action_type: str, payload: dict, locale: str) -> str:
         )
     elif action_type == "send_email":
         subject = payload.get("subject") or title
+        body = payload.get("body") or ""
         lines = (
-            [f"Отправить письмо «{subject}» адресатам: {people}."]
+            [f"Отправить письмо «{subject}» адресатам: {people}.", f"Текст письма:\n{body}"]
             if ru
-            else [f'Send email "{subject}" to: {people}.']
+            else [f'Send email "{subject}" to: {people}.', f"Email body:\n{body}"]
         )
     else:
         lines = [title]
-    return "\n".join(lines)[:500]
+    summary = "\n".join(lines)
+    return summary if action_type == "send_email" else summary[:500]
 
 
 def _provider_name(provider: str, ru: bool) -> str:
@@ -134,7 +136,7 @@ def action_result_summary(
     timezone = payload.get("timezone") or "Europe/Moscow"
     start = _local(payload.get("start_iso") or payload.get("original_start_iso"), timezone)
     end = _local(payload.get("end_iso"), timezone)
-    title = payload.get("title") or payload.get("event_title") or (
+    title = payload.get("title") or payload.get("event_title") or payload.get("subject") or (
         "Без названия" if ru else "Untitled"
     )
     attendees = payload.get("added_attendees") or payload.get("attendees") or []

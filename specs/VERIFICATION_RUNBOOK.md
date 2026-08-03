@@ -58,6 +58,10 @@ OpenAI latency acceptance (2026-08-03): the default planner model is `gpt-5.6-lu
 Gmail natural-search acceptance (2026-08-03): authorize Gmail read access, then verify «непрочитанные письма за сегодня» maps to `is:unread` plus local-day bounds and «письма от <имя> с документами» maps to sender plus attachment filters. Confirm the real mailbox returns the same records as Gmail UI without exposing tokens or message bodies in logs.
 
 Gmail summary acceptance (2026-08-03): explicitly request a summary for a matching message with TXT/HTML/CSV/PDF/DOCX/XLSX attachments. Verify the response identifies the message, lists processed attachment names, reports facts/prices/deadlines, caps attachments at five and total input at 20 MiB, and sends extracted content to OpenAI only for that explicit request with `store=false`. OAuth tokens, raw content and attachment bytes must not appear in application logs or audit records.
+
+Public/privacy and feedback acceptance (2026-08-03): README and Pages use `docs/assets/ai-planner-infographic.png`; the former chat screenshot containing personal data is absent from the tree and all public references. `LICENSE` contains MIT terms. Creating/copying an invite and successful task, agenda, settings and push actions surface a localized `role=status` notification that disappears automatically and remains above mobile navigation.
+
+Gmail compose/send acceptance (2026-08-03): ask the agent to write a polite email from a communication goal. Verify it produces a complete subject and body without invented facts, resolves a unique recipient, refuses to prepare a send action without Gmail compose/send scope, and shows the exact recipient, subject and body before Confirm/Cancel. Confirmation performs Gmail send and a metadata read-back; cancellation and automated tests never contact a real recipient.
 4. Authorize Google Calendar/Contacts, then Gmail read/compose/send incrementally.
 5. Authorize Microsoft Calendar/Contacts/Teams, verify granted scopes.
 6. Create a pending meeting action; cancel once and confirm a new one once.

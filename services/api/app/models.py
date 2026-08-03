@@ -161,7 +161,7 @@ class PendingAction(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     action_type: Mapped[str] = mapped_column(String(80))
-    display_summary: Mapped[str] = mapped_column(String(500))
+    display_summary: Mapped[str] = mapped_column(Text)
     payload_encrypted: Mapped[str] = mapped_column(Text)
     payload_hash: Mapped[str] = mapped_column(String(64))
     idempotency_key: Mapped[str] = mapped_column(String(64), unique=True)

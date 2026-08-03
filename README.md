@@ -4,7 +4,7 @@ Self-hosted семейный AI-планировщик: календарь, по
 
 [Сайт и инструкция](https://tigramaan.github.io/ai-planner/) · [Быстрый запуск](#быстрый-запуск) · [Skill для агента](skills/deploy-aiplanner/SKILL.md) · [Security](docs/THREAT_MODEL.md)
 
-![UMEC AI Planner — чат](docs/assets/screenshots/chat.jpg)
+![Как устроен UMEC AI Planner: голос и чат связывают почту, календарь, задачи, таймеры и безопасное подтверждение действий](docs/assets/ai-planner-infographic.png)
 
 ## Что умеет
 
@@ -12,7 +12,7 @@ Self-hosted семейный AI-планировщик: календарь, по
 - задачи со сроками, приоритетами, поиском, фильтрами и завершением;
 - Today и Week с локальными задачами и внешними календарями;
 - создание, изменение и удаление встреч только после подтверждения;
-- Google Calendar, Contacts и Gmail;
+- Google Calendar, Contacts и Gmail: поиск писем, резюме текста и вложений, подготовка и подтверждённая отправка писем;
 - Microsoft Outlook, Contacts и Teams;
 - Zoom и постоянные ссылки Яндекс Телемоста;
 - push-напоминания и PWA для iPhone/Android;
@@ -103,4 +103,4 @@ docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest git /repo --redact
 
 ## Лицензия
 
-Перед публичным распространением выберите и добавьте файл `LICENSE`. До этого применяются стандартные авторские права владельца репозитория.
+[MIT](LICENSE) — используйте, изменяйте и распространяйте проект с сохранением уведомления об авторских правах.
