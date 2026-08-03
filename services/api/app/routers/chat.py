@@ -176,22 +176,12 @@ async def chat(
                 stale.cancelled_at = datetime.now(UTC)
             result = await confirm_pending(active_pending.id, request, user, db, settings)
             execution = result.get("result") or {}
-            link = execution.get("link")
-            warnings = execution.get("warnings") or []
-            answer = "Действие выполнено." if ru else "Action completed."
-            if link:
-                answer += (" Ссылка: " if ru else " Link: ") + link
-            if warnings:
-                answer += (
-                    " Видеовстречу создать не удалось; событие календаря сохранено."
-                    if ru
-                    else " The video meeting failed, but the calendar event was saved."
-                )
+            answer = execution.get("report") or (
+                "Действие выполнено." if ru else "Action completed."
+            )
         else:
             cancel_pending(active_pending.id, request, user, db)
             answer = "Черновик отменён." if ru else "Draft cancelled."
-        db.add(AgentMessage(user_id=user.id, role="assistant", text=answer))
-        db.commit()
         return {"intent": None, "message": answer, "pending_action_id": None}
     config = openai_config(db, settings, user)
     recent = db.scalars(

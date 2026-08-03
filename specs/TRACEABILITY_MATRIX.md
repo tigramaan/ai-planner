@@ -24,6 +24,7 @@
 | REQ-005..006, REQ-054 | per-user ownership filters, session-subject binding and foreign-object not-found guards | cross-user BOLA isolation, auth and OAuth state tests |
 | REQ-055 | full-width auto-growing chat composer with a separate mobile action row | Web production build and mobile UI acceptance |
 | REQ-056 | ranked fuzzy calendar lookup across titles and attendees with numbered disambiguation | calendar action and conversation tests |
+| REQ-057 | mandatory external-write confirmation and structured post-execution reports with separate links | action policy, summary, calendar mutation and Web build tests |
 | REQ-030..035 | password, cipher, OAuth state, redaction | security tests |
 | REQ-036 | recipient resolver and Google/Microsoft contact adapters | recipient and adapter unit tests |
 | REQ-037 | bounded per-user conversation history passed to intent extraction | conversation continuation tests |

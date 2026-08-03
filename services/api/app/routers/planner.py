@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..action_summary import action_result_summary
 from ..adapters import (
     ProviderError,
     cancel_calendar_event,
@@ -363,9 +364,12 @@ async def confirm(
             "with Teams and OnlineMeetings.ReadWrite permission."
         )
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, message) from exc
+    locale = "ru" if request.headers.get("accept-language", "").lower().startswith("ru") else "en"
+    result_summary = action_result_summary(action.action_type, payload, result, warnings, locale)
     action.result_json = {
         "id": result.get("id"),
-        "link": (result.get("onlineMeeting") or {}).get("joinUrl") or result.get("htmlLink"),
+        "link": result_summary["join_link"] or result_summary["calendar_link"],
+        **result_summary,
         "status": result.get("status"),
         "warnings": warnings,
     }
@@ -379,6 +383,7 @@ async def confirm(
         action.id,
         {"action_type": action.action_type},
     )
+    db.add(AgentMessage(user_id=user.id, role="assistant", text=str(result_summary["report"])))
     db.commit()
     return {"status": "executed", "result": action.result_json}
 

@@ -168,7 +168,11 @@ def test_confirm_creates_teams_link_inside_google_event(logged_in, monkeypatch):
         action_id = action.id
     response = logged_in.post(f"/api/v1/pending-actions/{action_id}/confirm")
     assert response.status_code == 200
-    assert response.json()["result"]["link"] == "https://teams.example/join"
+    response_result = response.json()["result"]
+    assert response_result["link"] == "https://teams.example/join"
+    assert response_result["join_link"] == "https://teams.example/join"
+    assert response_result["calendar_link"] == "https://calendar.example/event"
+    assert "Meeting created" in response_result["report"]
     assert calls == [
         ("teams", "microsoft-token"),
         ("calendar", "google", "google-token", "https://teams.example/join"),

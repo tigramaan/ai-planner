@@ -6,8 +6,13 @@ import { api, uploadAudio } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
 type Message = { id?: string; role: "user" | "assistant"; text: string };
-type Pending = { id: string; display_summary: string; status: string; result: { link?: string } };
+type Pending = { id: string; display_summary: string; status: string; result: { report?: string } };
 const appendMessage = (items: Message[], message: Message) => [...items, message].slice(-50);
+
+function MessageText({text}:{text:string}) {
+  const parts=text.split(/(https:\/\/[^\s]+)/g);
+  return <>{parts.map((part,index)=>part.startsWith("https://")?<a className="messageLink" href={part.replace(/[.,;]+$/,"")} target="_blank" rel="noreferrer" key={index}>{part.replace(/[.,;]+$/,"")}</a>:part)}</>;
+}
 
 export function Chat() {
   const { locale, t } = useI18n();
@@ -137,10 +142,9 @@ export function Chat() {
     setBusy(true);
     setError("");
     try {
-      const result = await api<{ result?: { link?: string } }>(`/pending-actions/${id}/${decision}`, { method: "POST" });
-      const link = result?.result?.link;
+      const result = await api<{ result?: { report?: string } }>(`/pending-actions/${id}/${decision}`, { method: "POST" });
       stickToBottom.current = true;
-      setMessages((items) => appendMessage(items, { role: "assistant", text: link ? `${t("Готово. Ссылка на встречу:", "Done. Meeting link:")} ${link}` : decision === "confirm" ? t("Действие выполнено.", "Action completed.") : t("Действие отменено.", "Action cancelled.") }));
+      setMessages((items) => appendMessage(items, { role: "assistant", text: decision === "confirm" ? result?.result?.report || t("Действие выполнено.", "Action completed.") : t("Действие отменено.", "Action cancelled.") }));
       loadPending();
     } catch (value) {
       setError(value instanceof Error ? value.message : t("Не удалось обработать подтверждение", "Could not process confirmation"));
@@ -186,7 +190,7 @@ export function Chat() {
 
   return <section className="panel chat" aria-label={t("Чат с планировщиком", "Planner chat")}>
     <div className="messages" ref={messageList} onScroll={trackScroll} aria-live="polite">
-      {messages.length === 0 ? <p className="muted">{t("Напишите команду или запишите голосовое сообщение.", "Type a command or record a voice message.")}</p> : messages.map((message, index) => <div className={`message ${message.role}`} key={message.id ?? index}>{message.text}</div>)}
+      {messages.length === 0 ? <p className="muted">{t("Напишите команду или запишите голосовое сообщение.", "Type a command or record a voice message.")}</p> : messages.map((message, index) => <div className={`message ${message.role}`} key={message.id ?? index}><MessageText text={message.text}/></div>)}
       {pending.filter((action) => action.status === "pending").map((action) => <div className="confirmation" key={action.id}><strong>{t("Требуется подтверждение", "Confirmation required")}</strong><p>{action.display_summary}</p><div className="row"><button className="button" disabled={busy} onClick={() => decide(action.id, "confirm")}>{t("Подтвердить", "Confirm")}</button><button className="button secondary" disabled={busy} onClick={() => decide(action.id, "cancel")}>{t("Отменить", "Cancel")}</button></div></div>)}
     </div>
     {error && <p className="error" role="alert">{error}</p>}

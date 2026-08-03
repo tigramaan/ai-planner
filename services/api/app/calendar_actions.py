@@ -168,6 +168,8 @@ async def prepare_calendar_action(
         "event_id": event.id,
         "event_title": event.title,
         "original_start_iso": event.start.astimezone(UTC).isoformat(),
+        "original_end_iso": event.end.astimezone(UTC).isoformat(),
+        "attendees": event.attendees,
         "timezone": intent.timezone or user.timezone,
     }
     if intent.intent == "update_event":
