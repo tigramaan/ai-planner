@@ -7,7 +7,27 @@ import { useI18n } from "@/lib/i18n";
 
 type Message = { id?: string; role: "user" | "assistant"; text: string; created_at?: string };
 type Pending = { id: string; display_summary: string; status: string; result: { report?: string } };
+type Timer = { id: string; title: string; ends_at: string; status: string };
 const appendMessage = (items: Message[], message: Message) => [...items, message].slice(-50);
+
+export function shouldAutoSendTranscript(value: string) {
+  const text = value.trim();
+  const words = text.split(/\s+/u);
+  const punctuation = text.match(/[.!?;,]/gu)?.length ?? 0;
+  return Boolean(text) && text.length <= 110 && words.length <= 16 && punctuation <= 1 && !text.includes("\n");
+}
+
+export function shouldStopForSilence(hasSpeech: boolean, silenceMs: number, recordingMs: number) {
+  return hasSpeech && silenceMs >= 1400 && recordingMs >= 1800;
+}
+
+function countdown(endsAt: string, now: number) {
+  const seconds = Math.max(0, Math.ceil((new Date(endsAt).getTime() - now) / 1000));
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const rest = seconds % 60;
+  return hours ? `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}` : `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
+}
 
 function MessageText({text}:{text:string}) {
   const parts=text.split(/(https:\/\/[^\s]+)/g);
@@ -18,6 +38,8 @@ export function Chat() {
   const { locale, t } = useI18n();
   const [messages, setMessages] = useState<Message[]>([]);
   const [pending, setPending] = useState<Pending[]>([]);
+  const [timers, setTimers] = useState<Timer[]>([]);
+  const [now, setNow] = useState(() => Date.now());
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [replyPending, setReplyPending] = useState(false);
@@ -33,11 +55,18 @@ export function Chat() {
   const composerInput = useRef<HTMLTextAreaElement | null>(null);
   const stickToBottom = useRef(true);
   const busyRef = useRef(false);
+  const speechDetected = useRef(false);
+  const silenceStarted = useRef<number | null>(null);
+  const recordingStarted = useRef(0);
 
   async function syncMessages() {
     if (busyRef.current) return;
     const rows = await api<Message[]>("/chat/messages");
     setMessages(rows);
+  }
+
+  async function syncTimers() {
+    setTimers(await api<Timer[]>("/timers"));
   }
 
   function loadPending() {
@@ -48,12 +77,16 @@ export function Chat() {
     const draft = new URLSearchParams(window.location.search).get("draft");
     if (draft) setText(draft);
     void syncMessages().catch((value) => setError(value.message));
+    void syncTimers().catch((value) => setError(value.message));
     const poll = window.setInterval(() => {
       void syncMessages().catch(() => undefined);
+      void syncTimers().catch(() => undefined);
     }, 5000);
+    const ticker = window.setInterval(() => setNow(Date.now()), 1000);
     loadPending();
     return () => {
       window.clearInterval(poll);
+      window.clearInterval(ticker);
       stopVisualization();
     };
   }, []);
@@ -91,15 +124,32 @@ export function Chat() {
   }
 
   function startVisualization(stream: MediaStream) {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const context = new AudioContext();
     const analyser = context.createAnalyser();
     analyser.fftSize = 128;
     context.createMediaStreamSource(stream).connect(analyser);
     audioContext.current = context;
     const levels = new Uint8Array(analyser.frequencyBinCount);
+    const samples = new Uint8Array(analyser.fftSize);
+    speechDetected.current = false;
+    silenceStarted.current = null;
+    recordingStarted.current = performance.now();
     const draw = () => {
-      const canvas = waveform.current;
+      analyser.getByteTimeDomainData(samples);
+      const rms = Math.sqrt(samples.reduce((sum, value) => sum + ((value - 128) / 128) ** 2, 0) / samples.length);
+      const current = performance.now();
+      if (rms >= 0.035) {
+        speechDetected.current = true;
+        silenceStarted.current = null;
+      } else if (speechDetected.current) {
+        silenceStarted.current ??= current;
+        if (shouldStopForSilence(true, current - silenceStarted.current, current - recordingStarted.current)) {
+          if (recorder.current?.state !== "inactive") recorder.current?.stop();
+          return;
+        }
+      }
+      const canvas = reduceMotion ? null : waveform.current;
       if (canvas) {
         const ratio = window.devicePixelRatio || 1;
         const width = canvas.clientWidth;
@@ -129,10 +179,8 @@ export function Chat() {
     draw();
   }
 
-  async function send(event?: FormEvent) {
-    event?.preventDefault();
-    const value = text.trim();
-    if (!value || busy) return;
+  async function submit(value: string) {
+    if (!value) return;
     const sentAt = new Date().toISOString();
     stickToBottom.current = true;
     setMessages((items) => appendMessage(items, { role: "user", text: value, created_at: sentAt }));
@@ -148,6 +196,7 @@ export function Chat() {
       });
       setMessages((items) => appendMessage(items, { role: "assistant", text: result.message, created_at: new Date().toISOString() }));
       if (result.pending_action_id) loadPending();
+      void syncTimers().catch(() => undefined);
     } catch (value) {
       setError(value instanceof Error ? value.message : t("Команда не выполнена", "Command failed"));
     } finally {
@@ -155,6 +204,13 @@ export function Chat() {
       setBusy(false);
       busyRef.current = false;
     }
+  }
+
+  async function send(event?: FormEvent) {
+    event?.preventDefault();
+    const value = text.trim();
+    if (!value || busy) return;
+    await submit(value);
   }
 
   async function decide(id: string, decision: "confirm" | "cancel") {
@@ -197,7 +253,14 @@ export function Chat() {
         try {
           const type = media.mimeType || chunks.current[0]?.type || "application/octet-stream";
           const result = await uploadAudio(new Blob(chunks.current, { type }));
-          setText(result.text);
+          const transcript = result.text.trim();
+          if (shouldAutoSendTranscript(transcript)) {
+            setBusy(false);
+            setTranscribing(false);
+            await submit(transcript);
+          } else {
+            setText(transcript);
+          }
         } catch (value) {
           setError(value instanceof Error ? value.message : t("Ошибка записи", "Recording failed"));
         } finally { setBusy(false); setTranscribing(false); }
@@ -215,6 +278,13 @@ export function Chat() {
       {replyPending && <div className="message assistant typingIndicator" role="status" aria-label={t("Планировщик печатает", "Planner is typing")}><span>{t("Печатает", "Typing")}</span><i/><i/><i/></div>}
       {pending.filter((action) => action.status === "pending").map((action) => <div className="confirmation" key={action.id}><strong>{t("Требуется подтверждение", "Confirmation required")}</strong><p>{action.display_summary}</p><div className="row"><button className="button" disabled={busy} onClick={() => decide(action.id, "confirm")}>{t("Подтвердить", "Confirm")}</button><button className="button secondary" disabled={busy} onClick={() => decide(action.id, "cancel")}>{t("Отменить", "Cancel")}</button></div></div>)}
     </div>
+    {timers.some((timer) => new Date(timer.ends_at).getTime() > now) && <div className="activeTimers" aria-label={t("Активные таймеры", "Active timers")}>
+      {timers.filter((timer) => new Date(timer.ends_at).getTime() > now).map((timer) => <article className="activeTimer" role="timer" key={timer.id}>
+        <strong>{timer.title}</strong>
+        <span>{countdown(timer.ends_at, now)}</span>
+        <small>{t("до", "until")} {new Date(timer.ends_at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}</small>
+      </article>)}
+    </div>}
     {error && <p className="error" role="alert">{error}</p>}
     {(recording || transcribing) && <div className="voiceStatus" role="status">
       <span>{recording ? t("Идёт запись", "Recording") : t("Распознаю запись", "Transcribing")}</span>

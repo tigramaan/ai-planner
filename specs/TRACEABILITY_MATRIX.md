@@ -48,3 +48,4 @@
 | REQ-030..035 | password, cipher, OAuth state, redaction | security tests |
 | REQ-036 | recipient resolver and Google/Microsoft contact adapters | recipient and adapter unit tests |
 | REQ-037 | bounded per-user conversation history passed to intent extraction | conversation continuation tests |
+| REQ-076 | Активные таймеры с обратным отсчётом и адаптивная голосовая отправка | `services/api/app/routers/local_items.py`, `services/web/src/components/Chat.tsx`, `services/web/src/app/globals.css` | `services/api/tests/test_planner.py`, `services/web/src/components/Chat.test.tsx` |

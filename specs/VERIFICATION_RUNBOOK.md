@@ -107,3 +107,10 @@ Run the automated gates above, then verify the deployed boundary:
 7. OAuth state is hashed, expires after ten minutes, is provider-bound and single-use; provider tokens and pending actions are AES-GCM encrypted with context binding.
 8. Calendar/mail writes require an immutable pending-action confirmation and provider read-after-write verification.
 9. Rotate any provider credential disclosed outside the production secret store, then revoke the superseded value.
+## REQ-076 — Живые таймеры и голосовая автоотправка
+
+1. Запустить параллельно таймеры «Макароны» и «Яйца» и убедиться, что обе карточки показывают свои названия и независимый обратный отсчёт.
+2. Дождаться завершения: активная карточка должна исчезнуть, в истории должно появиться обычное сообщение «Таймер … завершён» со временем.
+3. Произнести короткую команду и замолчать минимум на 1,4 секунды: запись должна остановиться, команда — отправиться автоматически.
+4. Произнести длинный составной запрос: после паузы расшифровка должна остаться в поле ввода для редактирования.
+5. Запустить `npm run web:test`, `.venv/bin/pytest services/api/tests/test_planner.py -q`, `npm run web:build` и `npm run guards`.

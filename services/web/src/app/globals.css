@@ -37,6 +37,11 @@ h1 { font-size:clamp(30px,4vw,46px); line-height:1.05; letter-spacing:-.045em; m
 .message.user { align-self:flex-end; background:var(--accent); color:#f7f9fc; }
 .message.assistant { background:var(--surface-2); }
 .messageTime { display:block; margin-top:5px; font-size:11px; line-height:1; text-align:right; opacity:.65; }
+.activeTimers { flex:none; display:flex; gap:10px; margin-top:10px; overflow-x:auto; scrollbar-width:thin; }
+.activeTimer { min-width:190px; flex:1 0 190px; display:grid; gap:3px; padding:12px 15px; border:1px solid color-mix(in srgb,var(--accent) 55%,var(--line)); border-radius:16px; background:color-mix(in srgb,var(--accent) 9%,var(--surface)); }
+.activeTimer strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.activeTimer span { font-size:34px; line-height:1.05; font-variant-numeric:tabular-nums; font-weight:750; letter-spacing:.03em; }
+.activeTimer small { color:var(--muted); }
 .typingIndicator { display:flex; align-items:center; gap:5px; color:var(--muted); font-size:13px; }
 .typingIndicator span { margin-right:3px; }
 .typingIndicator i { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.35; }

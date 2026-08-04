@@ -129,6 +129,16 @@ def create_timer(
     return timer
 
 
+@router.get("/timers")
+def timers(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    return db.scalars(
+        select(Timer)
+        .where(Timer.user_id == user.id, Timer.status == "active")
+        .order_by(Timer.ends_at)
+        .limit(20)
+    ).all()
+
+
 @router.put("/timers/{timer_id}")
 def update_timer(
     timer_id: str,

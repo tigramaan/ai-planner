@@ -125,6 +125,20 @@ def test_timer_can_be_restarted_renamed_and_deleted(logged_in):
     assert logged_in.delete(f"/api/v1/timers/{timer_id}").status_code == 404
 
 
+def test_active_timers_are_listed_with_names_and_end_times(logged_in):
+    first = logged_in.post(
+        "/api/v1/timers", json={"title": "Макароны", "duration_seconds": 600}
+    ).json()
+    second = logged_in.post(
+        "/api/v1/timers", json={"title": "Яйца", "duration_seconds": 420}
+    ).json()
+    rows = logged_in.get("/api/v1/timers")
+    assert rows.status_code == 200
+    assert {row["title"] for row in rows.json()} >= {"Макароны", "Яйца"}
+    assert all(row["ends_at"] for row in rows.json())
+    assert {first["id"], second["id"]} <= {row["id"] for row in rows.json()}
+
+
 def test_google_agenda_event_keeps_time_links_attendees_and_reminder():
     item = provider_event("google", {
         "id": "event-1", "summary": "Встреча", "status": "confirmed",

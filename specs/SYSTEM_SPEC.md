@@ -89,3 +89,9 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - Store timestamps in UTC and retain the source IANA timezone. The default user timezone is `Europe/Moscow`.
 - Do not commit secrets or production credentials.
 - Automated tests must not contact real recipients or create real events.
+### REQ-076 — Живые таймеры и адаптивная отправка голоса
+
+- Активные таймеры отображаются в чате крупными карточками с названием и секундным обратным отсчётом.
+- После завершения карточка исчезает, а в истории остаётся обычное сообщение о завершении со временем.
+- Запись голоса автоматически завершается после устойчивой паузы, но только если речь уже была обнаружена.
+- Короткая простая расшифровка отправляется сразу; длинная или составная остаётся в поле ввода для проверки.

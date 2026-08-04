@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, expect, test, vi } from "vitest";
 
 import { api } from "@/lib/api";
-import { Chat } from "./Chat";
+import { Chat, shouldAutoSendTranscript, shouldStopForSilence } from "./Chat";
 
 vi.mock("@/lib/api", () => ({ api: vi.fn(), uploadAudio: vi.fn() }));
 
@@ -53,4 +53,25 @@ test("shows the time of each persisted message", async () => {
 
   expect(await screen.findByText("Timer finished")).toBeVisible();
   expect(document.querySelector("time[datetime='2026-08-04T05:14:00Z']")).not.toBeNull();
+});
+
+test("shows named active timers as a large countdown", async () => {
+  apiMock.mockImplementation((path) => Promise.resolve(path === "/timers" ? [{
+    id: "timer-1", title: "Макароны", status: "active",
+    ends_at: new Date(Date.now() + 65000).toISOString(),
+  }] : []));
+  render(<Chat />);
+  expect(await screen.findByRole("timer")).toHaveTextContent("Макароны");
+  expect(screen.getByRole("timer")).toHaveTextContent(/01:0[4-6]/);
+});
+
+test("auto-sends only short simple voice transcripts", () => {
+  expect(shouldAutoSendTranscript("Поставь таймер яйца на 7 минут")).toBe(true);
+  expect(shouldAutoSendTranscript("Сначала найди все важные письма, потом изучи вложения, подготовь ответы и создай задачи по каждому из них на завтра утром")).toBe(false);
+});
+
+test("stops voice recording only after speech and a sustained pause", () => {
+  expect(shouldStopForSilence(false, 3000, 4000)).toBe(false);
+  expect(shouldStopForSilence(true, 1000, 4000)).toBe(false);
+  expect(shouldStopForSilence(true, 1400, 2000)).toBe(true);
 });
