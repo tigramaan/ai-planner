@@ -205,7 +205,7 @@ export default function Tasks() {
     ["open", t("Открытые", "Open")],
     ["today", t("Сегодня", "Today")],
     ["overdue", t("Просроченные", "Overdue")],
-    ["completed", t("Выполненные", "Completed")],
+    ["completed", t("Архив", "Archive")],
     ["all", t("Все", "All")],
   ];
   return (
@@ -395,7 +395,7 @@ export default function Tasks() {
         >
           <CheckCircle size={20} />
           <span>
-            {t("Выполненные задачи свернуты", "Completed tasks are collapsed")}
+            {t("Архив выполненных задач", "Completed task archive")}
           </span>
           <strong>{counts.completed}</strong>
         </button>

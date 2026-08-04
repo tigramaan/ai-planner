@@ -2,7 +2,6 @@
 import { useState } from "react";
 import {
   Alarm,
-  ArrowClockwise,
   ArrowSquareOut,
   ChatCircleDots,
   Check,
@@ -82,7 +81,6 @@ export function Agenda({
     ({
       event: t("Событие", "Event"),
       task: t("Задача", "Task"),
-      timer: t("Таймер", "Timer"),
       reminder: t("Напоминание", "Reminder"),
     })[value] ?? value;
   const ordered = [...rows].sort(
@@ -96,10 +94,7 @@ export function Agenda({
     setBusy(item.id);
     setError("");
     try {
-      await api<void>(
-        `/${item.kind === "timer" ? "timers" : "tasks"}/${item.id}`,
-        { method: "DELETE" },
-      );
+      await api<void>(`/tasks/${item.id}`, { method: "DELETE" });
       setRows((value) => value.filter((row) => row.id !== item.id));
       setNotice(t(`«${item.title}» удалено`, `“${item.title}” deleted`));
     } catch (value) {
@@ -152,9 +147,6 @@ export function Agenda({
           const cancel = encodeURIComponent(
             `${t("Отмени событие", "Cancel event")} «${item.title}» ${format(item.start, true)}.`,
           );
-          const restart = encodeURIComponent(
-            `${t("Перезапусти таймер", "Restart timer")} «${item.title}». `,
-          );
           return (
             <article className="agendaItem" key={`${item.source}-${item.id}`}>
               <div className="agendaTime">
@@ -175,13 +167,6 @@ export function Agenda({
                 </div>
                 {item.description && <p>{item.description}</p>}
                 <div className="agendaMeta">
-                  {item.kind === "timer" && (
-                    <span>
-                      <Clock size={16} />
-                      {t("Запущен", "Started")}: {format(item.start, true)}.{" "}
-                      {t("Сработает", "Ends")}: {format(item.end, true)}
-                    </span>
-                  )}
                   {typeof item.reminder_minutes === "number" && (
                     <span>
                       <Alarm size={16} />
@@ -259,25 +244,6 @@ export function Agenda({
                       >
                         <ChatCircleDots size={18} />
                         {t("Изменить", "Change")}
-                      </a>
-                      <button
-                        className="button secondary danger"
-                        disabled={busy === item.id}
-                        onClick={() => removeLocal(item)}
-                      >
-                        <Trash size={18} />
-                        {t("Удалить", "Delete")}
-                      </button>
-                    </>
-                  )}
-                  {item.kind === "timer" && (
-                    <>
-                      <a
-                        className="button secondary"
-                        href={`/?draft=${restart}`}
-                      >
-                        <ArrowClockwise size={18} />
-                        {t("Перезапустить", "Restart")}
                       </a>
                       <button
                         className="button secondary danger"

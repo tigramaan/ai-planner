@@ -34,12 +34,12 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-026: All external writes are idempotent and verified by reading the created, updated or deleted resource state.
 - REQ-027: The Web/PWA and assistant responses support Russian and English. Locale is derived only from browser language preferences; unsupported preferences fall back to English and no manual override is stored.
 - REQ-028: Existing Google/Microsoft events can be rescheduled, cancelled or extended with participants only after unique matching and explicit confirmation.
-- REQ-047: The seven-day agenda combines the current user's local tasks, reminders, active timers and available Google/Microsoft calendar events; unavailable providers degrade without blocking local data.
+- REQ-047: The seven-day agenda combines the current user's open local tasks, standalone reminders and available Google/Microsoft calendar events; unavailable providers degrade without blocking local data. Timers are chat-only and never appear in Today or Week.
 - REQ-048: Mail-provider authorization failures are converted into localized reconnect guidance and never expose raw upstream errors to the user.
-- REQ-049: Today and Week expose start/end, timer trigger, participants, reminder offset, safe meeting link and provider edit link. Calendar events can open a prefilled chat correction.
+- REQ-049: Today and Week expose event start/end, participants, reminder offset, safe meeting link and provider edit link. Calendar events can open a prefilled chat correction.
 - REQ-050: The PWA exposes installation from the main screen and navigation, provides iOS/Android instructions, and ships branded manifest and Apple icons.
 - REQ-051: The task workspace supports creation with description, Moscow due date and priority; search and status/date filters; completion and reopening; inline editing; confirmed deletion; and strict per-user ownership on every mutation.
-- REQ-052: Chat and voice intents support detailed task creation, task update/completion/reopening/deletion and timer restart/deletion. Today/Week expose guarded task/timer actions and calendar change/cancel drafts. Explicit Telemost selection also replaces the video service while updating an existing event, using the encrypted permanent room when configured.
+- REQ-052: Chat and voice intents support detailed task creation, task update/completion/reopening/deletion and timer restart/deletion. Today/Week expose guarded task actions and calendar change/cancel drafts. Explicit Telemost selection also replaces the video service while updating an existing event, using the encrypted permanent room when configured.
 - REQ-053: Command examples are diverse, categorized and clickable into the chat draft. Navigation and install icons use the supplied UMEC brand logo.
 
 ## Security
@@ -103,3 +103,8 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - В чате отображается только предупреждение о выключенных уведомлениях; включение и проверка находятся в настройках.
 - Дата и время сообщения скрыты в обычном состоянии и плавно раскрываются при наведении.
 - Сообщения старше 100 дней удаляются при загрузке истории пользователя.
+### REQ-078 — Архив задач и chat-only таймеры
+
+- Выполненные задачи сохраняются и доступны в отдельном архиве задач; их можно вернуть в работу или удалить явно.
+- Архив содержит только задачи со статусом `completed` и не смешивается с открытыми задачами.
+- Таймеры не образуют пользовательский архив и не отображаются в «Сегодня» или «Неделе»; активный отсчёт и сообщение о завершении существуют только в чате.

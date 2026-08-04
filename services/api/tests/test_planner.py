@@ -5,7 +5,7 @@ from app.database import SessionLocal
 from app.models import Reminder
 
 
-def test_local_task_and_timer(logged_in):
+def test_tasks_are_in_agenda_but_timers_are_chat_only(logged_in):
     task = logged_in.post("/api/v1/tasks", json={"title": "Подготовить план"})
     assert task.status_code == 200
     assert task.json()["title"] == "Подготовить план"
@@ -18,10 +18,10 @@ def test_local_task_and_timer(logged_in):
         assert "Фокус" in reminder.title
     today = logged_in.get("/api/v1/today")
     assert today.status_code == 200
-    assert {item["kind"] for item in today.json()["items"]} == {"task", "timer"}
+    assert {item["kind"] for item in today.json()["items"]} == {"task"}
     week = logged_in.get("/api/v1/week")
     assert week.status_code == 200
-    assert {item["kind"] for item in week.json()["items"]} == {"task", "timer"}
+    assert {item["kind"] for item in week.json()["items"]} == {"task"}
 
 
 def test_task_can_be_edited_completed_reopened_and_deleted(logged_in):
@@ -44,6 +44,12 @@ def test_task_can_be_edited_completed_reopened_and_deleted(logged_in):
     assert updated.json()["title"] == "Подготовить договор"
     assert updated.json()["priority"] == "high"
     assert updated.json()["status"] == "completed"
+    archived = logged_in.get("/api/v1/tasks")
+    assert archived.status_code == 200
+    assert any(
+        row["id"] == task_id and row["status"] == "completed"
+        for row in archived.json()
+    )
     assert logged_in.put(f"/api/v1/tasks/{task_id}", json={"title": None}).status_code == 422
 
     reopened = logged_in.put(

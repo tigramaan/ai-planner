@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from .adapters import ProviderError, list_calendar_events
 from .config import Settings
 from .integrations import valid_access_token
-from .models import LocalTask, Reminder, Timer, User
+from .models import LocalTask, Reminder, User
 
 
 def agenda_window(user: User, days: int) -> tuple[datetime, datetime]:
@@ -29,14 +29,6 @@ async def collect_agenda(
          "description": row.description, "priority": row.priority}
         for row in tasks if row.due_at is None or start <= row.due_at.astimezone(UTC) < end
     ]
-    timers = db.scalars(
-        select(Timer).where(Timer.user_id == user.id, Timer.status == "active")
-    ).all()
-    items.extend(
-        {"kind": "timer", "source": "local", "id": row.id, "title": row.title,
-         "start": row.starts_at, "end": row.ends_at, "status": row.status}
-        for row in timers if start <= row.ends_at.astimezone(UTC) < end
-    )
     reminders = db.scalars(
         select(Reminder).where(
             Reminder.user_id == user.id,
