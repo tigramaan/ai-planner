@@ -126,7 +126,8 @@ async def oauth_callback(
         tokens = await exchange_code(settings, provider, code, record.scopes)
         if provider == "google":
             granted = set(tokens.get("scope", "").split())
-            if not granted or not set(record.scopes).issubset(granted):
+            required_capabilities = set(record.scopes) - {"openid", "email"}
+            if not granted or not required_capabilities.issubset(granted):
                 raise RuntimeError("Google did not grant all requested permissions")
         profile = await account_profile(provider, tokens["access_token"])
         if provider == "google" and any("/auth/gmail." in scope for scope in record.scopes):

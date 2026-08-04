@@ -139,3 +139,6 @@ Run the automated gates above, then verify the deployed boundary:
 завершить настройку Gmail. Сервер журналирует только HTTP-статус и безопасный код причины
 провайдера; OAuth-токены, адреса и тело ответа в журнал не попадают.
 Отказы до проверки Gmail журналируются только как фиксированное название этапа callback.
+Google может не повторить `openid`/`email` в поле `scope` token response после incremental
+consent. Прикладные scopes остаются обязательными, а identity проверяется живым запросом
+профиля до сохранения интеграции.

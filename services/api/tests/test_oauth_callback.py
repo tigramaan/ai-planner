@@ -71,3 +71,31 @@ def test_google_missing_requested_scope_is_rejected(logged_in, monkeypatch):
     )
     assert response.status_code == 303
     assert response.headers["location"].endswith("/settings?oauth_error=gmail_access_denied")
+
+
+def test_google_identity_scope_is_verified_by_live_profile(logged_in, monkeypatch):
+    async def tokens(*_args):
+        return {
+            "access_token": "access",
+            "refresh_token": "refresh",
+            "scope": "https://www.googleapis.com/auth/gmail.readonly",
+        }
+
+    async def profile(*_args):
+        return {"email": "family@example.com"}
+
+    async def gmail_access(*_args):
+        return None
+
+    monkeypatch.setattr(integrations_router, "exchange_code", tokens)
+    monkeypatch.setattr(integrations_router, "account_profile", profile)
+    monkeypatch.setattr(integrations_router, "verify_google_gmail_access", gmail_access)
+
+    response = logged_in.get(
+        "/api/v1/integrations/google/oauth/callback",
+        params={"state": google_state(), "code": "code"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"].endswith("/settings?connected=google")
