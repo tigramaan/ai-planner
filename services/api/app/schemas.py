@@ -96,9 +96,21 @@ class PushSubscriptionWrite(BaseModel):
     auth: str = Field(min_length=8, max_length=500)
 
 
+class PushTestRequest(BaseModel):
+    endpoint: str = Field(min_length=20, max_length=2000)
+
+
+class PushDeliveryResult(BaseModel):
+    subscription_id: str = Field(min_length=36, max_length=36)
+    status: Literal["delivered", "retry", "stale"]
+    status_code: int | None = Field(default=None, ge=100, le=599)
+    error: str | None = Field(default=None, max_length=300)
+
+
 class ReminderDelivery(BaseModel):
     status: Literal["delivered", "retry", "failed"]
     error: str | None = Field(default=None, max_length=300)
+    deliveries: list[PushDeliveryResult] = Field(default_factory=list, max_length=100)
 
 
 class ChatRequest(BaseModel):

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { CalendarBlank, CalendarDots, CaretLeft, CaretRight, ChatCircleDots, Gear, ListChecks, SignOut } from "@phosphor-icons/react";
+import { CalendarBlank, CalendarDots, CaretLeft, CaretRight, ChatCircleDots, Gear, ListChecks, Scan, SignOut } from "@phosphor-icons/react";
 import { useI18n } from "@/lib/i18n";
 import { InstallApp } from "@/components/InstallApp";
 import { PushSetup } from "@/components/PushSetup";
@@ -9,7 +9,8 @@ import { api } from "@/lib/api";
 const links = [
   ["/", "Чат", "Chat", ChatCircleDots], ["/today", "Сегодня", "Today", CalendarBlank],
   ["/week", "Неделя", "Week", CalendarDots],
-  ["/tasks", "Задачи", "Tasks", ListChecks], ["/settings", "Настройки", "Settings", Gear],
+  ["/tasks", "Задачи", "Tasks", ListChecks], ["/commitments", "Контур", "Radar", Scan],
+  ["/settings", "Настройки", "Settings", Gear],
 ] as const;
 
 export function Shell({children}:{children:React.ReactNode}) {

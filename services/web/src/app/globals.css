@@ -169,6 +169,29 @@ h1 { font-size:clamp(30px,4vw,46px); line-height:1.05; letter-spacing:-.045em; m
 .commandExample span { color:var(--accent); font-size:12px; font-weight:700; }
 .commandExample strong { font-size:14px; line-height:1.4; }
 .commandExample:hover strong,.commandExample:focus-visible strong { color:var(--accent); }
+.commitmentPage { width:min(1040px,100%); margin:0 auto; }
+.commitmentPage .pageHead .button { display:inline-flex; align-items:center; gap:8px; }
+.commitmentNotice { display:flex; align-items:flex-start; gap:10px; margin-bottom:20px; padding:13px 15px; border:1px solid var(--line); border-radius:var(--radius); background:var(--surface-2); color:var(--muted); }
+.commitmentNotice svg { flex:none; color:var(--accent); }
+.commitmentGroups { display:grid; gap:22px; }
+.commitmentGroup { min-width:0; }
+.commitmentGroup>header { display:flex; align-items:end; justify-content:space-between; gap:16px; margin-bottom:9px; }
+.commitmentGroup h2,.commitmentGroup p { margin:0; }
+.commitmentGroup>header>span { min-width:28px; padding:3px 8px; border-radius:999px; background:var(--surface-2); text-align:center; }
+.commitmentList { overflow:hidden; border:1px solid var(--line); border-radius:var(--radius); background:var(--surface); }
+.commitmentItem { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:18px; padding:17px 18px; border-bottom:1px solid var(--line); }
+.commitmentItem:last-child { border-bottom:0; }
+.commitmentMain { min-width:0; display:grid; gap:7px; }
+.commitmentMain h3,.commitmentMain p { margin:0; overflow-wrap:anywhere; }
+.commitmentMain p { color:var(--muted); }
+.commitmentFlags { display:flex; flex-wrap:wrap; gap:6px; }
+.commitmentFlags span { padding:2px 7px; border-radius:999px; background:var(--surface-2); color:var(--muted); font-size:12px; }
+.commitmentFlags .risk { color:var(--danger); }
+.commitmentItem .button { display:inline-flex; align-items:center; gap:6px; }
+.commitmentEmpty { min-height:260px; display:grid; place-items:center; align-content:center; gap:9px; text-align:center; }
+.commitmentEmpty svg { color:var(--accent); }
+.commitmentLoading { display:grid; gap:9px; padding:20px 0; }
+.commitmentLoading i { height:72px; border-radius:var(--radius); background:linear-gradient(90deg,var(--surface),var(--surface-2),var(--surface)); background-size:200% 100%; animation:commitmentShimmer 1.2s infinite; }
 .commandExample:focus-visible { outline:2px solid var(--accent); outline-offset:4px; border-radius:6px; }
 .shell:has(.chatPage) { height:100dvh; min-height:0; overflow:hidden; }
 .content:has(.chatPage) { width:100%; height:100dvh; display:flex; flex-direction:column; overflow:hidden; padding:16px clamp(14px,2vw,28px); }
@@ -186,7 +209,7 @@ h1 { font-size:clamp(30px,4vw,46px); line-height:1.05; letter-spacing:-.045em; m
   .shell,.shell.navCollapsed { grid-template-columns:1fr; padding-bottom:74px; }
   .nav { z-index:2; position:fixed; inset:auto 0 0; width:100%; height:64px; border-right:0; border-top:1px solid var(--line); padding:7px 12px; }
   .navTop { display:none; }
-  .navlinks { grid-template-columns:repeat(6,1fr); }
+  .navlinks { grid-template-columns:repeat(7,1fr); }
   .navCollapsed .navlink,.navlink { flex-direction:column; justify-content:center; gap:2px; font-size:11px; padding:5px; }
   .navCollapsed .navlink span { display:inline; }
   .content { width:100%; padding:22px 16px; }
@@ -218,6 +241,8 @@ h1 { font-size:clamp(30px,4vw,46px); line-height:1.05; letter-spacing:-.045em; m
   .taskActions { flex-direction:column; }
   .taskEditRow { grid-template-columns:1fr; }
   .taskEditActions .button { flex:1; justify-content:center; }
+  .commitmentItem { grid-template-columns:1fr; gap:13px; padding:15px; }
+  .commitmentItem .button { width:100%; justify-content:center; }
   .actionToast { right:16px; bottom:82px; }
   .shell:has(.chatPage) { padding-bottom:64px; }
   .content:has(.chatPage) { height:calc(100dvh - 64px); display:flex; flex-direction:column; overflow:hidden; padding:8px; }
@@ -248,3 +273,4 @@ h1 { font-size:clamp(30px,4vw,46px); line-height:1.05; letter-spacing:-.045em; m
   .typingIndicator i:nth-of-type(3) { animation-delay:.28s; }
 }
 @keyframes typingPulse { 0%,60%,100% { opacity:.3; transform:translateY(0); } 30% { opacity:1; transform:translateY(-2px); } }
+@keyframes commitmentShimmer { to { background-position:-200% 0; } }

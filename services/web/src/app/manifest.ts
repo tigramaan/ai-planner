@@ -6,6 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "AI Planner",
     description: "Personal command center",
     start_url: "/",
+    id: "/",
     display: "standalone",
     background_color: "#f6f8fb",
     theme_color: "#0f6cbd",

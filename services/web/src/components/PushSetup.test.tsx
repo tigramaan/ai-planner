@@ -55,11 +55,11 @@ test("explains recovery when browser permission is blocked", async () => {
 });
 
 test("checks real server delivery when notifications look enabled", async () => {
-  browserPush("granted", {});
+  browserPush("granted", { endpoint: "https://push.example/current-device" });
   apiMock.mockImplementation(async (path) => {
     if (path === "/push/status") return { configured: true };
     if (path === "/push/test") return { id: "test-reminder" };
-    return { status: "delivered" };
+    return { status: "delivered", device_status: "delivered" };
   });
 
   render(<PushSetup />);
@@ -67,7 +67,7 @@ test("checks real server delivery when notifications look enabled", async () => 
   await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Notifications are on"));
   fireEvent.click(screen.getByRole("button", { name: "Test notification" }));
   await waitFor(
-    () => expect(screen.getByText("Test notification sent to this device.")).toBeVisible(),
+    () => expect(screen.getByText("This device's push service accepted the notification.")).toBeVisible(),
     { timeout: 2500 },
   );
 });

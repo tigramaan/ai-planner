@@ -5,8 +5,9 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
 });
 self.addEventListener("push", (event) => {
-  const data = event.data ? event.data.json() : {title:"AI Planner", body:"Новое напоминание", url:"/today"};
-  event.waitUntil(self.registration.showNotification(data.title, {body:data.body, tag:data.tag, icon:"/icon.svg", data:{url:data.url || "/today"}}));
+  const payload = event.data ? event.data.json() : {};
+  const data = payload.notification || payload;
+  event.waitUntil(self.registration.showNotification(data.title || "AI Planner", {body:data.body || "Новое напоминание", tag:data.tag, icon:"/icon.svg", data:{url:data.navigate || data.url || "/today"}}));
 });
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();

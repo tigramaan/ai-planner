@@ -125,6 +125,9 @@ class Reminder(Base):
     task_id: Mapped[str | None] = mapped_column(
         ForeignKey("local_tasks.id", ondelete="CASCADE"), unique=True, index=True
     )
+    target_subscription_id: Mapped[str | None] = mapped_column(
+        ForeignKey("push_subscriptions.id", ondelete="SET NULL"), index=True
+    )
     title: Mapped[str] = mapped_column(String(300))
     due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     timezone: Mapped[str] = mapped_column(String(64), default="Europe/Moscow")
@@ -147,6 +150,27 @@ class PushSubscription(Base):
     user_agent: Mapped[str] = mapped_column(String(300), default="unknown")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class PushDelivery(Base):
+    __tablename__ = "push_deliveries"
+    __table_args__ = (UniqueConstraint("reminder_id", "endpoint_hash"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4)
+    reminder_id: Mapped[str] = mapped_column(
+        ForeignKey("reminders.id", ondelete="CASCADE"), index=True
+    )
+    subscription_id: Mapped[str | None] = mapped_column(
+        ForeignKey("push_subscriptions.id", ondelete="SET NULL"), index=True
+    )
+    endpoint_hash: Mapped[str] = mapped_column(String(64))
+    provider: Mapped[str] = mapped_column(String(80), default="web-push")
+    user_agent: Mapped[str] = mapped_column(String(300), default="unknown")
+    status: Mapped[str] = mapped_column(String(16), default="scheduled", index=True)
+    status_code: Mapped[int | None] = mapped_column(Integer)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    last_error: Mapped[str | None] = mapped_column(String(300))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
 class RecipientAlias(Base):

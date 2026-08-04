@@ -36,28 +36,37 @@ class Worker:
         response.raise_for_status()
         return response.json()
 
-    def complete(self, reminder_id: str, status: str, error: str | None = None) -> None:
+    def complete(
+        self, reminder_id: str, status: str, error: str | None = None,
+        deliveries: list[dict] | None = None,
+    ) -> None:
         response = self.http.post(
             f"{self.api_url}/internal/v1/reminders/{reminder_id}/complete",
-            json={"status": status, "error": error[:300] if error else None},
+            json={
+                "status": status,
+                "error": error[:300] if error else None,
+                "deliveries": deliveries or [],
+            },
         )
         response.raise_for_status()
 
-    def send_push(self, reminder: dict) -> tuple[int, list[str]]:
-        delivered = 0
-        errors = []
+    def send_push(self, reminder: dict) -> list[dict]:
+        results = []
         payload = json.dumps(
             {
-                "title": "AI Planner",
-                "body": reminder["title"],
-                "url": "/today",
-                "tag": f"reminder-{reminder['id']}",
+                "web_push": 8030,
+                "notification": {
+                    "title": "AI Planner",
+                    "body": reminder["title"],
+                    "navigate": "/today",
+                    "tag": f"reminder-{reminder['id']}",
+                },
             },
             ensure_ascii=False,
         )
         for subscription in reminder["subscriptions"]:
             try:
-                webpush(
+                response = webpush(
                     subscription_info={
                         "endpoint": subscription["endpoint"],
                         "keys": subscription["keys"],
@@ -67,14 +76,28 @@ class Worker:
                     vapid_claims={"sub": self.vapid_subject},
                     timeout=15,
                 )
-                delivered += 1
+                results.append({
+                    "subscription_id": subscription["id"],
+                    "status": "delivered",
+                    "status_code": response.status_code,
+                })
             except WebPushException as exc:
-                errors.append(f"push:{getattr(exc.response, 'status_code', 'error')}")
+                code = getattr(exc.response, "status_code", None)
+                results.append({
+                    "subscription_id": subscription["id"],
+                    "status": "stale" if code in {404, 410} else "retry",
+                    "status_code": code,
+                    "error": f"push:{code or 'error'}",
+                })
             except Exception as exc:  # noqa: BLE001 - isolate untrusted push clients
                 # A malformed or provider-specific subscription must not stop the
                 # delivery loop or prevent healthy subscriptions from being tried.
-                errors.append(f"push:{type(exc).__name__}")
-        return delivered, errors
+                results.append({
+                    "subscription_id": subscription["id"],
+                    "status": "retry",
+                    "error": f"push:{type(exc).__name__}",
+                })
+        return results
 
     def process(self, reminder: dict) -> None:
         if reminder["channel"] == "in_app":
@@ -83,11 +106,12 @@ class Worker:
         if not reminder["subscriptions"]:
             self.complete(reminder["id"], "retry", "no push subscription")
             return
-        delivered, errors = self.send_push(reminder)
-        if delivered:
-            self.complete(reminder["id"], "delivered")
-        else:
-            self.complete(reminder["id"], "retry", ",".join(errors) or "push failed")
+        results = self.send_push(reminder)
+        delivered = any(row["status"] == "delivered" for row in results)
+        retry = any(row["status"] == "retry" for row in results)
+        status = "retry" if retry else "delivered" if delivered else "failed"
+        errors = ",".join(row.get("error", "") for row in results if row.get("error"))
+        self.complete(reminder["id"], status, errors or None, results)
 
     def run(self) -> None:
         while True:

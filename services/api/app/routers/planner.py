@@ -28,6 +28,7 @@ from ..models import (
     AgentMessage,
     AuditLog,
     PendingAction,
+    PushDelivery,
     PushSubscription,
     Reminder,
     User,
@@ -36,6 +37,7 @@ from ..policy import action_status
 from ..schemas import (
     PendingActionView,
     PushSubscriptionWrite,
+    PushTestRequest,
     ReminderCreate,
     UserPreferences,
 )
@@ -151,12 +153,17 @@ def push_status(user: User = Depends(current_user), db: Session = Depends(get_db
 
 @router.post("/push/test", status_code=status.HTTP_202_ACCEPTED)
 def test_push(
+    body: PushTestRequest,
     request: Request,
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ):
+    endpoint_hash = hashlib.sha256(body.endpoint.encode()).hexdigest()
     configured = db.scalar(
-        select(PushSubscription.id).where(PushSubscription.user_id == user.id).limit(1)
+        select(PushSubscription).where(
+            PushSubscription.user_id == user.id,
+            PushSubscription.endpoint_hash == endpoint_hash,
+        )
     )
     if configured is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Push subscription is not configured")
@@ -172,6 +179,7 @@ def test_push(
         next_attempt_at=now,
         timezone=user.timezone,
         channel="push",
+        target_subscription_id=configured.id,
     )
     db.add(reminder)
     db.flush()
@@ -191,7 +199,15 @@ def push_test_status(
     )
     if reminder is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Push test not found")
-    return {"status": reminder.status}
+    delivery = db.scalar(
+        select(PushDelivery).where(PushDelivery.reminder_id == reminder.id)
+    )
+    return {
+        "status": reminder.status,
+        "device_status": delivery.status if delivery else "scheduled",
+        "provider": delivery.provider if delivery else None,
+        "status_code": delivery.status_code if delivery else None,
+    }
 
 
 @router.post("/push/subscriptions", status_code=201)

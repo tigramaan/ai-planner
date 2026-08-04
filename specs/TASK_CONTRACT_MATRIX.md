@@ -7,3 +7,4 @@
 | AP-004 | `contracts/agent-service.md` |
 | AP-007 | `contracts/planner-service.md` |
 | AP-008 | `contracts/web-service.md` |
+| AP-011 | `contracts/agent-service.md`, `contracts/planner-service.md`, `contracts/web-service.md` |

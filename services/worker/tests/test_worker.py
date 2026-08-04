@@ -24,6 +24,7 @@ def reminder(subscriptions=None, channel="push") -> dict:
 
 def subscription(endpoint="https://push.example/device") -> dict:
     return {
+        "id": endpoint.rsplit("/", 1)[-1],
         "endpoint": endpoint,
         "keys": {"p256dh": "public-key", "auth": "auth-secret"},
     }
@@ -52,23 +53,41 @@ def test_missing_push_subscription_schedules_retry():
 def test_malformed_subscription_isolated_from_healthy_subscription():
     worker = make_worker()
 
-    with patch("worker.webpush", side_effect=[ValueError("invalid key"), None]):
-        delivered, errors = worker.send_push(
+    accepted = Mock(status_code=201)
+    with patch("worker.webpush", side_effect=[ValueError("invalid key"), accepted]):
+        results = worker.send_push(
             reminder([subscription("https://push.example/bad"), subscription()])
         )
 
-    assert delivered == 1
-    assert errors == ["push:ValueError"]
+    assert [row["status"] for row in results] == ["retry", "delivered"]
+    assert results[0]["error"] == "push:ValueError"
 
 
 def test_all_subscription_failures_schedule_retry_without_secret_leak():
     worker = make_worker()
-    worker.send_push = Mock(return_value=(0, ["push:ValueError"]))
+    worker.send_push = Mock(
+        return_value=[
+            {
+                "subscription_id": "device",
+                "status": "retry",
+                "error": "push:ValueError",
+            }
+        ]
+    )
 
     worker.process(reminder([subscription()]))
 
     worker.complete.assert_called_once_with(
-        "reminder-1", "retry", "push:ValueError"
+        "reminder-1",
+        "retry",
+        "push:ValueError",
+        [
+            {
+                "subscription_id": "device",
+                "status": "retry",
+                "error": "push:ValueError",
+            }
+        ],
     )
 
 

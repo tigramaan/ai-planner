@@ -120,20 +120,30 @@ export function PushSetup({ compact = false }: { compact?: boolean }) {
   async function testDelivery() {
     setBusy(true);
     try {
-      const created = await api<{ id: string }>("/push/test", { method: "POST" });
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (!subscription?.endpoint) {
+        setState("idle");
+        setNotice(t("Подписка этого устройства отсутствует.", "This device is not subscribed."));
+        return;
+      }
+      const created = await api<{ id: string }>("/push/test", {
+        method: "POST",
+        body: JSON.stringify({ endpoint: subscription.endpoint }),
+      });
       for (let attempt = 0; attempt < 20; attempt += 1) {
         await new Promise((resolve) => window.setTimeout(resolve, 1000));
-        const result = await api<{ status: string }>(`/push/test/${created.id}`);
-        if (result.status === "delivered") {
+        const result = await api<{ status: string; device_status: string; provider?: string }>(`/push/test/${created.id}`);
+        if (result.device_status === "delivered") {
           setNotice(
             t(
-              "Тестовое уведомление отправлено на это устройство.",
-              "Test notification sent to this device.",
+              "Push-сервис этого устройства принял уведомление.",
+              "This device's push service accepted the notification.",
             ),
           );
           return;
         }
-        if (result.status === "failed") {
+        if (result.status === "failed" || result.device_status === "stale") {
           setNotice(
             t(
               "Тест не доставлен. Переподключите уведомления или проверьте ограничения батареи.",
