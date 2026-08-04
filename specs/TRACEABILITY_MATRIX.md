@@ -31,8 +31,8 @@
 | REQ-059 | adaptive black/white navigation logo selected by the browser color scheme | Web production build and visual acceptance |
 | REQ-060 | granted-scope and live Gmail validation before OAuth persistence with localized callback recovery | OAuth callback tests and Web production build |
 | REQ-061 | explicit session-revoking logout and unlimited member-created, hashed, expiring single-use family invites | auth/family member and replay tests, migration drill and Web build |
-| REQ-062 | public Russian-first README/Pages, security policy, Gitleaks CI and deploy-aiplanner skill | Gitleaks history/tree scans, skill validator, static-page responsive review and CI |
-| REQ-063 | concrete privacy-safe feature descriptions, MIT license and accessible transient Web action notifications | public-copy review, asset-reference scan, license check, Web tests/build and visual acceptance |
+| REQ-062 | self-hosting-first Russian README/Pages covering personal, family and small-team use plus the complete product, security policy, Gitleaks CI and deploy-aiplanner skill | Gitleaks history/tree scans, comprehensive copy review, skill validator, static-page responsive review and CI |
+| REQ-063 | privacy-safe full-product descriptions, high-contrast alternating section themes, MIT license and accessible transient Web action notifications | public-copy review, contrast and responsive visual review, asset-reference scan, license check and Web tests/build |
 | REQ-064 | natural-language email drafting, Gmail send-scope guard, exact-body confirmation and verified Gmail send adapter | agent, action-summary, scope and Gmail adapter tests |
 | REQ-065 | one-to-one timer reminder lifecycle, migration backfill, push readiness guidance and no-subscription retry | planner/chat, agenda, migration and worker tests |
 | REQ-066 | one-to-one due-task delivery plus browser/server push status and global enable/recovery UI | task lifecycle, push status API, Web tests/build and migration drill |
