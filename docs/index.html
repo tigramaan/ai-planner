@@ -1,32 +1,171 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="UMEC AI Planner — открытый self-hosted семейный AI-планировщик">
-  <title>UMEC AI Planner — ваш день, ваши данные</title>
-  <link rel="stylesheet" href="assets/site.css"><link rel="icon" href="assets/logo.png">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="UMEC AI Planner: открытый self-hosted помощник для почты, календаря, задач, таймеров и обязательств">
+  <title>UMEC AI Planner: почта, календарь и задачи в одном диалоге</title>
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="icon" href="assets/logo.png">
 </head>
 <body>
-  <header class="nav"><a href="#top" class="mark"><img src="assets/logo.png" alt="UMEC space"><span>AI Planner</span></a><nav><a href="#features">Возможности</a><a href="#install">Установка</a><a href="#connect">Интеграции</a><a href="#contribute">Участие</a></nav><a class="button small" href="https://github.com/tigramaan/ai-planner">GitHub ↗</a></header>
+  <header class="nav">
+    <a href="#top" class="mark"><img src="assets/logo.png" alt="UMEC space"><span>AI Planner</span></a>
+    <nav aria-label="Основная навигация">
+      <a href="#features">Возможности</a>
+      <a href="#safety">Безопасность</a>
+      <a href="#install">Установка</a>
+      <a href="#connect">Интеграции</a>
+    </nav>
+    <a class="button small" href="https://github.com/tigramaan/ai-planner">GitHub</a>
+  </header>
+
   <main id="top">
     <section class="hero">
-      <div class="hero-copy"><p class="kicker">OPEN SOURCE · SELF-HOSTED</p><h1>Ваш день.<br><em>Ваши данные.</em></h1><p>Скажите голосом — планировщик соберёт задачи, встречи, почту и напоминания в одном приватном пространстве.</p><div class="actions"><a class="button" href="#install">Установить</a><a class="text-link" href="https://github.com/tigramaan/ai-planner">Посмотреть код →</a></div></div>
-      <div class="hero-visual"><div class="day"><span>ПОНЕДЕЛЬНИК · 4 АВГУСТА</span><strong>12:30</strong><p>Встреча с Иваном</p><i>Google Calendar · Telemost</i></div><div class="command">«Перенеси встречу на 16:30<br>и добавь видеосвязь»</div><div class="status"><b>Требуется подтверждение</b><span>Изменить встречу · 16:30–17:00</span></div></div>
+      <div class="hero-copy">
+        <p class="kicker">OPEN SOURCE / SELF-HOSTED</p>
+        <h1>Договорённости под контролем.</h1>
+        <p>AI Planner связывает письма, встречи и задачи, чтобы договорённости превращались в понятные следующие шаги.</p>
+        <div class="actions">
+          <a class="button" href="#install">Установить</a>
+          <a class="text-link" href="https://github.com/tigramaan/ai-planner">Посмотреть код</a>
+        </div>
+      </div>
+      <aside class="hero-summary" aria-label="Ключевые возможности">
+        <div><strong>Контур обязательств</strong><span>Показывает, что обещали вы, что ждут от вас и где ответа ждёте вы.</span></div>
+        <div><strong>Действия между сервисами</strong><span>Находит письмо, готовит задачу или изменение встречи в одном диалоге.</span></div>
+        <div><strong>Контроль перед записью</strong><span>Письма и календарные изменения выполняются только после явного подтверждения.</span></div>
+      </aside>
     </section>
 
-    <section class="principles"><p>Не ещё один чат-бот.</p><div><strong>01</strong><span>Ваш сервер</span></div><div><strong>02</strong><span>Раздельные аккаунты</span></div><div><strong>03</strong><span>Подтверждение действий</span></div></section>
+    <section class="principles" aria-label="Принципы продукта">
+      <p>Не ещё один список и не оболочка над чатом.</p>
+      <div><strong>Ваш сервер</strong><span>Приложение и данные находятся под вашим контролем.</span></div>
+      <div><strong>Раздельные аккаунты</strong><span>У каждого участника свои интеграции, история и задачи.</span></div>
+      <div><strong>Проверяемые действия</strong><span>Внешняя запись имеет проект, подтверждение и аудит.</span></div>
+    </section>
 
-    <section id="features" class="section"><h2>Один разговор.<br>Весь план.</h2><div class="feature-grid"><article class="feature blue"><span>Голос и текст</span><h3>Говорите естественно</h3><p>Русские формулировки, приблизительные названия и продолжение контекста.</p></article><article class="feature screenshot"><img src="assets/screenshots/today.jpg" alt="Обезличенная демонстрация экрана Сегодня с задачами, расписанием и таймером"></article><article class="feature"><span>Задачи</span><h3>От идеи до «готово»</h3><p>Сроки, приоритеты, поиск, фильтры, редактирование и завершённые задачи.</p></article><article class="feature dark"><span>Gmail и документы</span><h3>Письмо превращается<br>в понятный итог.</h3><p>Находит переписку, читает PDF, DOCX и таблицы, составляет резюме и готовит ответ. Отправка — только после подтверждения.</p></article><article class="feature wide"><img src="assets/ai-planner-infographic.png" alt="Инфографика возможностей AI Planner без пользовательских данных"><div><span>Всё связано</span><h3>Одна команда вместо пяти приложений</h3><p>Почта, календарь, задачи, таймеры и голос работают через единый безопасный диалог.</p></div></article></div></section>
+    <section id="features" class="section feature-section">
+      <div class="section-head">
+        <h2>Что делает AI Planner</h2>
+        <p>Ценность появляется не внутри одного приложения, а на стыке почты, календаря, задач и личных договорённостей.</p>
+      </div>
 
-    <section class="privacy"><div><p class="kicker">PRIVACY BY ARCHITECTURE</p><h2>Семья вместе.<br>Данные отдельно.</h2></div><ul><li>Отдельные задачи, чат и история</li><li>Персональные OAuth-токены</li><li>AES-256-GCM для интеграций</li><li>HttpOnly cookies и BOLA-защита</li><li>Одноразовые инвайты</li><li>Аудит внешних действий</li></ul></section>
+      <article class="commitment-feature">
+        <div>
+          <p class="kicker">КОНТУР ОБЯЗАТЕЛЬСТВ</p>
+          <h3>Показывает, что зависло</h3>
+          <p>По явному запросу AI проверяет недавнюю почту, выделяет только явные обещания и просьбы, затем сверяет их с открытыми задачами и календарём.</p>
+        </div>
+        <dl>
+          <div><dt>Я обещал</dt><dd>Ваши обязательства и названные сроки.</dd></div>
+          <div><dt>Ждут от меня</dt><dd>Вопросы, решения и действия, которые ожидают от вас.</dd></div>
+          <div><dt>Жду я</dt><dd>Ваши запросы, по которым нужен ответ другого человека.</dd></div>
+          <div><dt>Нет в плане</dt><dd>Риск, для которого не найдено задачи или времени в календаре.</dd></div>
+        </dl>
+        <p class="boundary">Отчёт ничего не создаёт сам. «Разобрать» открывает редактируемую команду в чате.</p>
+      </article>
 
-    <section id="install" class="section install"><div class="install-head"><h2>От чистого сервера<br>до личного помощника.</h2><p>Docker Compose поднимает Web, API, worker, PostgreSQL, Redis, backup и автоматический TLS.</p></div><ol><li><b>Подготовьте</b><span>Linux, Docker, домен и DNS на IP сервера.</span></li><li><b>Склонируйте</b><code>git clone https://github.com/tigramaan/ai-planner.git</code></li><li><b>Создайте секреты</b><span>Скопируйте `.env.example`, замените заглушки локально.</span></li><li><b>Запустите</b><code>docker compose --profile caddy up -d --build</code></li><li><b>Подключите сервисы</b><span>Каждый пользователь авторизует собственные календари и почту.</span></li></ol><aside><b>Можно поручить агенту</b><p>Codex или Claude Code используют репозиторный <code>deploy-aiplanner</code> skill и ведут установку пошагово, не печатая секреты.</p><a href="https://github.com/tigramaan/ai-planner/tree/main/skills/deploy-aiplanner">Открыть skill →</a></aside></section>
+      <div class="capability-grid">
+        <article>
+          <h3>Почта без ручного поиска</h3>
+          <p>Находит Gmail и Outlook письма по смыслу, отправителю, дате, непрочитанности и вложениям. Отдельный режим оставляет только личные и рабочие письма, где действительно нужен ответ.</p>
+        </article>
+        <article>
+          <h3>Документы в контексте письма</h3>
+          <p>По явному запросу читает письмо и до пяти вложений PDF, DOCX, XLSX, CSV, HTML или TXT. В ответе сохраняет факты, суммы и сроки, а не пересказывает общими словами.</p>
+        </article>
+        <article>
+          <h3>Календарь через разговор</h3>
+          <p>Создаёт и находит встречи, переносит время, добавляет участников или готовит отмену. Поддерживает Google Calendar, Outlook, Meet, Teams, Zoom и постоянные комнаты Телемоста.</p>
+        </article>
+        <article>
+          <h3>Задачи и живые таймеры</h3>
+          <p>Создаёт задачи со сроком, описанием и приоритетом. Позволяет искать, редактировать, завершать и возвращать их из архива. Именованные таймеры показывают обратный отсчёт прямо в чате.</p>
+        </article>
+        <article>
+          <h3>Голос с безопасной автоотправкой</h3>
+          <p>Короткая однозначная команда отправляется после паузы. Длинный или составной запрос остаётся в поле ввода, чтобы пользователь мог проверить формулировку.</p>
+        </article>
+        <article>
+          <h3>Push отдельно для каждого устройства</h3>
+          <p>Задачи и таймеры создают одно Web Push напоминание. Результат хранится отдельно для iPhone, Android и desktop. Принятие push-сервисом не считается подтверждением показа операционной системой.</p>
+        </article>
+      </div>
+    </section>
 
-    <section id="connect" class="providers"><h2>Подключайте то,<br>чем уже пользуетесь.</h2><div class="provider-row"><b>OpenAI</b><span>Понимание команд и транскрипция</span><i>runtime</i></div><div class="provider-row"><b>Google</b><span>Calendar · Contacts · Gmail · Meet</span><i>OAuth</i></div><div class="provider-row"><b>Microsoft</b><span>Outlook · Contacts · Mail · Teams</span><i>OAuth</i></div><div class="provider-row"><b>Zoom</b><span>Проверенные видеовстречи</span><i>OAuth</i></div><div class="provider-row"><b>Яндекс 360</b><span>Calendar · Mail · Telemost fallback</span><i>business</i></div></section>
+    <section id="safety" class="safety">
+      <div class="section-head">
+        <h2>AI предлагает. Пользователь решает.</h2>
+        <p>Модель помогает понять намерение и подготовить следующий шаг. Права, данные и внешние изменения контролирует приложение.</p>
+      </div>
+      <div class="safety-flow" aria-label="Последовательность безопасного внешнего действия">
+        <div><span>Команда</span><p>Пользователь описывает цель голосом или текстом.</p></div>
+        <div><span>Проверки</span><p>API проверяет владельца, разрешения, состояние и ответ провайдера.</p></div>
+        <div><span>Проект</span><p>Приложение показывает точного адресата, время или содержание изменения.</p></div>
+        <div><span>Подтверждение</span><p>Только явное согласие разрешает внешнюю запись.</p></div>
+        <div><span>Проверка результата</span><p>Созданный объект читается обратно, а действие попадает в аудит.</p></div>
+      </div>
+      <ul class="security-list">
+        <li><b>Изоляция пользователей.</b> Задачи, чат, интеграции и токены принадлежат одному аккаунту.</li>
+        <li><b>Шифрование секретов.</b> OAuth-токены защищены AES-256-GCM и не передаются модели.</li>
+        <li><b>Неперсистентный анализ.</b> Почтовые AI-запросы используют <code>store=false</code> и ограниченный объём данных.</li>
+        <li><b>Защищённые сессии.</b> HttpOnly cookies, отзыв сессий, Argon2id и проверка владельца каждого объекта.</li>
+        <li><b>Изолированные сервисы.</b> API, Web и worker запускаются без root-доступа; PostgreSQL и Redis не публикуются наружу.</li>
+        <li><b>Восстановление.</b> Backup-сервис проверяет дампы, контрольные суммы и срок хранения.</li>
+      </ul>
+    </section>
 
-    <section class="gallery"><figure><img src="assets/screenshots/chat.jpg" alt="Обезличенная демонстрация диалога с подтверждением действия"><figcaption>Внешнее действие выполняется только после понятного подтверждения.</figcaption></figure><figure><img src="assets/screenshots/today.jpg" alt="Обезличенная демонстрация экрана Сегодня"><figcaption>Расписание, задачи и таймеры собраны в одном спокойном обзоре.</figcaption></figure></section>
+    <section id="install" class="section install">
+      <div class="section-head">
+        <h2>Установка на свой сервер</h2>
+        <p>Нужны Linux, Docker Compose, домен с DNS-записью на сервер и открытые порты 80/443.</p>
+      </div>
+      <ol>
+        <li><b>Подготовьте сервер</b><span>Установите Docker, направьте домен на IP и проверьте доступность портов.</span></li>
+        <li><b>Склонируйте проект</b><code>git clone https://github.com/tigramaan/ai-planner.git</code></li>
+        <li><b>Создайте конфигурацию</b><span>Скопируйте <code>.env.example</code> и локально замените все <code>replace-with-*</code>.</span></li>
+        <li><b>Создайте секреты</b><span>Сгенерируйте JWT, master key, пароль PostgreSQL и VAPID key. Не вставляйте их в issue или чат.</span></li>
+        <li><b>Запустите стек</b><code>docker compose --profile caddy up -d --build</code></li>
+        <li><b>Проверьте health</b><code>docker compose ps</code></li>
+        <li><b>Подключите провайдеры</b><span>Каждый пользователь самостоятельно авторизует свою почту и календари.</span></li>
+      </ol>
+      <aside>
+        <h3>Установку можно поручить агенту</h3>
+        <p>Репозиторный <code>deploy-aiplanner</code> skill ведёт Codex или Claude Code по настройке сервера и провайдеров. Он запрашивает секреты по одному и запрещает печатать или коммитить их.</p>
+        <a class="text-link" href="https://github.com/tigramaan/ai-planner/tree/main/skills/deploy-aiplanner">Открыть инструкцию для агента</a>
+      </aside>
+    </section>
 
-    <section id="contribute" class="contribute"><p class="kicker">OPEN CALL</p><h2>Давайте научим<br>планировщик большему.</h2><p>Ищем contributors для Claude runtime, Ollama, YandexGPT, навыка Алисы, GigaChat и других голосовых помощников.</p><div class="actions"><a class="button inverse" href="https://github.com/tigramaan/ai-planner/issues">Предложить интеграцию</a><a class="text-link" href="https://github.com/tigramaan/ai-planner">Сделать PR →</a></div></section>
+    <section id="connect" class="providers">
+      <div class="section-head">
+        <h2>Поддерживаемые интеграции</h2>
+        <p>Каждый коннектор имеет собственный OAuth или сервисный контракт. Можно подключать только нужные возможности.</p>
+      </div>
+      <div class="provider-groups">
+        <article><h3>OpenAI</h3><p>Распознавание речи, определение намерения, структурированный анализ писем и инструментальный AI-цикл.</p><span>API key</span></article>
+        <article><h3>Google</h3><p>Calendar, Contacts, Gmail и Google Meet с incremental OAuth scopes.</p><span>OAuth</span></article>
+        <article><h3>Microsoft</h3><p>Outlook Calendar, Contacts, Mail и Microsoft Teams через Microsoft Graph.</p><span>OAuth</span></article>
+        <article><h3>Zoom</h3><p>Создание проверенной видеовстречи от имени подключённого пользователя.</p><span>OAuth</span></article>
+        <article><h3>Яндекс 360</h3><p>CalDAV, IMAP/SMTP и Telemost API для подходящих бизнес-организаций, либо постоянная комната.</p><span>Business</span></article>
+        <article><h3>Web Push</h3><p>VAPID, service worker и Declarative Web Push для PWA на iPhone, Android и desktop.</p><span>Browser</span></article>
+      </div>
+    </section>
+
+    <section id="contribute" class="contribute">
+      <h2>Проект открыт для развития</h2>
+      <p>Полезны новые runtime-провайдеры, календарные и почтовые коннекторы, мобильное тестирование, локализация и улучшения доступности.</p>
+      <div class="actions">
+        <a class="button inverse" href="https://github.com/tigramaan/ai-planner/issues">Открыть issue</a>
+        <a class="text-link" href="https://github.com/tigramaan/ai-planner">Подготовить PR</a>
+      </div>
+    </section>
   </main>
-  <footer><img src="assets/logo.png" alt="UMEC space"><p>AI Planner · Open source · Self-hosted · MIT</p><a href="https://github.com/tigramaan/ai-planner">GitHub</a></footer>
-</body></html>
+
+  <footer>
+    <img src="assets/logo.png" alt="UMEC space">
+    <p>AI Planner / Open source / Self-hosted / MIT</p>
+    <a href="https://github.com/tigramaan/ai-planner">GitHub</a>
+  </footer>
+</body>
+</html>
