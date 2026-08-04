@@ -13,3 +13,4 @@
 | AP-009 | Gmail/Outlook read, draft, send and live provider acceptance | adapters and confirmation implemented; consent pending |
 | AP-010 | Push, reminders worker and backup automation | done; browser permission acceptance pending per user device |
 | AP-011 | Per-device push diagnostics and commitment radar | implemented; live iOS acceptance pending |
+| AP-012 | Server-to-server lead booking API and owner settings | done; live provider acceptance pending |

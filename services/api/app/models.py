@@ -223,3 +223,57 @@ class AgentMessage(Base):
     text: Mapped[str] = mapped_column(Text)
     structured_intent_json: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class BookingPolicy(Base):
+    __tablename__ = "booking_policies"
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    duration_minutes: Mapped[int] = mapped_column(Integer, default=30)
+    workdays: Mapped[list] = mapped_column(JSON, default=lambda: [0, 1, 2, 3, 4])
+    work_start: Mapped[str] = mapped_column(String(5), default="09:00")
+    work_end: Mapped[str] = mapped_column(String(5), default="18:00")
+    minimum_notice_minutes: Mapped[int] = mapped_column(Integer, default=120)
+    horizon_days: Mapped[int] = mapped_column(Integer, default=30)
+    buffer_before_minutes: Mapped[int] = mapped_column(Integer, default=0)
+    buffer_after_minutes: Mapped[int] = mapped_column(Integer, default=15)
+    max_per_day: Mapped[int] = mapped_column(Integer, default=5)
+    title_template: Mapped[str] = mapped_column(String(200), default="Звонок: {name}")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class BookingApiKey(Base):
+    __tablename__ = "booking_api_keys"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    key_prefix: Mapped[str] = mapped_column(String(16))
+    key_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class Booking(Base):
+    __tablename__ = "bookings"
+    __table_args__ = (UniqueConstraint("api_key_id", "idempotency_key"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    api_key_id: Mapped[str] = mapped_column(
+        ForeignKey("booking_api_keys.id", ondelete="RESTRICT"), index=True
+    )
+    lead_hash: Mapped[str] = mapped_column(String(64), index=True)
+    idempotency_key: Mapped[str] = mapped_column(String(100))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    slot_lock: Mapped[str | None] = mapped_column(String(100), unique=True)
+    contact_encrypted: Mapped[str] = mapped_column(Text)
+    start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    end_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    timezone: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(24), default="creating", index=True)
+    provider: Mapped[str] = mapped_column(String(32))
+    provider_event_id: Mapped[str | None] = mapped_column(String(300))
+    result_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)

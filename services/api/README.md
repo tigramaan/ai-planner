@@ -1,6 +1,8 @@
 # API service
 
-Owns authentication, encrypted integrations, agent orchestration, local planner data and audit. Public contract is under `contracts/`. Health: `GET /health/live` and `/health/ready`.
+Owns authentication, encrypted integrations, agent orchestration, local planner data, audit and the server-to-server booking boundary. Public contracts are under `contracts/`, including `booking-api.md`. Health: `GET /health/live` and `/health/ready`.
+
+Booking API keys are created by an authenticated owner, displayed once and persisted only as hashes. The website calls `/booking/v1/*`; contact data is encrypted and provider writes are rechecked and read back.
 
 ## Development
 

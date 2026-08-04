@@ -54,3 +54,4 @@
 | REQ-079 | Мобильная ширина всех разделов от 320 px | responsive Web layouts and global overflow guards | Web tests/build and manual viewport acceptance |
 | REQ-080 | Адресная Web Push доставка, stale cleanup и Declarative Web Push | push API/model/migration, worker, service worker and settings UI | reminder API, worker and Web push tests plus live iOS acceptance |
 | REQ-081 | Неперсистентный контур обязательств по почте, задачам и календарю | commitments agent/router and responsive Web report | commitment grounding/privacy test, API suite and Web build |
+| REQ-082 | Server-to-server запись проверенных лидов в календарь | booking policy/key models, availability and booking router, provider adapters, settings UI | booking auth, slot conflict, idempotency, three-success limit, API suite and Web build |

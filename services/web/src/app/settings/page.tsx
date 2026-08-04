@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { FamilyInvite } from "@/components/FamilyInvite";
 import { ActionToast } from "@/components/ActionToast";
 import { PushSetup } from "@/components/PushSetup";
+import { BookingSettings } from "@/components/BookingSettings";
 import { Shell } from "@/components/Shell";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -456,6 +457,7 @@ export default function Settings() {
           </form>
         </section>
         <section className="panel stack">
+          <BookingSettings />
           <FamilyInvite />
           <PushSetup />
           <form className="form" onSubmit={password}>

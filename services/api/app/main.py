@@ -9,7 +9,17 @@ from sqlalchemy import text
 from .bootstrap import ensure_owner
 from .config import get_settings
 from .database import Base, SessionLocal, engine
-from .routers import auth, chat, commitments, family, integrations, internal, local_items, planner
+from .routers import (
+    auth,
+    booking,
+    chat,
+    commitments,
+    family,
+    integrations,
+    internal,
+    local_items,
+    planner,
+)
 
 logger = structlog.get_logger()
 
@@ -40,6 +50,7 @@ app.include_router(planner.router)
 app.include_router(local_items.router)
 app.include_router(commitments.router)
 app.include_router(internal.router)
+app.include_router(booking.router)
 
 
 @app.get("/health/live")
