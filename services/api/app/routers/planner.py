@@ -149,6 +149,51 @@ def push_status(user: User = Depends(current_user), db: Session = Depends(get_db
     return {"configured": configured is not None}
 
 
+@router.post("/push/test", status_code=status.HTTP_202_ACCEPTED)
+def test_push(
+    request: Request,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    configured = db.scalar(
+        select(PushSubscription.id).where(PushSubscription.user_id == user.id).limit(1)
+    )
+    if configured is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Push subscription is not configured")
+    now = datetime.now(UTC)
+    reminder = Reminder(
+        user_id=user.id,
+        title=(
+            "Тестовое уведомление AI Planner"
+            if user.locale.startswith("ru")
+            else "AI Planner test notification"
+        ),
+        due_at=now,
+        next_attempt_at=now,
+        timezone=user.timezone,
+        channel="push",
+    )
+    db.add(reminder)
+    db.flush()
+    audit(db, user, request, "push.test_requested", "reminder", reminder.id)
+    db.commit()
+    return {"id": reminder.id, "status": reminder.status}
+
+
+@router.get("/push/test/{reminder_id}")
+def push_test_status(
+    reminder_id: str,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    reminder = db.scalar(
+        select(Reminder).where(Reminder.id == reminder_id, Reminder.user_id == user.id)
+    )
+    if reminder is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Push test not found")
+    return {"status": reminder.status}
+
+
 @router.post("/push/subscriptions", status_code=201)
 def subscribe_push(
     body: PushSubscriptionWrite,

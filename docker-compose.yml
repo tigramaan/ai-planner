@@ -30,6 +30,7 @@ services:
       - path: .env
         required: true
     environment: ["REDIS_URL=redis://redis:6379/0", "API_INTERNAL_URL=http://api:8000", "VAPID_PRIVATE_KEY_PATH=/run/secrets/vapid_private.pem"]
+    group_add: ["${VAPID_FILE_GID:-0}"]
     secrets:
       - source: vapid_private
         target: vapid_private.pem

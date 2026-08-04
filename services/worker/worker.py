@@ -8,14 +8,26 @@ import redis
 from pywebpush import WebPushException, webpush
 
 
+def readable_vapid_key(path: Path) -> Path:
+    try:
+        content = path.read_bytes()
+    except OSError as exc:
+        raise RuntimeError(
+            f"VAPID private key is not readable: {type(exc).__name__}"
+        ) from exc
+    if not content.strip():
+        raise RuntimeError("VAPID private key is empty")
+    return path
+
+
 class Worker:
     def __init__(self) -> None:
         self.redis = redis.from_url(os.environ["REDIS_URL"], socket_timeout=5)
         self.api_url = os.environ.get("API_INTERNAL_URL", "http://api:8000").rstrip("/")
         self.token = os.environ["WORKER_SERVICE_TOKEN"]
         self.vapid_subject = os.environ.get("VAPID_SUBJECT", "mailto:admin@example.com")
-        self.vapid_key_path = Path(
-            os.environ.get("VAPID_PRIVATE_KEY_PATH", "/run/secrets/vapid_private.pem")
+        self.vapid_key_path = readable_vapid_key(
+            Path(os.environ.get("VAPID_PRIVATE_KEY_PATH", "/run/secrets/vapid_private.pem"))
         )
         self.http = httpx.Client(timeout=15, headers={"X-Worker-Token": self.token})
 

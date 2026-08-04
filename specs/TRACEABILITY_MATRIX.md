@@ -43,6 +43,7 @@
 | REQ-071 | bounded senior Responses tool loop over mail and local planner contracts | multi-round output propagation, storage, call-limit and tool validation tests |
 | REQ-072 | senior external-action preparation routed into the existing encrypted confirmation boundary | senior pending-action propagation, conversation, policy, recipient and calendar-action tests |
 | REQ-073 | in-stream chat response status, explicit mail result limit and deterministic automated-mail exclusion | Chat component lifecycle test, intent-schema, mail-summary and mail-chat tests |
+| REQ-074 | VAPID startup validation, supplementary container key group and authenticated push delivery test | worker key-permission test, push test lifecycle API test, Web delivery-check test and live one-minute retry acceptance |
 | REQ-030..035 | password, cipher, OAuth state, redaction | security tests |
 | REQ-036 | recipient resolver and Google/Microsoft contact adapters | recipient and adapter unit tests |
 | REQ-037 | bounded per-user conversation history passed to intent extraction | conversation continuation tests |

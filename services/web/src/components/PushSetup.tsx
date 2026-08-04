@@ -117,6 +117,45 @@ export function PushSetup({ compact = false }: { compact?: boolean }) {
     }
   }
 
+  async function testDelivery() {
+    setBusy(true);
+    try {
+      const created = await api<{ id: string }>("/push/test", { method: "POST" });
+      for (let attempt = 0; attempt < 20; attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 1000));
+        const result = await api<{ status: string }>(`/push/test/${created.id}`);
+        if (result.status === "delivered") {
+          setNotice(
+            t(
+              "Тестовое уведомление отправлено на это устройство.",
+              "Test notification sent to this device.",
+            ),
+          );
+          return;
+        }
+        if (result.status === "failed") {
+          setNotice(
+            t(
+              "Тест не доставлен. Переподключите уведомления или проверьте ограничения батареи.",
+              "Test was not delivered. Reconnect notifications or check battery restrictions.",
+            ),
+          );
+          return;
+        }
+      }
+      setNotice(
+        t(
+          "Тест отправлен, но подтверждение задерживается. Проверьте системную шторку.",
+          "Test sent, but confirmation is delayed. Check system notifications.",
+        ),
+      );
+    } catch {
+      setNotice(t("Не удалось отправить тестовое уведомление.", "Could not send test notification."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const Icon = state === "enabled" ? Bell : state === "idle" ? BellSlash : WarningCircle;
   const actionLabel = state === "denied"
     ? t("Как разрешить", "How to allow")
@@ -135,6 +174,11 @@ export function PushSetup({ compact = false }: { compact?: boolean }) {
         {state !== "enabled" && state !== "checking" && state !== "unsupported" && (
           <button className="button secondary" type="button" disabled={busy} onClick={enable}>
             {busy ? t("Подключаю…", "Enabling…") : actionLabel}
+          </button>
+        )}
+        {state === "enabled" && (
+          <button className="button secondary" type="button" disabled={busy} onClick={testDelivery}>
+            {busy ? t("Проверяю…", "Testing…") : t("Проверить", "Test")}
           </button>
         )}
         <ActionToast message={notice} onDismiss={() => setNotice("")} />
@@ -159,6 +203,11 @@ export function PushSetup({ compact = false }: { compact?: boolean }) {
       {state !== "enabled" && state !== "checking" && state !== "unsupported" && (
         <button className="button secondary" type="button" disabled={busy} onClick={enable}>
           {busy ? t("Подключаю…", "Enabling…") : actionLabel}
+        </button>
+      )}
+      {state === "enabled" && (
+        <button className="button secondary" type="button" disabled={busy} onClick={testDelivery}>
+          {busy ? t("Проверяю…", "Testing…") : t("Проверить уведомление", "Test notification")}
         </button>
       )}
     </section>

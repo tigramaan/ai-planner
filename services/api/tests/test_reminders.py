@@ -55,3 +55,30 @@ def test_reminder_requires_timezone_offset(logged_in):
 def test_push_public_key_requires_login_only_for_subscription(client, logged_in):
     assert client.get("/api/v1/push/public-key").status_code == 200
     assert logged_in.get("/api/v1/push/public-key").json()["public_key"]
+
+
+def test_push_delivery_can_be_checked_from_the_browser(logged_in):
+    assert logged_in.post("/api/v1/push/test").status_code == 409
+    logged_in.post(
+        "/api/v1/push/subscriptions",
+        json={
+            "endpoint": "https://push.example.com/test-device",
+            "p256dh": "public-encryption-key-material",
+            "auth": "authentication-secret",
+        },
+    )
+    created = logged_in.post("/api/v1/push/test")
+    assert created.status_code == 202
+    reminder_id = created.json()["id"]
+    assert logged_in.get(f"/api/v1/push/test/{reminder_id}").json() == {
+        "status": "scheduled"
+    }
+    logged_in.post("/internal/v1/reminders/claim", headers=WORKER_HEADERS)
+    logged_in.post(
+        f"/internal/v1/reminders/{reminder_id}/complete",
+        headers=WORKER_HEADERS,
+        json={"status": "delivered"},
+    )
+    assert logged_in.get(f"/api/v1/push/test/{reminder_id}").json() == {
+        "status": "delivered"
+    }

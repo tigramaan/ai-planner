@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 
 import { api } from "@/lib/api";
@@ -52,4 +52,22 @@ test("explains recovery when browser permission is blocked", async () => {
   await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Notifications are blocked"));
   expect(screen.getByRole("button", { name: "How to allow" })).toBeVisible();
   expect(apiMock).not.toHaveBeenCalled();
+});
+
+test("checks real server delivery when notifications look enabled", async () => {
+  browserPush("granted", {});
+  apiMock.mockImplementation(async (path) => {
+    if (path === "/push/status") return { configured: true };
+    if (path === "/push/test") return { id: "test-reminder" };
+    return { status: "delivered" };
+  });
+
+  render(<PushSetup compact />);
+
+  await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Notifications are on"));
+  fireEvent.click(screen.getByRole("button", { name: "Test" }));
+  await waitFor(
+    () => expect(screen.getByText("Test notification sent to this device.")).toBeVisible(),
+    { timeout: 2500 },
+  );
 });

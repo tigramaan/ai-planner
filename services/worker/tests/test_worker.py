@@ -1,6 +1,8 @@
+from pathlib import Path
 from unittest.mock import Mock, patch
 
-from worker import Worker
+import pytest
+from worker import Worker, readable_vapid_key
 
 
 def make_worker() -> Worker:
@@ -68,3 +70,11 @@ def test_all_subscription_failures_schedule_retry_without_secret_leak():
     worker.complete.assert_called_once_with(
         "reminder-1", "retry", "push:ValueError"
     )
+
+
+def test_worker_rejects_unreadable_vapid_key_before_heartbeat():
+    with (
+        patch.object(Path, "read_bytes", side_effect=PermissionError("private")),
+        pytest.raises(RuntimeError, match="not readable: PermissionError"),
+    ):
+        readable_vapid_key(Path("/run/secrets/vapid_private.pem"))
