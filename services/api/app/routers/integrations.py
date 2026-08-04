@@ -155,7 +155,12 @@ async def oauth_callback(
             f"{urlencode({'oauth_error': 'oauth_access_denied'})}",
             status_code=303,
         )
-    except (ValueError, RuntimeError):
+    except (ValueError, RuntimeError) as exc:
+        logger.warning(
+            "OAuth callback rejected provider=%s stage=%s",
+            provider,
+            str(exc),
+        )
         reason = "gmail_access_denied" if provider == "google" else "oauth_access_denied"
         return RedirectResponse(
             f"{settings.public_base_url}/settings?{urlencode({'oauth_error': reason})}",
