@@ -55,3 +55,4 @@
 | REQ-080 | Адресная Web Push доставка, stale cleanup и Declarative Web Push | push API/model/migration, worker, service worker and settings UI | reminder API, worker and Web push tests plus live iOS acceptance |
 | REQ-081 | Неперсистентный контур обязательств по почте, задачам и календарю | commitments agent/router and responsive Web report | commitment grounding/privacy test, API suite and Web build |
 | REQ-082 | Server-to-server запись проверенных лидов в календарь | booking policy/key models, availability and booking router, provider adapters, settings UI | booking auth, slot conflict, idempotency, three-success limit, API suite and Web build |
+| REQ-083 | Совместные задачи внутри одного сервера без назначения исполнителя | participant/checklist/activity models and API, Tasks UI, Today/Week | collaboration permissions/isolation tests, API suite, Web tests/build |

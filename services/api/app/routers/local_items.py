@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from ..audit import audit
@@ -13,8 +13,9 @@ from ..local_notifications import (
     schedule_task_notification,
     schedule_timer_notification,
 )
-from ..models import LocalTask, Timer, User
+from ..models import LocalTask, TaskParticipant, Timer, User
 from ..schemas import TaskCreate, TaskUpdate, TimerCreate, TimerUpdate
+from ..task_collaboration import accessible_task, add_activity, owner_task, task_view
 
 router = APIRouter(prefix="/api/v1", tags=["local-planner"])
 
@@ -28,12 +29,15 @@ def owned(row_type, row_id: str, user: User, db: Session):
 
 @router.get("/tasks")
 def tasks(user: User = Depends(current_user), db: Session = Depends(get_db)):
-    return db.scalars(
+    rows = db.scalars(
         select(LocalTask)
-        .where(LocalTask.user_id == user.id)
+        .outerjoin(TaskParticipant, TaskParticipant.task_id == LocalTask.id)
+        .where(or_(LocalTask.user_id == user.id, TaskParticipant.user_id == user.id))
+        .distinct()
         .order_by(LocalTask.created_at.desc())
         .limit(500)
     ).all()
+    return [task_view(db, row, user) for row in rows]
 
 
 @router.post("/tasks")
@@ -46,10 +50,11 @@ def create_task(
     task = LocalTask(user_id=user.id, **body.model_dump())
     db.add(task)
     db.flush()
+    add_activity(db, task, user, "created")
     schedule_task_notification(db, user, task)
     audit(db, user, request, "task.created", "task", task.id, {"title": task.title})
     db.commit()
-    return task
+    return task_view(db, task, user)
 
 
 @router.put("/tasks/{task_id}")
@@ -60,16 +65,13 @@ def update_task(
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ):
-    task = owned(LocalTask, task_id, user, db)
+    task = accessible_task(db, task_id, user)
     changes = body.model_dump(exclude_unset=True)
     for field, value in changes.items():
         setattr(task, field, value)
-    schedule_task_notification(
-        db,
-        user,
-        task,
-        reset="due_at" in changes or changes.get("status") == "open",
-    )
+    owner = db.get(User, task.user_id)
+    schedule_task_notification(db, owner, task, reset="due_at" in changes or changes.get("status") == "open")
+    add_activity(db, task, user, "updated", {"fields": sorted(changes)})
     audit(
         db,
         user,
@@ -81,7 +83,7 @@ def update_task(
     )
     db.commit()
     db.refresh(task)
-    return task
+    return task_view(db, task, user)
 
 
 @router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -91,7 +93,7 @@ def delete_task(
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ):
-    task = owned(LocalTask, task_id, user, db)
+    task = owner_task(db, task_id, user)
     audit(db, user, request, "task.deleted", "task", task.id, {"title": task.title})
     delete_task_notification(db, task)
     db.delete(task)

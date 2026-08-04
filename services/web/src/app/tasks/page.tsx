@@ -1,22 +1,15 @@
 "use client";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import {
-  Check,
-  CheckCircle,
-  Circle,
-  MagnifyingGlass,
-  PencilSimple,
-  Plus,
-  Trash,
-} from "@phosphor-icons/react";
+import { Check, CheckCircle, Circle, MagnifyingGlass, PencilSimple, Plus, Trash } from "@phosphor-icons/react";
 import { Shell } from "@/components/Shell";
 import { ActionToast } from "@/components/ActionToast";
+import { TaskCollaboration, type SharedTask } from "@/components/TaskCollaboration";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
 type Status = "open" | "completed";
 type Priority = "low" | "normal" | "high";
-type Task = {
+type Task = SharedTask & {
   id: string;
   title: string;
   description: string;
@@ -26,7 +19,7 @@ type Task = {
   status: Status;
   created_at: string;
 };
-type Filter = "open" | "today" | "overdue" | "completed" | "all";
+type Filter = "open" | "today" | "overdue" | "completed" | "shared" | "all";
 const moscowDate = (value: string | Date) =>
   new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/Moscow",
@@ -80,6 +73,7 @@ export default function Tasks() {
     today: items.filter(isToday).length,
     overdue: items.filter(isOverdue).length,
     completed: items.filter((x) => x.status === "completed").length,
+    shared: items.filter((x) => x.participants.length > 0).length,
     all: items.length,
   };
   const visible = useMemo(
@@ -95,6 +89,7 @@ export default function Tasks() {
           if (filter === "all") return true;
           if (filter === "today") return isToday(task);
           if (filter === "overdue") return isOverdue(task);
+          if (filter === "shared") return task.participants.length > 0;
           return task.status === filter;
         })
         .sort((a, b) => {
@@ -206,6 +201,7 @@ export default function Tasks() {
     ["today", t("Сегодня", "Today")],
     ["overdue", t("Просроченные", "Overdue")],
     ["completed", t("Архив", "Archive")],
+    ["shared", t("Совместные", "Shared")],
     ["all", t("Все", "All")],
   ];
   return (
@@ -364,6 +360,17 @@ export default function Tasks() {
                             : t("Обычный", "Normal")}
                       </span>
                     </div>
+                    <TaskCollaboration
+                      task={task}
+                      onChange={(updated) =>
+                        setItems((rows) =>
+                          rows.map((row) =>
+                            row.id === task.id ? ({ ...row, ...updated } as Task) : row,
+                          ),
+                        )
+                      }
+                      onLeave={() => setItems((rows) => rows.filter((row) => row.id !== task.id))}
+                    />
                   </div>
                   <div className="taskActions">
                     <button
@@ -373,13 +380,15 @@ export default function Tasks() {
                     >
                       <PencilSimple size={19} />
                     </button>
-                    <button
-                      className="iconAction danger"
-                      onClick={() => remove(task)}
-                      aria-label={t("Удалить", "Delete")}
-                    >
-                      <Trash size={19} />
-                    </button>
+                    {task.is_owner && (
+                      <button
+                        className="iconAction danger"
+                        onClick={() => remove(task)}
+                        aria-label={t("Удалить", "Delete")}
+                      >
+                        <Trash size={19} />
+                      </button>
+                    )}
                   </div>
                 </>
               )}

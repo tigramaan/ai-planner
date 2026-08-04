@@ -73,6 +73,38 @@ class TaskUpdate(BaseModel):
         return value
 
 
+class TaskParticipantCreate(BaseModel):
+    email: EmailStr
+
+
+class TaskChecklistCreate(BaseModel):
+    text: str = Field(min_length=1, max_length=500)
+
+    @field_validator("text")
+    @classmethod
+    def nonempty_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Checklist text cannot be empty")
+        return value
+
+
+class TaskChecklistUpdate(BaseModel):
+    text: str | None = Field(default=None, min_length=1, max_length=500)
+    completed: bool | None = None
+
+    @field_validator("text", "completed")
+    @classmethod
+    def reject_checklist_null(cls, value):
+        if value is None:
+            raise ValueError("Field cannot be null")
+        if isinstance(value, str):
+            value = value.strip()
+            if not value:
+                raise ValueError("Checklist text cannot be empty")
+        return value
+
+
 class TimerCreate(BaseModel):
     title: str = Field(default="Таймер", max_length=300)
     duration_seconds: int = Field(ge=1, le=86400)

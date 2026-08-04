@@ -159,6 +159,20 @@ h1 { font-size:clamp(30px,4vw,46px); line-height:1.05; letter-spacing:-.045em; m
 .taskEdit { grid-column:1/-1; display:grid; gap:13px; }
 .taskEditRow { display:grid; grid-template-columns:2fr 1fr; gap:13px; }
 .taskEditActions .button { display:inline-flex; align-items:center; gap:7px; }
+.taskCollaboration { display:grid; gap:9px; margin-top:10px; }
+.taskSharedWith { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:13px; overflow-wrap:anywhere; }
+.taskChecklist { display:grid; gap:6px; }
+.taskChecklistItem { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:8px; }
+.taskChecklistItem .done { color:var(--muted); text-decoration:line-through; }
+.bareIcon { display:grid; place-items:center; padding:3px; border:0; background:transparent; color:var(--muted); cursor:pointer; }
+.taskInlineForm { display:flex; gap:7px; margin-top:5px; }
+.taskInlineForm input { min-width:0; flex:1; border:1px solid var(--line); border-radius:9px; padding:8px 10px; background:var(--surface); color:var(--text); }
+.taskInlineForm button,.taskMember button { border:0; border-radius:8px; padding:7px 10px; background:var(--soft); color:var(--text); cursor:pointer; }
+.taskShareDetails summary { color:var(--muted); font-size:13px; cursor:pointer; }
+.taskMember,.taskActivity > div { display:flex; justify-content:space-between; gap:10px; align-items:center; margin-top:7px; font-size:13px; overflow-wrap:anywhere; }
+.taskMember button { display:flex; align-items:center; gap:5px; color:var(--danger); flex:none; }
+.taskActivity { margin-top:10px; padding-top:4px; border-top:1px solid var(--line); color:var(--muted); }
+.taskActivity time { flex:none; font-size:12px; }
 .completedDisclosure { width:100%; display:flex; align-items:center; gap:9px; margin-top:10px; padding:12px 16px; border:1px solid var(--line); border-radius:var(--radius); background:var(--surface); color:var(--muted); cursor:pointer; text-align:left; }
 .completedDisclosure:hover,.completedDisclosure:focus-visible { color:var(--text); border-color:var(--accent); outline:none; }
 .completedDisclosure strong { margin-left:auto; min-width:24px; text-align:center; }

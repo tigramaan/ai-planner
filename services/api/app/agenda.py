@@ -1,13 +1,13 @@
 from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from .adapters import ProviderError, list_calendar_events
 from .config import Settings
 from .integrations import valid_access_token
-from .models import LocalTask, Reminder, User
+from .models import LocalTask, Reminder, TaskParticipant, User
 
 
 def agenda_window(user: User, days: int) -> tuple[datetime, datetime]:
@@ -21,7 +21,13 @@ async def collect_agenda(
 ) -> tuple[datetime, datetime, list[dict]]:
     start, end = agenda_window(user, days)
     tasks = db.scalars(
-        select(LocalTask).where(LocalTask.user_id == user.id, LocalTask.status == "open")
+        select(LocalTask)
+        .outerjoin(TaskParticipant, TaskParticipant.task_id == LocalTask.id)
+        .where(
+            or_(LocalTask.user_id == user.id, TaskParticipant.user_id == user.id),
+            LocalTask.status == "open",
+        )
+        .distinct()
     ).all()
     items = [
         {"kind": "task", "source": "local", "id": row.id, "title": row.title,

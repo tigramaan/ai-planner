@@ -19,6 +19,7 @@ from .routers import (
     internal,
     local_items,
     planner,
+    task_collaboration,
 )
 
 logger = structlog.get_logger()
@@ -51,6 +52,7 @@ app.include_router(local_items.router)
 app.include_router(commitments.router)
 app.include_router(internal.router)
 app.include_router(booking.router)
+app.include_router(task_collaboration.router)
 
 
 @app.get("/health/live")

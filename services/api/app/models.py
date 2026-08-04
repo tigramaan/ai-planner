@@ -105,6 +105,45 @@ class LocalTask(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
+class TaskParticipant(Base):
+    __tablename__ = "task_participants"
+    __table_args__ = (UniqueConstraint("task_id", "user_id"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4)
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("local_tasks.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    added_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class TaskChecklistItem(Base):
+    __tablename__ = "task_checklist_items"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4)
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("local_tasks.id", ondelete="CASCADE"), index=True
+    )
+    text: Mapped[str] = mapped_column(String(500))
+    completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    created_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    updated_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class TaskActivity(Base):
+    __tablename__ = "task_activities"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4)
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("local_tasks.id", ondelete="CASCADE"), index=True
+    )
+    actor_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    action: Mapped[str] = mapped_column(String(40))
+    details_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
 class Timer(Base):
     __tablename__ = "timers"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4)
