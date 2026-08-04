@@ -76,12 +76,17 @@ export default function Settings() {
       );
     }
     if (oauthError) {
+      const mailboxUnavailable = oauthError === "gmail_mailbox_unavailable";
       setError(
         t(
-          oauthError === "gmail_access_denied"
+          mailboxUnavailable
+            ? "Google выдал запрошенные права, но Gmail отклонил доступ к почтовому ящику. Откройте Gmail этим аккаунтом, завершите первоначальную настройку почты и повторите авторизацию."
+            : oauthError === "gmail_access_denied"
             ? "Google не предоставил доступ к Gmail. Убедитесь, что Gmail API включён в Google Cloud, приложение опубликовано или ваш адрес добавлен в тестовые пользователи, затем нажмите «Авторизовать Gmail» ещё раз и разрешите все запрошенные права."
             : "Провайдер отклонил авторизацию. Повторите подключение и разрешите запрошенные права.",
-          oauthError === "gmail_access_denied"
+          mailboxUnavailable
+            ? "Google granted the requested permissions, but Gmail rejected access to the mailbox. Open Gmail with this account, finish its initial setup, and authorize again."
+            : oauthError === "gmail_access_denied"
             ? "Google did not grant Gmail access. Ensure the Gmail API is enabled, the app is published or your address is a test user, then authorize Gmail again and allow every requested permission."
             : "The provider declined authorization. Reconnect and allow the requested permissions.",
         ),

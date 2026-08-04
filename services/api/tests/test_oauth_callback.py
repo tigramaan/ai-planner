@@ -1,5 +1,6 @@
 from sqlalchemy import select
 
+from app.adapters import ProviderError
 from app.database import SessionLocal
 from app.models import Integration, User
 from app.oauth import create_state, resolve_scopes
@@ -39,7 +40,7 @@ def test_google_gmail_is_verified_before_connection(logged_in, monkeypatch):
         return {"email": "family@example.com"}
 
     async def rejected(*_args):
-        raise RuntimeError("Provider request failed (403)")
+        raise ProviderError("Provider request failed (403)", 403, "forbidden")
 
     monkeypatch.setattr(integrations_router, "exchange_code", tokens)
     monkeypatch.setattr(integrations_router, "account_profile", profile)
@@ -51,7 +52,9 @@ def test_google_gmail_is_verified_before_connection(logged_in, monkeypatch):
         follow_redirects=False,
     )
     assert response.status_code == 303
-    assert response.headers["location"].endswith("/settings?oauth_error=gmail_access_denied")
+    assert response.headers["location"].endswith(
+        "/settings?oauth_error=gmail_mailbox_unavailable"
+    )
     with SessionLocal() as db:
         assert db.scalar(select(Integration).where(Integration.provider == "google")) is None
 

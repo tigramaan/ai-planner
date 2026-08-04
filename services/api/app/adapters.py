@@ -8,9 +8,15 @@ import httpx
 
 
 class ProviderError(RuntimeError):
-    def __init__(self, message: str, status_code: int | None = None):
+    def __init__(
+        self,
+        message: str,
+        status_code: int | None = None,
+        provider_reason: str | None = None,
+    ):
         super().__init__(message)
         self.status_code = status_code
+        self.provider_reason = provider_reason
 
 
 def graph_datetime(value: str) -> str:
@@ -42,7 +48,20 @@ async def provider_request(
             method, url, headers=request_headers, json=json, params=params
         )
     if response.status_code >= 400:
-        raise ProviderError(f"Provider request failed ({response.status_code})", response.status_code)
+        provider_reason = None
+        try:
+            error = response.json().get("error", {})
+            details = error.get("errors", []) if isinstance(error, dict) else []
+            provider_reason = error.get("status") if isinstance(error, dict) else None
+            if details and isinstance(details[0], dict):
+                provider_reason = details[0].get("reason") or provider_reason
+        except (TypeError, ValueError):
+            pass
+        raise ProviderError(
+            f"Provider request failed ({response.status_code})",
+            response.status_code,
+            provider_reason,
+        )
     return response.json() if response.content else {}
 
 

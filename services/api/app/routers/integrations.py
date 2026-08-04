@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, datetime, timedelta
 from urllib.parse import urlencode
 
@@ -6,7 +7,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..adapters import account_profile, verify_google_gmail_access
+from ..adapters import ProviderError, account_profile, verify_google_gmail_access
 from ..audit import audit
 from ..config import Settings, get_settings
 from ..database import get_db
@@ -18,6 +19,7 @@ from ..schemas import OAuthStart, SecretWrite
 from .auth import set_auth_cookies
 
 router = APIRouter(prefix="/api/v1/integrations", tags=["integrations"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("")
@@ -128,7 +130,31 @@ async def oauth_callback(
                 raise RuntimeError("Google did not grant all requested permissions")
         profile = await account_profile(provider, tokens["access_token"])
         if provider == "google" and any("/auth/gmail." in scope for scope in record.scopes):
-            await verify_google_gmail_access(tokens["access_token"])
+            try:
+                await verify_google_gmail_access(tokens["access_token"])
+            except ProviderError as exc:
+                logger.warning(
+                    "Gmail capability check failed status=%s reason=%s",
+                    exc.status_code,
+                    exc.provider_reason or "unspecified",
+                )
+                return RedirectResponse(
+                    f"{settings.public_base_url}/settings?"
+                    f"{urlencode({'oauth_error': 'gmail_mailbox_unavailable'})}",
+                    status_code=303,
+                )
+    except ProviderError as exc:
+        logger.warning(
+            "OAuth provider capability check failed provider=%s status=%s reason=%s",
+            provider,
+            exc.status_code,
+            exc.provider_reason or "unspecified",
+        )
+        return RedirectResponse(
+            f"{settings.public_base_url}/settings?"
+            f"{urlencode({'oauth_error': 'oauth_access_denied'})}",
+            status_code=303,
+        )
     except (ValueError, RuntimeError):
         reason = "gmail_access_denied" if provider == "google" else "oauth_access_denied"
         return RedirectResponse(
