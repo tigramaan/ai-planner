@@ -5,7 +5,7 @@ import { Microphone, PaperPlaneRight, Stop } from "@phosphor-icons/react";
 import { api, uploadAudio } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
-type Message = { id?: string; role: "user" | "assistant"; text: string };
+type Message = { id?: string; role: "user" | "assistant"; text: string; created_at?: string };
 type Pending = { id: string; display_summary: string; status: string; result: { report?: string } };
 const appendMessage = (items: Message[], message: Message) => [...items, message].slice(-50);
 
@@ -32,6 +32,13 @@ export function Chat() {
   const messageList = useRef<HTMLDivElement | null>(null);
   const composerInput = useRef<HTMLTextAreaElement | null>(null);
   const stickToBottom = useRef(true);
+  const busyRef = useRef(false);
+
+  async function syncMessages() {
+    if (busyRef.current) return;
+    const rows = await api<Message[]>("/chat/messages");
+    setMessages(rows);
+  }
 
   function loadPending() {
     api<Pending[]>("/pending-actions").then(setPending).catch((value) => setError(value.message));
@@ -40,9 +47,15 @@ export function Chat() {
   useEffect(() => {
     const draft = new URLSearchParams(window.location.search).get("draft");
     if (draft) setText(draft);
-    api<Message[]>("/chat/messages").then(setMessages).catch((value) => setError(value.message));
+    void syncMessages().catch((value) => setError(value.message));
+    const poll = window.setInterval(() => {
+      void syncMessages().catch(() => undefined);
+    }, 5000);
     loadPending();
-    return () => stopVisualization();
+    return () => {
+      window.clearInterval(poll);
+      stopVisualization();
+    };
   }, []);
 
   useLayoutEffect(() => {
@@ -120,10 +133,12 @@ export function Chat() {
     event?.preventDefault();
     const value = text.trim();
     if (!value || busy) return;
+    const sentAt = new Date().toISOString();
     stickToBottom.current = true;
-    setMessages((items) => appendMessage(items, { role: "user", text: value }));
+    setMessages((items) => appendMessage(items, { role: "user", text: value, created_at: sentAt }));
     setText("");
     setBusy(true);
+    busyRef.current = true;
     setReplyPending(true);
     setError("");
     try {
@@ -131,28 +146,31 @@ export function Chat() {
         method: "POST",
         body: JSON.stringify({ text: value }),
       });
-      setMessages((items) => appendMessage(items, { role: "assistant", text: result.message }));
+      setMessages((items) => appendMessage(items, { role: "assistant", text: result.message, created_at: new Date().toISOString() }));
       if (result.pending_action_id) loadPending();
     } catch (value) {
       setError(value instanceof Error ? value.message : t("Команда не выполнена", "Command failed"));
     } finally {
       setReplyPending(false);
       setBusy(false);
+      busyRef.current = false;
     }
   }
 
   async function decide(id: string, decision: "confirm" | "cancel") {
     setBusy(true);
+    busyRef.current = true;
     setError("");
     try {
       const result = await api<{ result?: { report?: string } }>(`/pending-actions/${id}/${decision}`, { method: "POST" });
       stickToBottom.current = true;
-      setMessages((items) => appendMessage(items, { role: "assistant", text: decision === "confirm" ? result?.result?.report || t("Действие выполнено.", "Action completed.") : t("Действие отменено.", "Action cancelled.") }));
+      setMessages((items) => appendMessage(items, { role: "assistant", text: decision === "confirm" ? result?.result?.report || t("Действие выполнено.", "Action completed.") : t("Действие отменено.", "Action cancelled."), created_at: new Date().toISOString() }));
       loadPending();
     } catch (value) {
       setError(value instanceof Error ? value.message : t("Не удалось обработать подтверждение", "Could not process confirmation"));
     } finally {
       setBusy(false);
+      busyRef.current = false;
     }
   }
 
@@ -193,7 +211,7 @@ export function Chat() {
 
   return <section className="panel chat" aria-label={t("Чат с планировщиком", "Planner chat")}>
     <div className="messages" ref={messageList} onScroll={trackScroll} aria-live="polite">
-      {messages.length === 0 ? <p className="muted">{t("Напишите команду или запишите голосовое сообщение.", "Type a command or record a voice message.")}</p> : messages.map((message, index) => <div className={`message ${message.role}`} key={message.id ?? index}><MessageText text={message.text}/></div>)}
+      {messages.length === 0 ? <p className="muted">{t("Напишите команду или запишите голосовое сообщение.", "Type a command or record a voice message.")}</p> : messages.map((message, index) => <div className={`message ${message.role}`} key={message.id ?? index}><MessageText text={message.text}/>{message.created_at && <time className="messageTime" dateTime={message.created_at}>{new Date(message.created_at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}</time>}</div>)}
       {replyPending && <div className="message assistant typingIndicator" role="status" aria-label={t("Планировщик печатает", "Planner is typing")}><span>{t("Печатает", "Typing")}</span><i/><i/><i/></div>}
       {pending.filter((action) => action.status === "pending").map((action) => <div className="confirmation" key={action.id}><strong>{t("Требуется подтверждение", "Confirmation required")}</strong><p>{action.display_summary}</p><div className="row"><button className="button" disabled={busy} onClick={() => decide(action.id, "confirm")}>{t("Подтвердить", "Confirm")}</button><button className="button secondary" disabled={busy} onClick={() => decide(action.id, "cancel")}>{t("Отменить", "Cancel")}</button></div></div>)}
     </div>

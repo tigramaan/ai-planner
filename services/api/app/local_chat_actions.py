@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -23,6 +24,18 @@ LOCAL_INTENTS = {
     "update_timer",
     "cancel_timer",
 }
+
+
+def duration_label(minutes: int, ru: bool) -> str:
+    if not ru:
+        return f"{minutes} {'minute' if minutes == 1 else 'minutes'}"
+    if minutes % 10 == 1 and minutes % 100 != 11:
+        unit = "минуту"
+    elif minutes % 10 in {2, 3, 4} and minutes % 100 not in {12, 13, 14}:
+        unit = "минуты"
+    else:
+        unit = "минут"
+    return f"{minutes} {unit}"
 
 
 def recent_match(db: Session, row_type, user: User, query: str):
@@ -132,10 +145,12 @@ def timer_action(db: Session, user: User, intent: Intent, ru: bool) -> str:
         db.add(timer)
         db.flush()
         push_ready = schedule_timer_notification(db, user, timer)
+        end_time = timer.ends_at.astimezone(ZoneInfo(user.timezone)).strftime("%H:%M")
+        duration = duration_label(seconds // 60, ru)
         answer = (
-            f"Таймер запущен на {seconds // 60} минут."
+            f"Таймер «{timer.title}» запущен на {duration}, до {end_time}."
             if ru
-            else f"Timer started for {seconds // 60} minutes."
+            else f'Timer "{timer.title}" started for {duration}, until {end_time}.'
         )
         if not push_ready:
             answer += (
@@ -164,9 +179,9 @@ def timer_action(db: Session, user: User, intent: Intent, ru: bool) -> str:
     timer.status = "active"
     push_ready = schedule_timer_notification(db, user, timer)
     answer = (
-        f"Таймер «{timer.title}» перезапущен на {seconds // 60} минут."
+        f"Таймер «{timer.title}» перезапущен на {duration_label(seconds // 60, ru)}."
         if ru
-        else f'Timer "{timer.title}" restarted for {seconds // 60} minutes.'
+        else f'Timer "{timer.title}" restarted for {duration_label(seconds // 60, ru)}.'
     )
     if not push_ready:
         answer += (

@@ -1,5 +1,10 @@
 from datetime import UTC, datetime, timedelta
 
+from sqlalchemy import select
+
+from app.database import SessionLocal
+from app.models import AgentMessage, Reminder, Timer, User
+
 WORKER_HEADERS = {"X-Worker-Token": "test-worker-service-token-that-is-long-enough"}
 
 
@@ -82,3 +87,40 @@ def test_push_delivery_can_be_checked_from_the_browser(logged_in):
     assert logged_in.get(f"/api/v1/push/test/{reminder_id}").json() == {
         "status": "delivered"
     }
+
+
+def test_finished_named_timer_is_written_to_chat_history(logged_in):
+    now = datetime.now(UTC)
+    with SessionLocal() as db:
+        user = db.scalar(select(User))
+        timer = Timer(user_id=user.id, title="Макароны", ends_at=now)
+        db.add(timer)
+        db.flush()
+        reminder = Reminder(
+            user_id=user.id,
+            timer_id=timer.id,
+            title="Таймер «Макароны» завершён",
+            due_at=now,
+            next_attempt_at=now,
+            timezone="Europe/Moscow",
+            channel="push",
+            status="processing",
+            attempts=1,
+        )
+        db.add(reminder)
+        db.commit()
+        reminder_id = reminder.id
+        timer_id = timer.id
+
+    completed = logged_in.post(
+        f"/internal/v1/reminders/{reminder_id}/complete",
+        headers=WORKER_HEADERS,
+        json={"status": "delivered"},
+    )
+
+    assert completed.status_code == 204
+    with SessionLocal() as db:
+        assert db.get(Timer, timer_id).status == "finished"
+        message = db.scalar(select(AgentMessage).where(AgentMessage.text.contains("Макароны")))
+        assert message is not None
+        assert message.role == "assistant"

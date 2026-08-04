@@ -33,3 +33,24 @@ test("shows a typing status until the assistant response arrives", async () => {
   await waitFor(() => expect(screen.queryByRole("status", { name: "Planner is typing" })).toBeNull());
   expect(screen.getByText("Done")).toBeVisible();
 });
+
+test("shows the time of each persisted message", async () => {
+  apiMock.mockImplementation((path) => {
+    if (path === "/chat/messages") {
+      return Promise.resolve([
+        {
+          id: "message-1",
+          role: "assistant",
+          text: "Timer finished",
+          created_at: "2026-08-04T05:14:00Z",
+        },
+      ]);
+    }
+    return Promise.resolve([]);
+  });
+
+  render(<Chat />);
+
+  expect(await screen.findByText("Timer finished")).toBeVisible();
+  expect(document.querySelector("time[datetime='2026-08-04T05:14:00Z']")).not.toBeNull();
+});

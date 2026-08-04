@@ -36,6 +36,7 @@ h1 { font-size:clamp(30px,4vw,46px); line-height:1.05; letter-spacing:-.045em; m
 .message { max-width:82%; padding:12px 14px; border-radius:var(--radius); line-height:1.45; white-space:pre-wrap; }
 .message.user { align-self:flex-end; background:var(--accent); color:#f7f9fc; }
 .message.assistant { background:var(--surface-2); }
+.messageTime { display:block; margin-top:5px; font-size:11px; line-height:1; text-align:right; opacity:.65; }
 .typingIndicator { display:flex; align-items:center; gap:5px; color:var(--muted); font-size:13px; }
 .typingIndicator span { margin-right:3px; }
 .typingIndicator i { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.35; }

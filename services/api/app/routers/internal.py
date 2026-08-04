@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from ..config import Settings, get_settings
 from ..database import get_db
-from ..models import AuditLog, PushSubscription, Reminder
+from ..models import AgentMessage, AuditLog, PushSubscription, Reminder, Timer
 from ..schemas import ReminderDelivery
 from ..security import decrypt_json
 
@@ -94,6 +94,18 @@ def complete_reminder(
         reminder.status = "delivered"
         reminder.delivered_at = now
         reminder.last_error = None
+        if reminder.timer_id:
+            timer = db.get(Timer, reminder.timer_id)
+            if timer is not None:
+                timer.status = "finished"
+            db.add(
+                AgentMessage(
+                    user_id=reminder.user_id,
+                    role="assistant",
+                    text=reminder.title,
+                    created_at=now,
+                )
+            )
     elif body.status == "retry" and reminder.attempts < 5:
         reminder.status = "retry"
         reminder.next_attempt_at = now + timedelta(minutes=min(2**reminder.attempts, 30))
