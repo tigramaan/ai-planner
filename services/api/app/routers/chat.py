@@ -1,8 +1,8 @@
 import re
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from ..action_summary import action_summary
@@ -136,6 +136,14 @@ def browser_locale(request: Request) -> str:
 
 @router.get("/chat/messages")
 def messages(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    deleted = db.execute(
+        delete(AgentMessage).where(
+            AgentMessage.user_id == user.id,
+            AgentMessage.created_at < datetime.now(UTC) - timedelta(days=100),
+        )
+    )
+    if deleted.rowcount:
+        db.commit()
     latest = db.scalars(
         select(AgentMessage)
         .where(AgentMessage.user_id == user.id)

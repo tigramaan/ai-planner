@@ -49,3 +49,4 @@
 | REQ-036 | recipient resolver and Google/Microsoft contact adapters | recipient and adapter unit tests |
 | REQ-037 | bounded per-user conversation history passed to intent extraction | conversation continuation tests |
 | REQ-076 | Активные таймеры с обратным отсчётом и адаптивная голосовая отправка | `services/api/app/routers/local_items.py`, `services/web/src/components/Chat.tsx`, `services/web/src/app/globals.css` | `services/api/tests/test_planner.py`, `services/web/src/components/Chat.test.tsx` |
+| REQ-077 | Viewport-чат, сворачиваемая навигация, компактные уведомления и retention 100 дней | `services/web/src/components/Shell.tsx`, `services/web/src/app/page.tsx`, `services/web/src/components/PushSetup.tsx`, `services/web/src/components/Chat.tsx`, `services/web/src/app/globals.css`, `services/api/app/routers/chat.py` | `services/web/src/components/PushSetup.test.tsx`, `services/api/tests/test_chat_retention.py` |

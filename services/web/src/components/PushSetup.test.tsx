@@ -62,12 +62,20 @@ test("checks real server delivery when notifications look enabled", async () => 
     return { status: "delivered" };
   });
 
-  render(<PushSetup compact />);
+  render(<PushSetup />);
 
   await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Notifications are on"));
-  fireEvent.click(screen.getByRole("button", { name: "Test" }));
+  fireEvent.click(screen.getByRole("button", { name: "Test notification" }));
   await waitFor(
     () => expect(screen.getByText("Test notification sent to this device.")).toBeVisible(),
     { timeout: 2500 },
   );
+});
+
+test("does not consume chat space when notifications are enabled", async () => {
+  browserPush("granted", {});
+  apiMock.mockResolvedValue({ configured: true });
+  render(<PushSetup compact />);
+  await waitFor(() => expect(apiMock).toHaveBeenCalledWith("/push/status"));
+  expect(screen.queryByRole("status")).toBeNull();
 });

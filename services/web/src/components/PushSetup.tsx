@@ -162,23 +162,17 @@ export function PushSetup({ compact = false }: { compact?: boolean }) {
     : t("Включить", "Enable");
 
   if (compact) {
+    if (state === "checking" || state === "enabled") return null;
     return (
       <aside className={`notificationBanner ${state}`} role="status" aria-live="polite">
         <Icon size={22} weight="duotone" />
         <div>
           <strong>{labels[state]}</strong>
-          {state !== "enabled" && state !== "checking" && (
-            <span>{t("Таймеры и задачи не смогут прислать сигнал.", "Timers and tasks cannot alert you.")}</span>
-          )}
+          <span>{t("Таймеры и задачи не смогут прислать сигнал.", "Timers and tasks cannot alert you.")}</span>
         </div>
-        {state !== "enabled" && state !== "checking" && state !== "unsupported" && (
+        {state !== "unsupported" && (
           <button className="button secondary" type="button" disabled={busy} onClick={enable}>
             {busy ? t("Подключаю…", "Enabling…") : actionLabel}
-          </button>
-        )}
-        {state === "enabled" && (
-          <button className="button secondary" type="button" disabled={busy} onClick={testDelivery}>
-            {busy ? t("Проверяю…", "Testing…") : t("Проверить", "Test")}
           </button>
         )}
         <ActionToast message={notice} onDismiss={() => setNotice("")} />
