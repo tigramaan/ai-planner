@@ -15,6 +15,8 @@ Provider client secrets and OAuth tokens are runtime data. They must never be co
 ## Website booking handover
 
 The owner enables the booking API and creates a website key in Settings. Copy the key immediately into the website backend secret store; AI Planner never shows it again. Browser code must never receive this key. The backend uses `GET /booking/v1/availability` and `POST /booking/v1/bookings` with a unique `Idempotency-Key`. Stable `lead_id` values enforce the limit of three successful bookings per lead.
+
+Booking requires the owner's Google Calendar connection regardless of the general calendar default. Select Google Meet, Yandex Telemost, Zoom or no video in the booking block. Telemost requires the encrypted permanent room URL in general Settings; Zoom requires its OAuth connection. Availability and the final pre-write guard both read Google Calendar conflicts.
 # Web Push deployment note
 
 The VAPID private key is mounted read-only into the non-root worker. Keep it at mode `0640` and set `VAPID_FILE_GID` to the key file's numeric host group before `docker compose up`. The worker validates readability before publishing its Redis heartbeat. After deployment, use the authenticated **Проверить уведомление** action rather than relying only on the browser permission toggle.

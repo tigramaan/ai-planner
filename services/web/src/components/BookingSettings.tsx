@@ -16,6 +16,7 @@ type Policy = {
   buffer_before_minutes: number;
   buffer_after_minutes: number;
   max_per_day: number;
+  conference_provider: "google" | "yandex" | "zoom" | "none";
   title_template: string;
   keys: KeyMeta[];
 };
@@ -31,6 +32,7 @@ const initial: Policy = {
   buffer_before_minutes: 0,
   buffer_after_minutes: 15,
   max_per_day: 5,
+  conference_provider: "google",
   title_template: "Звонок: {name}",
   keys: [],
 };
@@ -95,6 +97,16 @@ export function BookingSettings() {
           <span><input type="checkbox" checked={policy.enabled} onChange={(event) => setPolicy({ ...policy, enabled: event.target.checked })} /> {t("Включить API записи", "Enable booking API")}</span>
         </label>
         <label className="label">{t("Длительность, минут", "Duration, minutes")}<input className="field" type="number" min="15" max="240" step="5" value={policy.duration_minutes} onChange={(event) => number("duration_minutes", Number(event.target.value))} /></label>
+        <label className="label">
+          {t("Видеосвязь для записей", "Video service for bookings")}
+          <select className="field" value={policy.conference_provider} onChange={(event) => setPolicy({ ...policy, conference_provider: event.target.value as Policy["conference_provider"] })}>
+            <option value="google">Google Meet</option>
+            <option value="yandex">{t("Яндекс Телемост", "Yandex Telemost")}</option>
+            <option value="zoom">Zoom</option>
+            <option value="none">{t("Без видеосвязи", "No video")}</option>
+          </select>
+        </label>
+        <p className="muted">{t("Свободные слоты всегда проверяются по подключённому Google Календарю. Для Телемоста используется защищённая постоянная ссылка из общих настроек.", "Available slots are always checked against the connected Google Calendar. Telemost uses the protected permanent link from general settings.")}</p>
         <label className="label">{t("Рабочие дни (0=Пн … 6=Вс)", "Workdays (0=Mon … 6=Sun)")}<input className="field" value={policy.workdays.join(",")} onChange={(event) => setPolicy({ ...policy, workdays: event.target.value.split(",").map(Number) })} /></label>
         <div className="fieldRow">
           <label className="label">{t("С", "From")}<input className="field" type="time" value={policy.work_start} onChange={(event) => setPolicy({ ...policy, work_start: event.target.value })} /></label>

@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 from ..adapters import (
     ProviderError,
     create_calendar_event,
-    create_teams_online_meeting,
     create_zoom_meeting,
     list_calendar_events,
 )
@@ -159,13 +158,10 @@ async def availability_rows(
     now = datetime.now(UTC)
     minimum, maximum = policy_window(policy, user, now)
     start = max(requested_from.astimezone(UTC), minimum)
-    provider = user.default_calendar
-    if provider not in {"google", "microsoft"}:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Default calendar does not support booking")
     try:
-        token = await valid_access_token(db, settings, user, provider)
+        token = await valid_access_token(db, settings, user, "google")
         events = await list_calendar_events(
-            provider, token, start - timedelta(hours=4), maximum + timedelta(hours=4)
+            "google", token, start - timedelta(hours=4), maximum + timedelta(hours=4)
         )
     except (LookupError, ProviderError) as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Calendar is unavailable") from exc
@@ -288,9 +284,8 @@ async def create_booking(
     if not slots or slots[0][0] != requested_start:
         raise HTTPException(status.HTTP_409_CONFLICT, "slot_unavailable")
     requested_end = requested_start + timedelta(minutes=policy.duration_minutes)
-    if user.default_calendar == "microsoft" and user.default_conference == "google":
-        raise HTTPException(status.HTTP_409_CONFLICT, "conference_not_supported_by_calendar")
-    if user.default_conference == "yandex" and not read_fallback_url(
+    conference_provider = policy.conference_provider
+    if conference_provider == "yandex" and not read_fallback_url(
         settings, user, "yandex_telemost"
     ):
         raise HTTPException(status.HTTP_409_CONFLICT, "conference_fallback_not_configured")
@@ -305,7 +300,7 @@ async def create_booking(
         start_at=requested_start,
         end_at=requested_end,
         timezone=body.timezone,
-        provider=user.default_calendar,
+        provider="google",
         status="creating",
     )
     db.add(row)
@@ -314,12 +309,10 @@ async def create_booking(
     except IntegrityError as exc:
         db.rollback()
         raise HTTPException(status.HTTP_409_CONFLICT, "slot_unavailable") from exc
-    conference = {"google": "google_meet", "microsoft": "microsoft_teams", "none": "none"}.get(
-        user.default_conference, "none"
-    )
+    conference = "google_meet" if conference_provider == "google" else "none"
     external_url = (
         read_fallback_url(settings, user, "yandex_telemost")
-        if user.default_conference == "yandex"
+        if conference_provider == "yandex"
         else None
     )
     event_payload = {
@@ -334,24 +327,14 @@ async def create_booking(
         "reminder_minutes": user.default_reminder_minutes,
     }
     try:
-        token = await valid_access_token(db, settings, user, user.default_calendar)
-        if user.default_conference == "microsoft" and user.default_calendar == "google":
-            event_payload["conference"] = "none"
-            try:
-                teams_token = await valid_access_token(db, settings, user, "microsoft")
-                teams = await create_teams_online_meeting(teams_token, event_payload)
-                event_payload["external_join_url"] = teams.get("joinWebUrl")
-            except (LookupError, ProviderError):
-                event_payload["external_join_url"] = read_fallback_url(
-                    settings, user, "microsoft_teams"
-                )
-            if not event_payload["external_join_url"]:
-                raise ProviderError("Microsoft returned no Teams join URL")
-        elif user.default_conference == "zoom":
+        token = await valid_access_token(db, settings, user, "google")
+        if conference_provider == "zoom":
             zoom_token = await valid_access_token(db, settings, user, "zoom")
             zoom = await create_zoom_meeting(zoom_token, event_payload)
             event_payload["external_join_url"] = zoom.get("join_url")
-        result = await create_calendar_event(user.default_calendar, token, event_payload)
+            if not event_payload["external_join_url"]:
+                raise ProviderError("Zoom returned no join URL")
+        result = await create_calendar_event("google", token, event_payload)
         if not result.get("id"):
             raise ProviderError("Calendar returned no event id")
     except Exception as exc:

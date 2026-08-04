@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from app.routers import booking
 
 
-def configure(logged_in):
+def configure(logged_in, conference_provider="google"):
     response = logged_in.put(
         "/api/v1/booking/settings",
         json={
@@ -17,6 +17,7 @@ def configure(logged_in):
             "buffer_before_minutes": 0,
             "buffer_after_minutes": 0,
             "max_per_day": 20,
+            "conference_provider": conference_provider,
             "title_template": "Звонок: {name}",
         },
     )
@@ -132,3 +133,52 @@ def test_busy_slot_does_not_consume_attempt(logged_in, monkeypatch):
     assert logged_in.post("/booking/v1/bookings", json=body, headers=headers).status_code == 409
     busy = False
     assert logged_in.post("/booking/v1/bookings", json=body, headers=headers).status_code == 201
+
+
+def test_booking_always_checks_google_and_uses_selected_telemost(logged_in, monkeypatch):
+    key = configure(logged_in, "yandex")
+    assert logged_in.put(
+        "/api/v1/preferences",
+        json={
+            "default_calendar": "microsoft",
+            "default_mail": "google",
+            "default_conference": "none",
+            "default_reminder_minutes": 5,
+            "fallback_teams_url": "",
+            "fallback_telemost_url": "https://telemost.yandex.ru/j/test-room",
+        },
+    ).status_code == 200
+    providers = []
+    created_payload = {}
+
+    async def token(_db, _settings, _user, provider):
+        providers.append(provider)
+        return "provider-token"
+
+    async def events(provider, *_args):
+        providers.append(provider)
+        return []
+
+    async def create(provider, _token, payload):
+        providers.append(provider)
+        created_payload.update(payload)
+        return {"id": "google-event", "htmlLink": "https://calendar.google.test/event"}
+
+    monkeypatch.setattr(booking, "valid_access_token", token)
+    monkeypatch.setattr(booking, "list_calendar_events", events)
+    monkeypatch.setattr(booking, "create_calendar_event", create)
+    response = logged_in.post(
+        "/booking/v1/bookings",
+        json={
+            "lead_id": "telemost-lead",
+            "name": "Анна",
+            "email": "anna@example.com",
+            "start": next_slot().isoformat(),
+            "timezone": "Europe/Moscow",
+        },
+        headers={"Authorization": f"Bearer {key}", "Idempotency-Key": "telemost-booking"},
+    )
+    assert response.status_code == 201, response.text
+    assert set(providers) == {"google"}
+    assert created_payload["conference"] == "none"
+    assert created_payload["external_join_url"] == "https://telemost.yandex.ru/j/test-room"

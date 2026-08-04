@@ -279,6 +279,7 @@ class BookingPolicy(Base):
     buffer_before_minutes: Mapped[int] = mapped_column(Integer, default=0)
     buffer_after_minutes: Mapped[int] = mapped_column(Integer, default=15)
     max_per_day: Mapped[int] = mapped_column(Integer, default=5)
+    conference_provider: Mapped[str] = mapped_column(String(32), default="google")
     title_template: Mapped[str] = mapped_column(String(200), default="Звонок: {name}")
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 

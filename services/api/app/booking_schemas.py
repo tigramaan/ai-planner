@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -14,6 +15,7 @@ class BookingPolicyWrite(BaseModel):
     buffer_before_minutes: int = Field(default=0, ge=0, le=240)
     buffer_after_minutes: int = Field(default=15, ge=0, le=240)
     max_per_day: int = Field(default=5, ge=1, le=50)
+    conference_provider: Literal["google", "yandex", "zoom", "none"] = "google"
     title_template: str = Field(default="Звонок: {name}", min_length=1, max_length=200)
 
     @field_validator("workdays")

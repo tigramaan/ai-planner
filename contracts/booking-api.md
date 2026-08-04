@@ -15,6 +15,8 @@ Booking API is a server-to-server boundary exposed by the API service. It has no
 - `POST /booking/v1/bookings` requires `Idempotency-Key` and accepts `lead_id`, `name`, `email`, `start`, optional company and safe note.
 - `GET /booking/v1/bookings/{id}` returns only a booking created through the same API key owner.
 
-The site cannot override duration, organizer, calendar, conference provider or availability policy. Availability and booking validate timezone, bounds and provider state. Booking repeats the conflict check, creates the provider event with attendee updates, reads it back and only then consumes one of three successful attempts for `lead_id`. Failed provider calls and conflicts do not consume an attempt. Reusing an idempotency key with a different payload is rejected.
+Booking uses the owner's connected Google Calendar only. The owner selects a dedicated booking conference default in Settings: Google Meet, Yandex Telemost, Zoom or no video. Telemost uses the encrypted permanent room configured by the owner; Zoom requires its connected integration. The site cannot override duration, organizer, calendar, conference provider or availability policy.
+
+Availability reads Google events for the complete bounded window and applies configured buffers. Booking repeats that Google conflict check immediately before creation, creates the Google event with attendee updates, reads it back and only then consumes one of three successful attempts for `lead_id`. Failed provider calls and conflicts do not consume an attempt. Reusing an idempotency key with a different payload is rejected.
 
 Contact fields are encrypted at rest. API responses expose no provider token or encrypted payload. Cancellation and rescheduling are outside this contract.
