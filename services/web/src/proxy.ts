@@ -12,6 +12,7 @@ export function proxy(request: NextRequest) {
     PUBLIC_PATHS.has(path) ||
     path.startsWith("/_next/") ||
     PUBLIC_PWA_ASSETS.has(path) ||
+    path.startsWith("/booking/v1/") ||
     path.startsWith("/api/")
   ) {
     return NextResponse.next();

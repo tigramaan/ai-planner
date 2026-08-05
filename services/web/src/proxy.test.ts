@@ -29,4 +29,12 @@ describe("protected routes", () => {
       expect(proxy(new NextRequest(`https://planner.umec.space${path}`)).status).toBe(200);
     }
   });
+
+  it("allows only the versioned booking machine prefix without a browser session", () => {
+    expect(proxy(new NextRequest("https://planner.umec.space/booking/v1/availability")).status).toBe(200);
+    expect(proxy(new NextRequest("https://planner.umec.space/booking/v1/bookings")).status).toBe(200);
+    const nearby = proxy(new NextRequest("https://planner.umec.space/booking/settings"));
+    expect(nearby.status).toBe(307);
+    expect(nearby.headers.get("location")).toBe("https://planner.umec.space/login");
+  });
 });

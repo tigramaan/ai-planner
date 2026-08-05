@@ -16,6 +16,8 @@ Provider client secrets and OAuth tokens are runtime data. They must never be co
 
 The owner enables the booking API and creates a website key in Settings. Copy the key immediately into the website backend secret store; AI Planner never shows it again. Browser code must never receive this key. The backend uses `GET /booking/v1/availability` and `POST /booking/v1/bookings` with a unique `Idempotency-Key`. Stable `lead_id` values enforce the limit of three successful bookings per lead.
 
+The production Web gateway must proxy the exact `/booking/v1/:path*` prefix to the internal API and exempt only that prefix from browser-session redirects. Do not expose or exempt `/api/v1/booking/*`: those owner settings remain browser-authenticated. Verify an anonymous machine request receives an API JSON status rather than `/login` before enabling a consuming site.
+
 Booking requires the owner's Google Calendar connection regardless of the general calendar default. Select Google Meet, Yandex Telemost, Zoom or no video in the booking block. Telemost requires the encrypted permanent room URL in general Settings; Zoom requires its OAuth connection. Availability and the final pre-write guard both read Google Calendar conflicts.
 # Web Push deployment note
 
