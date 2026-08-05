@@ -13,7 +13,7 @@ Production routes the exact `/booking/v1/*` machine prefix through the Web gatew
 
 ## Site endpoints
 
-- `GET /booking/v1/availability?from=...&timezone=...` returns exact JSON `{timezone,duration_minutes,slots:[{start,end}]}` with bounded UTC-offset intervals.
+- `GET /booking/v1/availability?from=...&timezone=...` returns exact JSON `{timezone,duration_minutes,slots:[{start,end}]}` with at most 24 ordered UTC-offset intervals inside the next 14 days.
 - `POST /booking/v1/bookings` requires `Idempotency-Key` and accepts `lead_id`, `name`, `email`, `start`, optional company and safe note.
 - `GET /booking/v1/bookings/{id}` returns only a booking created through the same API key owner.
 

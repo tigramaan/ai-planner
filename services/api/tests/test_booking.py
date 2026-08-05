@@ -47,6 +47,31 @@ def test_key_is_shown_once_and_revocation_blocks_site(logged_in):
     assert response.status_code == 401
 
 
+def test_machine_availability_is_bounded_to_14_days_and_24_slots(logged_in, monkeypatch):
+    key = configure(logged_in)
+
+    async def token(*_args):
+        return "provider-token"
+
+    async def events(*_args):
+        return []
+
+    monkeypatch.setattr(booking, "valid_access_token", token)
+    monkeypatch.setattr(booking, "list_calendar_events", events)
+    requested = datetime.now(UTC).replace(second=0, microsecond=0)
+    response = logged_in.get(
+        "/booking/v1/availability",
+        params={"from": requested.isoformat(), "timezone": "Europe/Moscow"},
+        headers={"Authorization": f"Bearer {key}"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body) == {"timezone", "duration_minutes", "slots"}
+    assert 1 <= len(body["slots"]) <= 24
+    assert all(set(slot) == {"start", "end"} for slot in body["slots"])
+    assert all(datetime.fromisoformat(slot["end"]) <= requested + timedelta(days=14) for slot in body["slots"])
+
+
 def test_booking_idempotency_and_three_success_limit(logged_in, monkeypatch):
     key = configure(logged_in)
 

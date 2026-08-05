@@ -157,6 +157,7 @@ async def availability_rows(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "from requires UTC offset")
     now = datetime.now(UTC)
     minimum, maximum = policy_window(policy, user, now)
+    maximum = min(maximum, requested_from.astimezone(UTC) + timedelta(days=14))
     start = max(requested_from.astimezone(UTC), minimum)
     try:
         token = await valid_access_token(db, settings, user, "google")
@@ -215,7 +216,7 @@ async def availability(
         "duration_minutes": policy.duration_minutes,
         "slots": [
             {"start": start.astimezone(zone).isoformat(), "end": end.astimezone(zone).isoformat()}
-            for start, end in slots
+            for start, end in slots[:24]
         ],
     }
 
