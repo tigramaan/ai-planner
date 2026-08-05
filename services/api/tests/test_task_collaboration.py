@@ -83,3 +83,50 @@ def test_only_owner_can_manage_participants(client):
     assert client.delete(f"/api/v1/tasks/{task['id']}/participants/{participant_id}").status_code == 200
     login(client, "member@example.com")
     assert client.get("/api/v1/tasks").json() == []
+
+
+def test_member_edits_shared_task_through_chat_action(client):
+    register(client, "chat-owner@example.com")
+    task = client.post("/api/v1/tasks", json={"title": "Покупки"}).json()
+    register(client, "chat-member@example.com")
+    login(client, "chat-owner@example.com")
+    assert client.post(
+        f"/api/v1/tasks/{task['id']}/participants",
+        json={"email": "chat-member@example.com"},
+    ).status_code == 201
+
+    with SessionLocal() as db:
+        member = db.scalar(select(User).where(User.email == "chat-member@example.com"))
+        answer = task_action(
+            db,
+            member,
+            Intent(intent="update_task", event_query="Покупки", body="Молоко и кофе"),
+            "Добавь молоко и кофе в Покупки",
+            True,
+        )
+        db.commit()
+        assert answer == "Задача «Покупки» изменена."
+        assert db.get(LocalTask, task["id"]).description == "Молоко и кофе"
+        assert db.scalar(
+            select(TaskActivity).where(
+                TaskActivity.task_id == task["id"],
+                TaskActivity.actor_user_id == member.id,
+                TaskActivity.action == "updated",
+            )
+        )
+
+        denied = task_action(
+            db,
+            member,
+            Intent(intent="delete_task", event_query="Покупки"),
+            "Удали Покупки",
+            True,
+        )
+        assert denied == "Удалить общую задачу может только её владелец."
+        assert db.get(LocalTask, task["id"]) is not None
+from sqlalchemy import select
+
+from app.database import SessionLocal
+from app.local_chat_actions import task_action
+from app.models import LocalTask, TaskActivity, User
+from app.schemas import Intent

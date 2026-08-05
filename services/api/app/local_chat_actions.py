@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from .local_notifications import (
@@ -11,8 +11,9 @@ from .local_notifications import (
     schedule_task_notification,
     schedule_timer_notification,
 )
-from .models import LocalTask, Timer, User
+from .models import LocalTask, TaskParticipant, Timer, User
 from .schemas import Intent
+from .task_collaboration import add_activity
 
 LOCAL_INTENTS = {
     "create_task",
@@ -40,14 +41,20 @@ def duration_label(minutes: int, ru: bool) -> str:
 
 def recent_match(db: Session, row_type, user: User, query: str):
     order = row_type.created_at if row_type is LocalTask else row_type.starts_at
+    statement = select(row_type)
+    if row_type is LocalTask:
+        statement = (
+            statement.outerjoin(TaskParticipant, TaskParticipant.task_id == LocalTask.id)
+            .where(or_(LocalTask.user_id == user.id, TaskParticipant.user_id == user.id))
+            .distinct()
+        )
+    else:
+        statement = statement.where(row_type.user_id == user.id)
     return next(
         (
             row
             for row in db.scalars(
-                select(row_type)
-                .where(row_type.user_id == user.id)
-                .order_by(order.desc())
-                .limit(500)
+                statement.order_by(order.desc()).limit(500)
             )
             if query in row.title.casefold()
         ),
@@ -72,6 +79,7 @@ def task_action(db: Session, user: User, intent: Intent, raw: str, ru: bool) -> 
         )
         db.add(task)
         db.flush()
+        add_activity(db, task, user, "created")
         push_is_ready = schedule_task_notification(db, user, task)
         answer = f"Задача «{task.title}» создана." if ru else f'Task "{task.title}" created.'
         if task.due_at and not push_is_ready:
@@ -89,7 +97,14 @@ def task_action(db: Session, user: User, intent: Intent, raw: str, ru: bool) -> 
             if ru
             else "Task not found. Specify its title."
         )
+    owner = db.get(User, task.user_id)
     if intent.intent == "delete_task":
+        if task.user_id != user.id:
+            return (
+                "Удалить общую задачу может только её владелец."
+                if ru
+                else "Only the owner can delete a shared task."
+            )
         title = task.title
         delete_task_notification(db, task)
         db.delete(task)
@@ -97,10 +112,12 @@ def task_action(db: Session, user: User, intent: Intent, raw: str, ru: bool) -> 
     if intent.intent == "complete_task":
         task.status = "completed"
         delete_task_notification(db, task)
+        add_activity(db, task, user, "updated", {"fields": ["status"]})
         return f"Задача «{task.title}» выполнена." if ru else f'Task "{task.title}" completed.'
     if intent.intent == "reopen_task":
         task.status = "open"
-        push_is_ready = schedule_task_notification(db, user, task)
+        push_is_ready = schedule_task_notification(db, owner, task)
+        add_activity(db, task, user, "updated", {"fields": ["status"]})
         answer = f"Задача «{task.title}» возвращена в работу." if ru else f'Task "{task.title}" reopened.'
         if task.due_at and not push_is_ready:
             answer += (
@@ -123,7 +140,18 @@ def task_action(db: Session, user: User, intent: Intent, raw: str, ru: bool) -> 
                 status.HTTP_422_UNPROCESSABLE_ENTITY, "Task due time requires UTC offset"
             )
         task.due_at = due_at
-    push_is_ready = schedule_task_notification(db, user, task, reset=due_changed)
+    push_is_ready = schedule_task_notification(db, owner, task, reset=due_changed)
+    changed_fields = [
+        field
+        for field, changed in {
+            "title": bool(intent.title),
+            "description": intent.body is not None,
+            "priority": bool(intent.priority),
+            "due_at": due_changed,
+        }.items()
+        if changed
+    ]
+    add_activity(db, task, user, "updated", {"fields": changed_fields})
     answer = f"Задача «{task.title}» изменена." if ru else f'Task "{task.title}" updated.'
     if task.due_at and not push_is_ready:
         answer += (
