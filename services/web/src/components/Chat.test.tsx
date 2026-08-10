@@ -55,6 +55,21 @@ test("shows the time of each persisted message", async () => {
   expect(document.querySelector("time[datetime='2026-08-04T05:14:00Z']")).not.toBeNull();
 });
 
+test("inserts a clicked recipient candidate into the composer", async () => {
+  apiMock.mockImplementation((path) => Promise.resolve(path === "/chat/messages" ? [{
+    id: "message-choice",
+    role: "assistant",
+    text: "Choose: sorokinani@gmail.com, a.sorokina@blanc.ru",
+    created_at: "2026-08-10T06:42:00Z",
+  }] : []));
+
+  render(<Chat />);
+  fireEvent.click(await screen.findByRole("button", { name: "sorokinani@gmail.com" }));
+
+  expect(screen.getByRole("textbox", { name: "Command" })).toHaveValue("sorokinani@gmail.com");
+  expect(screen.getByRole("textbox", { name: "Command" })).toHaveFocus();
+});
+
 test("shows named active timers as a large countdown", async () => {
   apiMock.mockImplementation((path) => Promise.resolve(path === "/timers" ? [{
     id: "timer-1", title: "Макароны", status: "active",

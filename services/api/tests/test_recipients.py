@@ -17,6 +17,30 @@ def test_candidate_addresses_prefers_exact_contact_name():
     assert result == ["anastasia@example.com"]
 
 
+def test_candidate_addresses_excludes_unrelated_mail_and_technical_senders():
+    result = recipients.candidate_addresses(
+        "Анастасия Сорокина",
+        [{"name": "Сорокина Анастасия", "email": "sorokinani@gmail.com"}],
+        [
+            {"from": "Anastasia Sorokina <a.sorokina@blanc.ru>"},
+            {"from": "a.kalvin@vodomer.su"},
+            {"from": "sales@umec.space"},
+            {"from": "tigramaan@gmail.com"},
+            {"from": "kulai@btcvent.ru"},
+            {"from": "No Reply <no-reply@glueup.com>"},
+        ],
+    )
+    assert result == ["sorokinani@gmail.com", "a.sorokina@blanc.ru"]
+
+
+def test_candidate_addresses_does_not_guess_from_partial_name():
+    assert recipients.candidate_addresses(
+        "Анастасия Сорокина",
+        [{"name": "Анастасия", "email": "sorokinani@gmail.com"}],
+        [],
+    ) == []
+
+
 @pytest.mark.anyio
 async def test_resolver_uses_contacts_when_mail_scope_is_missing(monkeypatch):
     async def token(db, settings, user, provider):

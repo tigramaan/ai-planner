@@ -12,7 +12,7 @@ Gmail sending requires a connected user-owned integration with `gmail.compose` o
 
 Calendar and conference providers are independent for new meetings. A Google Calendar event may carry a standalone Microsoft Teams URL: the Teams meeting is created idempotently and verified first, then the Google event is created with invitations and the join URL; a failed calendar write triggers deletion of the standalone Teams meeting.
 
-Meeting and mail recipients may be supplied as names. The agent resolves names against connected provider contacts first and mail senders second, preferring the requested event provider and then other connected providers. A unique address is used in the pending confirmation; zero or multiple matches require user clarification.
+Meeting and mail recipients may be supplied as names. The agent resolves names against paginated connected provider contacts first and validated mail sender identities second, preferring the requested event provider and then other connected providers. Matching normalizes case, punctuation, name order and Cyrillic/Latin spelling. Message subjects and bodies never make their senders candidates; technical/automated addresses and weak partial matches are excluded. At most three strongly relevant addresses are returned. A unique address is used in the pending confirmation; zero or multiple matches require user clarification.
 
 If the owner explicitly asks to remember an email supplied after a missing-recipient clarification, the API stores an encrypted, per-user alias. Saved aliases are checked before external contacts and mail. Provider validation failures are returned as guarded `409`/`502` responses and never as an unhandled `500`.
 

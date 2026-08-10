@@ -29,9 +29,18 @@ function countdown(endsAt: string, now: number) {
   return hours ? `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}` : `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
 }
 
-function MessageText({text}:{text:string}) {
-  const parts=text.split(/(https:\/\/[^\s]+)/g);
-  return <>{parts.map((part,index)=>part.startsWith("https://")?<a className="messageLink" href={part.replace(/[.,;]+$/,"")} target="_blank" rel="noreferrer" key={index}>{part.replace(/[.,;]+$/,"")}</a>:part)}</>;
+export function MessageText({text,onEmailSelect}:{text:string;onEmailSelect?:(email:string)=>void}) {
+  const parts=text.split(/(https:\/\/[^\s]+|[\w.!#$%&'*+/=?^`{|}~-]+@[\w.-]+\.[A-Za-z]{2,})/g);
+  return <>{parts.map((part,index)=>{
+    if (part.startsWith("https://")) {
+      const url=part.replace(/[.,;]+$/,"");
+      return <a className="messageLink" href={url} target="_blank" rel="noreferrer" key={index}>{url}</a>;
+    }
+    if (/^[\w.!#$%&'*+/=?^`{|}~-]+@[\w.-]+\.[A-Za-z]{2,}$/.test(part)) {
+      return <button className="messageEmail" type="button" onClick={()=>onEmailSelect?.(part)} key={index}>{part}</button>;
+    }
+    return part;
+  })}</>;
 }
 
 export function Chat() {
@@ -114,6 +123,11 @@ export function Chat() {
     const list = messageList.current;
     if (!list) return;
     stickToBottom.current = list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+  }
+
+  function selectEmail(email: string) {
+    setText(email);
+    composerInput.current?.focus();
   }
 
   function stopVisualization() {
@@ -274,7 +288,7 @@ export function Chat() {
 
   return <section className="panel chat" aria-label={t("Чат с планировщиком", "Planner chat")}>
     <div className="messages" ref={messageList} onScroll={trackScroll} aria-live="polite">
-      {messages.length === 0 ? <p className="muted">{t("Напишите команду или запишите голосовое сообщение.", "Type a command or record a voice message.")}</p> : messages.map((message, index) => <div className={`message ${message.role}`} key={message.id ?? index}><MessageText text={message.text}/>{message.created_at && <time className="messageTime" dateTime={message.created_at}>{new Date(message.created_at).toLocaleString(locale, { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time>}</div>)}
+      {messages.length === 0 ? <p className="muted">{t("Напишите команду или запишите голосовое сообщение.", "Type a command or record a voice message.")}</p> : messages.map((message, index) => <div className={`message ${message.role}`} key={message.id ?? index}><MessageText text={message.text} onEmailSelect={selectEmail}/>{message.created_at && <time className="messageTime" dateTime={message.created_at}>{new Date(message.created_at).toLocaleString(locale, { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time>}</div>)}
       {replyPending && <div className="message assistant typingIndicator" role="status" aria-label={t("Планировщик печатает", "Planner is typing")}><span>{t("Печатает", "Typing")}</span><i/><i/><i/></div>}
       {pending.filter((action) => action.status === "pending").map((action) => <div className="confirmation" key={action.id}><strong>{t("Требуется подтверждение", "Confirmation required")}</strong><p>{action.display_summary}</p><div className="row"><button className="button" disabled={busy} onClick={() => decide(action.id, "confirm")}>{t("Подтвердить", "Confirm")}</button><button className="button secondary" disabled={busy} onClick={() => decide(action.id, "cancel")}>{t("Отменить", "Cancel")}</button></div></div>)}
     </div>

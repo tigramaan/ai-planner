@@ -46,7 +46,7 @@
 | REQ-074 | VAPID startup validation, supplementary container key group and authenticated push delivery test | worker key-permission test, push test lifecycle API test, Web delivery-check test and live one-minute retry acceptance |
 | REQ-075 | message timestamps, named timer response and timer-delivery chat event with bounded polling | chat timestamp test, named timer conversation test, worker completion/history test and multi-timer live acceptance |
 | REQ-030..035 | password, cipher, OAuth state, redaction | security tests |
-| REQ-036 | recipient resolver and Google/Microsoft contact adapters | recipient and adapter unit tests |
+| REQ-036 | conservative recipient matcher, paginated Google/Microsoft contact adapters and clickable chat candidates | ranking/junk-exclusion, adapter pagination and Chat insertion tests |
 | REQ-037 | bounded per-user conversation history passed to intent extraction | conversation continuation tests |
 | REQ-076 | Активные таймеры с обратным отсчётом и адаптивная голосовая отправка | `services/api/app/routers/local_items.py`, `services/web/src/components/Chat.tsx`, `services/web/src/app/globals.css` | `services/api/tests/test_planner.py`, `services/web/src/components/Chat.test.tsx` |
 | REQ-077 | Viewport-чат, сворачиваемая навигация, компактные уведомления и retention 100 дней | `services/web/src/components/Shell.tsx`, `services/web/src/app/page.tsx`, `services/web/src/components/PushSetup.tsx`, `services/web/src/components/Chat.tsx`, `services/web/src/app/globals.css`, `services/api/app/routers/chat.py` | `services/web/src/components/PushSetup.test.tsx`, `services/api/tests/test_chat_retention.py` |

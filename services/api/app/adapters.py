@@ -6,6 +6,8 @@ from urllib.parse import quote
 
 import httpx
 
+from .recipient_matching import name_score
+
 
 class ProviderError(RuntimeError):
     def __init__(
@@ -107,42 +109,48 @@ async def create_zoom_meeting(token: str, payload: dict[str, Any]) -> dict:
 
 async def search_contacts(provider: str, token: str, query: str, limit: int = 10) -> list[dict]:
     if provider == "google":
-        data = await provider_request(
-            "GET",
-            "https://people.googleapis.com/v1/people/me/connections",
-            token,
-            params={"personFields": "names,emailAddresses", "pageSize": 1000},
-        )
         rows = []
-        normalized_query = " ".join(query.casefold().split())
-        for person in data.get("connections", []):
-            names = person.get("names", [])
-            name = names[0].get("displayName", "") if names else ""
-            if normalized_query not in " ".join(name.casefold().split()):
+        page_token = None
+        for _ in range(5):
+            params = {"personFields": "names,emailAddresses", "pageSize": 1000}
+            if page_token:
+                params["pageToken"] = page_token
+            data = await provider_request(
+                "GET", "https://people.googleapis.com/v1/people/me/connections", token,
+                params=params,
+            )
+            for person in data.get("connections", []):
+                names = person.get("names", [])
+                name = names[0].get("displayName", "") if names else ""
+                if name_score(query, name) < 90:
+                    continue
+                for email in person.get("emailAddresses", []):
+                    if email.get("value"):
+                        rows.append({"name": name, "email": email["value"]})
+                        if len(rows) >= limit:
+                            return rows
+            page_token = data.get("nextPageToken")
+            if not page_token:
+                break
+        return rows
+    rows, next_url = [], "https://graph.microsoft.com/v1.0/me/contacts"
+    params = {"$top": 1000, "$select": "displayName,emailAddresses"}
+    for _ in range(5):
+        data = await provider_request("GET", next_url, token, params=params)
+        params = None
+        for row in data.get("value", []):
+            name = row.get("displayName", "")
+            if name_score(query, name) < 90:
                 continue
-            for email in person.get("emailAddresses", []):
-                if email.get("value"):
-                    rows.append({"name": name, "email": email["value"]})
+            for email in row.get("emailAddresses", []):
+                if email.get("address"):
+                    rows.append({"name": name, "email": email["address"]})
                     if len(rows) >= limit:
                         return rows
-        return rows
-    escaped = query.replace("'", "''")
-    data = await provider_request(
-        "GET",
-        "https://graph.microsoft.com/v1.0/me/contacts",
-        token,
-        params={
-            "$filter": f"contains(displayName,'{escaped}')",
-            "$top": min(limit, 20),
-            "$select": "displayName,emailAddresses",
-        },
-    )
-    return [
-        {"name": row.get("displayName", ""), "email": email.get("address", "")}
-        for row in data.get("value", [])
-        for email in row.get("emailAddresses", [])
-        if email.get("address")
-    ]
+        next_url = data.get("@odata.nextLink")
+        if not next_url:
+            break
+    return rows
 
 
 async def list_calendar_events(

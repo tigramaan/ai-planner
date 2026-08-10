@@ -71,7 +71,7 @@ def test_due_task_notification_follows_task_lifecycle(logged_in):
         "/api/v1/tasks",
         json={
             "title": "Отправить отчёт",
-            "due_at": "2026-08-05T18:00:00+03:00",
+            "due_at": "2099-08-05T18:00:00+03:00",
             "timezone": "Europe/Moscow",
         },
     )

@@ -58,6 +58,8 @@ h1 { font-size:clamp(30px,4vw,46px); line-height:1.05; letter-spacing:-.045em; m
 .typingIndicator i { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.35; }
 .messageLink { color:var(--accent); text-decoration:underline; text-underline-offset:3px; overflow-wrap:anywhere; }
 .message.user .messageLink { color:inherit; }
+.messageEmail { display:inline; padding:0; border:0; background:none; color:var(--accent); font:inherit; text-decoration:underline; text-underline-offset:3px; overflow-wrap:anywhere; cursor:pointer; }
+.message.user .messageEmail { color:inherit; }
 .confirmation { align-self:stretch; padding:14px; border:1px solid var(--accent); border-radius:var(--radius); background:var(--surface-2); }
 .confirmation p { margin:8px 0 14px; }
 .composer { margin-top:14px; display:grid; overflow:hidden; border:1px solid var(--line); border-radius:20px; background:var(--bg); }

@@ -50,7 +50,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-033: OAuth state is single-use, time-limited and bound to the authenticated user who started authorization.
 - REQ-034: Logs and audit records redact credentials, tokens and message bodies where required.
 - REQ-035: Untrusted mail/contact/calendar text cannot issue agent instructions.
-- REQ-036: Named recipients are resolved from connected contacts and mail senders; ambiguous or missing matches require clarification.
+- REQ-036: Named recipients are conservatively ranked from paginated connected contacts and validated mail sender identities; name order and Cyrillic/Latin variants are normalized, unrelated or technical senders are excluded, and ambiguous or missing matches require clarification. Recipient choices in chat are clickable and insert the selected email into the composer without sending it.
 - REQ-037: The agent resolves concise follow-up answers against recent conversation context without reviving completed actions.
 - REQ-038: Every pending external action presents a localized human-readable summary; corrections replace the draft and an explicit affirmative chat reply executes only the latest version.
 - REQ-039: An explicitly referenced cancelled, unexecuted draft can be corrected into a new draft; Google Calendar meetings may use a Microsoft Teams conference link when both integrations are authorized.

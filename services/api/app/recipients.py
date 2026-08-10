@@ -8,6 +8,7 @@ from .config import Settings
 from .integrations import valid_access_token
 from .models import User
 from .recipient_aliases import find_recipient_alias
+from .recipient_matching import ranked_addresses
 
 
 @dataclass
@@ -22,20 +23,8 @@ def is_email(value: str) -> bool:
     return bool(address and "@" in address and address.rsplit("@", 1)[1])
 
 
-def normalize_name(value: str) -> str:
-    return " ".join(value.casefold().split())
-
-
 def candidate_addresses(query: str, contacts: list[dict], messages: list[dict]) -> list[str]:
-    candidates: list[tuple[str, str]] = []
-    for row in contacts:
-        candidates.append((row.get("name", ""), row.get("email", "")))
-    for row in messages:
-        name, address = parseaddr(row.get("from", ""))
-        candidates.append((name, address))
-    exact = [address for name, address in candidates if normalize_name(name) == normalize_name(query)]
-    selected = exact or [address for _, address in candidates]
-    return list(dict.fromkeys(address.casefold() for address in selected if is_email(address)))
+    return ranked_addresses(query, contacts, messages)
 
 
 async def resolve_recipients(
