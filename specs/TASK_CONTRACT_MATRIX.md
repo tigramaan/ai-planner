@@ -10,3 +10,4 @@
 | AP-011 | `contracts/agent-service.md`, `contracts/planner-service.md`, `contracts/web-service.md` |
 | AP-012 | `contracts/booking-api.md`, `contracts/integration-service.md`, `contracts/web-service.md` |
 | AP-013 | `contracts/planner-service.md`, `contracts/web-service.md` |
+| AP-014 | `contracts/agent-service.md`, `contracts/planner-service.md` |

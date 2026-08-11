@@ -24,7 +24,7 @@ def _task_title(user: User, task: LocalTask) -> str:
     return f'Task "{task.title}" is due'
 
 
-def _reset(reminder: Reminder, due_at: datetime) -> None:
+def reset_reminder(reminder: Reminder, due_at: datetime) -> None:
     reminder.due_at = due_at
     reminder.next_attempt_at = due_at
     reminder.status = "scheduled"
@@ -52,7 +52,7 @@ def schedule_timer_notification(
         reminder.title = _timer_title(user, timer)
         reminder.timezone = user.timezone
         if reset:
-            _reset(reminder, timer.ends_at)
+            reset_reminder(reminder, timer.ends_at)
     return push_ready(db, user)
 
 
@@ -87,7 +87,7 @@ def schedule_task_notification(
         reminder.title = _task_title(user, task)
         reminder.timezone = task.timezone
         if reset:
-            _reset(reminder, task.due_at)
+            reset_reminder(reminder, task.due_at)
     return push_ready(db, user)
 
 

@@ -1,7 +1,5 @@
-import re
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from difflib import SequenceMatcher
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -9,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from .adapters import list_calendar_events
 from .config import Settings
+from .entity_matching import text_relevance
 from .integrations import valid_access_token
 from .models import User
 from .schemas import Intent
@@ -36,39 +35,9 @@ class CalendarEvent:
     attendee_names: list[str]
 
 
-IGNORED_WORDS = {
-    "встреча", "встречу", "встречи", "событие", "события", "созвон", "созвона",
-    "перенеси", "перенести", "измени", "изменить", "отмени", "отменить", "добавь",
-    "сегодня", "сегодняшнюю", "завтра", "пожалуйста", "meeting", "event", "call",
-    "move", "change", "cancel", "add", "today", "tomorrow", "please", "with",
-}
-
-
-def words(value: str) -> list[str]:
-    return [
-        token for token in re.findall(r"[\w@.+-]+", value.casefold().replace("ё", "е"))
-        if len(token) > 1 and token not in IGNORED_WORDS
-    ]
-
-
-def word_score(left: str, right: str) -> float:
-    if left == right:
-        return 1.0
-    if len(left) >= 5 and len(right) >= 5 and left[:5] == right[:5]:
-        return 0.92
-    return SequenceMatcher(None, left, right).ratio()
-
-
 def event_relevance(event: CalendarEvent, query: str) -> float:
-    query_words = words(query)
-    if not query_words:
-        return 0.0
     searchable = " ".join([event.title, *event.attendees, *event.attendee_names])
-    event_words = words(searchable)
-    if not event_words:
-        return 0.0
-    matches = [max(word_score(query_word, candidate) for candidate in event_words) for query_word in query_words]
-    return sum(matches) / len(matches)
+    return text_relevance(searchable, query)
 
 
 def display_choice(event: CalendarEvent, timezone: str) -> str:

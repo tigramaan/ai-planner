@@ -15,3 +15,4 @@
 | AP-011 | Per-device push diagnostics and commitment radar | implemented; live iOS acceptance pending |
 | AP-012 | Server-to-server lead booking API and owner settings | done; live provider acceptance pending |
 | AP-013 | Same-server shared tasks, checklist and activity | done |
+| AP-014 | Flexible task/reminder/timer/calendar lookup and reminder chat lifecycle | done |

@@ -183,6 +183,8 @@ class Intent(BaseModel):
         "reopen_task",
         "delete_task",
         "create_reminder",
+        "update_reminder",
+        "delete_reminder",
         "start_timer",
         "update_timer",
         "cancel_timer",

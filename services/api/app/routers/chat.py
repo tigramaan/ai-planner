@@ -20,7 +20,7 @@ from ..conference_intent import explicit_conference_provider
 from ..config import Settings, get_settings
 from ..database import get_db
 from ..dependencies import current_user
-from ..local_chat_actions import LOCAL_INTENTS, handle_local_intent
+from ..local_chat_actions import LOCAL_INTENTS, LocalEntityAmbiguous, handle_local_intent
 from ..mail_chat import handle_mail_search
 from ..mail_queries import mail_send_access_granted
 from ..models import AgentMessage, PendingAction, Reminder, User
@@ -373,7 +373,23 @@ async def chat(
             else "\nIf this is correct, reply “Confirm” or press the button. To revise it, send the correction."
         )
     elif intent.intent in LOCAL_INTENTS:
-        answer = handle_local_intent(db, user, intent, body.text, ru)
+        try:
+            answer = handle_local_intent(db, user, intent, body.text, ru)
+        except LocalEntityAmbiguous as exc:
+            labels = {
+                "task": "задач",
+                "reminder": "напоминаний",
+                "timer": "таймеров",
+            }
+            options = "; ".join(
+                f"{index}. {choice}" for index, choice in enumerate(exc.choices, 1)
+            )
+            answer = (
+                f"Нашёл несколько подходящих {labels[exc.kind]}: {options}. "
+                "Уточните название."
+                if ru
+                else f"I found several matches: {options}. Specify the title."
+            )
     elif intent.intent == "create_reminder":
         if not intent.start_iso or not intent.timezone:
             raise HTTPException(

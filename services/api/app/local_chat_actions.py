@@ -1,17 +1,20 @@
 from datetime import UTC, datetime, timedelta
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import HTTPException, status
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
+from .entity_matching import best_text_match
 from .local_notifications import (
     delete_task_notification,
     delete_timer_notification,
+    push_ready,
+    reset_reminder,
     schedule_task_notification,
     schedule_timer_notification,
 )
-from .models import LocalTask, TaskParticipant, Timer, User
+from .models import LocalTask, Reminder, TaskParticipant, Timer, User
 from .schemas import Intent
 from .task_collaboration import add_activity
 
@@ -21,10 +24,19 @@ LOCAL_INTENTS = {
     "complete_task",
     "reopen_task",
     "delete_task",
+    "update_reminder",
+    "delete_reminder",
     "start_timer",
     "update_timer",
     "cancel_timer",
 }
+
+
+class LocalEntityAmbiguous(ValueError):
+    def __init__(self, kind: str, choices: list[str]):
+        super().__init__(f"{kind} is ambiguous")
+        self.kind = kind
+        self.choices = choices
 
 
 def duration_label(minutes: int, ru: bool) -> str:
@@ -50,16 +62,79 @@ def recent_match(db: Session, row_type, user: User, query: str):
         )
     else:
         statement = statement.where(row_type.user_id == user.id)
-    return next(
-        (
-            row
-            for row in db.scalars(
-                statement.order_by(order.desc()).limit(500)
+    rows = db.scalars(statement.order_by(order.desc()).limit(500)).all()
+    result = best_text_match(rows, query, lambda row: row.title)
+    if result.alternatives:
+        kind = "task" if row_type is LocalTask else "timer"
+        raise LocalEntityAmbiguous(kind, [row.title for row in result.alternatives])
+    return result.match
+
+
+def reminder_action(db: Session, user: User, intent: Intent, ru: bool) -> str:
+    query = (intent.event_query or intent.title or "").strip()
+    rows = db.scalars(
+        select(Reminder)
+        .where(
+            Reminder.user_id == user.id,
+            Reminder.task_id.is_(None),
+            Reminder.timer_id.is_(None),
+            Reminder.target_subscription_id.is_(None),
+        )
+        .order_by(Reminder.created_at.desc())
+        .limit(500)
+    ).all()
+    result = best_text_match(rows, query, lambda row: row.title) if query else None
+    if result and result.alternatives:
+        raise LocalEntityAmbiguous(
+            "reminder", [row.title for row in result.alternatives]
+        )
+    reminder = result.match if result else None
+    if reminder is None:
+        return (
+            "Напоминание не найдено. Укажите его название или запомнившийся фрагмент."
+            if ru
+            else "Reminder not found. Specify its title or a phrase you remember."
+        )
+    if intent.intent == "delete_reminder":
+        title = reminder.title
+        db.delete(reminder)
+        return f"Напоминание «{title}» удалено." if ru else f'Reminder "{title}" deleted.'
+    if not intent.start_iso and not intent.title:
+        return (
+            "Укажите новое время или новое название напоминания."
+            if ru
+            else "Specify a new time or title for the reminder."
+        )
+    if intent.title:
+        reminder.title = intent.title
+    if intent.start_iso:
+        due_at = datetime.fromisoformat(intent.start_iso)
+        if due_at.tzinfo is None:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                "Reminder time requires UTC offset",
             )
-            if query in row.title.casefold()
-        ),
-        None,
+        reset_reminder(reminder, due_at.astimezone(UTC))
+    if intent.timezone:
+        try:
+            ZoneInfo(intent.timezone)
+        except ZoneInfoNotFoundError as exc:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY, "Unknown IANA timezone"
+            ) from exc
+        reminder.timezone = intent.timezone
+    answer = (
+        f"Напоминание «{reminder.title}» изменено."
+        if ru
+        else f'Reminder "{reminder.title}" updated.'
     )
+    if not push_ready(db, user):
+        answer += (
+            " Чтобы получить уведомление, включите его в Настройках."
+            if ru
+            else " Enable notifications in Settings to receive it."
+        )
+    return answer
 
 
 def task_action(db: Session, user: User, intent: Intent, raw: str, ru: bool) -> str:
@@ -223,4 +298,6 @@ def timer_action(db: Session, user: User, intent: Intent, ru: bool) -> str:
 def handle_local_intent(db: Session, user: User, intent: Intent, raw: str, ru: bool) -> str:
     if "task" in intent.intent:
         return task_action(db, user, intent, raw, ru)
+    if "reminder" in intent.intent:
+        return reminder_action(db, user, intent, ru)
     return timer_action(db, user, intent, ru)
