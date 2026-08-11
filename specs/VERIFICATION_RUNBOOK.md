@@ -181,3 +181,8 @@ consent. Прикладные scopes остаются обязательными
 5. Запустить matcher/conversation/calendar tests, полный API suite, Ruff, file-line guard и `git diff --check`.
 
 OAuth refresh recovery acceptance (2026-08-11): expire a provider access token and make its refresh endpoint return `400`. Confirming a pending calendar action must return localized `409` with reconnection guidance instead of `500`, preserve the unexecuted action, and mark the integration as requiring authorization in Settings. No provider write may be attempted.
+### Confirmation without an active draft
+
+- Send `Подтверждаю` when no pending action exists (or after it was executed/expired).
+- Verify the API returns a localized explanation that there is no active draft.
+- Verify the message is not reinterpreted as a new meeting and no pending action is created.

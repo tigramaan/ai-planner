@@ -16,6 +16,7 @@ from ..agent import (
 )
 from ..audit import audit
 from ..calendar_actions import EventAmbiguous, EventNotFound, prepare_calendar_action
+from ..chat_decisions import decision_without_active_draft
 from ..conference_intent import explicit_conference_provider
 from ..config import Settings, get_settings
 from ..database import get_db
@@ -169,7 +170,6 @@ async def chat(
     if active_pending and requested_decision:
         from .planner import cancel as cancel_pending
         from .planner import confirm as confirm_pending
-
         user_message = AgentMessage(user_id=user.id, role="user", text=body.text)
         db.add(user_message)
         if requested_decision == "confirm":
@@ -184,6 +184,8 @@ async def chat(
             cancel_pending(active_pending.id, request, user, db)
             answer = "Черновик отменён." if ru else "Draft cancelled."
         return {"intent": None, "message": answer, "pending_action_id": None}
+    if requested_decision:
+        return decision_without_active_draft(db, user, request, body.text, requested_decision, ru)
     config = openai_config(db, settings, user)
     recent = db.scalars(
         select(AgentMessage)
