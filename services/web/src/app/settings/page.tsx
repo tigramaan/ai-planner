@@ -43,6 +43,8 @@ export default function Settings() {
     items.find((item) => item.provider === provider);
   const providerState = (provider: string) => {
     const item = state(provider);
+    if (item?.status === "reauthorization_required")
+      return t("Требуется повторная авторизация", "Authorization required");
     return (
       item?.account_email ||
       (item?.status === "connected" ? t("Подключено", "Connected") : "")

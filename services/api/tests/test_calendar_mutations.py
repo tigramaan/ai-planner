@@ -179,6 +179,41 @@ def test_confirm_creates_teams_link_inside_google_event(logged_in, monkeypatch):
     ]
 
 
+def test_confirm_reports_expired_provider_authorization(logged_in, monkeypatch):
+    async def expired(*args, **kwargs):
+        raise LookupError("google authorization must be renewed")
+
+    monkeypatch.setattr(planner, "valid_access_token", expired)
+    with SessionLocal() as db:
+        user = db.scalar(select(User))
+        action = create_pending_action(
+            db,
+            get_settings(),
+            user,
+            "create_meeting",
+            "Google Calendar",
+            {
+                "provider": "google",
+                "conference": "none",
+                "title": "Meeting",
+                "start_iso": "2099-08-11T11:00:00+00:00",
+                "end_iso": "2099-08-11T11:30:00+00:00",
+                "timezone": "Europe/Moscow",
+                "attendees": [],
+            },
+        )
+        db.commit()
+        action_id = action.id
+
+    response = logged_in.post(
+        f"/api/v1/pending-actions/{action_id}/confirm",
+        headers={"accept-language": "ru"},
+    )
+
+    assert response.status_code == 409
+    assert "авторизуйте" in response.json()["detail"]
+
+
 def test_confirm_keeps_calendar_event_when_teams_rejects_request(logged_in, monkeypatch):
     async def token(db, settings, user, provider):
         return f"{provider}-token"

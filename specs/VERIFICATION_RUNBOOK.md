@@ -179,3 +179,5 @@ consent. Прикладные scopes остаются обязательными
 3. Создать две задачи или два напоминания с одинаковым сильным фрагментом. Команда изменения должна вернуть варианты и не изменить ни один объект.
 4. Убедиться, что слабый кандидат не выбирается, а связанное с задачей или таймером push-напоминание нельзя изменить как самостоятельное.
 5. Запустить matcher/conversation/calendar tests, полный API suite, Ruff, file-line guard и `git diff --check`.
+
+OAuth refresh recovery acceptance (2026-08-11): expire a provider access token and make its refresh endpoint return `400`. Confirming a pending calendar action must return localized `409` with reconnection guidance instead of `500`, preserve the unexecuted action, and mark the integration as requiring authorization in Settings. No provider write may be attempted.

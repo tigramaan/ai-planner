@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from .config import Settings
 from .models import Integration, IntegrationSecret, User
-from .oauth import refresh_access_token
+from .oauth import OAuthRefreshError, refresh_access_token
 from .security import decrypt_json, encrypt_json
 
 
@@ -79,9 +79,15 @@ async def valid_access_token(db: Session, settings: Settings, user: User, provid
     refresh_token = secret.get("refresh_token")
     if not refresh_token:
         raise LookupError(f"{provider} authorization expired")
-    refreshed = await refresh_access_token(
-        settings, provider, refresh_token, integration.scopes if integration else []
-    )
+    try:
+        refreshed = await refresh_access_token(
+            settings, provider, refresh_token, integration.scopes if integration else []
+        )
+    except OAuthRefreshError as exc:
+        if integration is not None:
+            integration.status = "reauthorization_required"
+            db.commit()
+        raise LookupError(f"{provider} authorization must be renewed") from exc
     merged = {**secret, **refreshed, "refresh_token": refreshed.get("refresh_token", refresh_token)}
     if merged.get("expires_in"):
         merged["expires_at"] = (

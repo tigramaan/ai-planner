@@ -10,6 +10,13 @@ from .config import Settings
 from .models import OAuthState, User
 from .security import token_hash
 
+
+class OAuthRefreshError(RuntimeError):
+    def __init__(self, status_code: int | None):
+        super().__init__("OAuth token refresh was rejected")
+        self.status_code = status_code
+
+
 GOOGLE_SCOPE_GROUPS = {
     "identity": ["openid", "email"],
     "calendar.read": ["https://www.googleapis.com/auth/calendar.readonly"],
@@ -195,8 +202,8 @@ async def refresh_access_token(
         )
         response = await client.post(url, data=data, auth=auth)
     if response.status_code >= 400:
-        raise RuntimeError(f"OAuth token refresh failed ({response.status_code})")
+        raise OAuthRefreshError(response.status_code)
     payload = response.json()
     if not payload.get("access_token"):
-        raise RuntimeError("OAuth provider returned no refreshed access token")
+        raise OAuthRefreshError(None)
     return payload
