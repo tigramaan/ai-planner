@@ -186,3 +186,10 @@ OAuth refresh recovery acceptance (2026-08-11): expire a provider access token a
 - Send `Подтверждаю` when no pending action exists (or after it was executed/expired).
 - Verify the API returns a localized explanation that there is no active draft.
 - Verify the message is not reinterpreted as a new meeting and no pending action is created.
+
+### Relative reminder time field recovery
+
+- Send a reminder request such as `поставь напоминание перезвонить Татьяне через час`.
+- Verify the relative time is stored as `start_iso`, even if the model initially returns it in the
+  calendar-only `event_start_iso` field.
+- Verify the API creates one reminder instead of returning `422 Reminder requires time and timezone`.

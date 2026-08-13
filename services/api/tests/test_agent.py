@@ -1,6 +1,62 @@
+import json
+
+import pytest
+
+from app import agent
 from app.agent import pending_payload
 from app.conference_intent import explicit_conference_provider
 from app.schemas import Intent
+
+
+@pytest.mark.anyio
+async def test_reminder_time_in_event_field_is_normalized(monkeypatch):
+    class Responses:
+        async def create(self, **kwargs):
+            return type(
+                "Response",
+                (),
+                {
+                    "output_text": json.dumps(
+                        {
+                            "intent": "create_reminder",
+                            "title": "Перезвонить Татьяне в Новоспасский",
+                            "event_query": None,
+                            "event_start_iso": "2026-08-13T12:37:19+03:00",
+                            "start_iso": None,
+                            "timezone": "Europe/Moscow",
+                            "duration_minutes": None,
+                            "priority": None,
+                            "participants": [],
+                            "provider": None,
+                            "mail_mode": "search",
+                            "mail_limit": None,
+                            "conference_provider": None,
+                            "conference_requested": False,
+                            "body": None,
+                            "requires_senior": False,
+                            "route_reason": None,
+                            "requires_clarification": False,
+                            "clarification_question": None,
+                        }
+                    )
+                },
+            )()
+
+    class Client:
+        def __init__(self, **kwargs):
+            self.responses = Responses()
+
+    monkeypatch.setattr(agent, "AsyncOpenAI", Client)
+    intent = await agent.extract_intent(
+        "key",
+        "model",
+        "поставь напоминание перезвонить Татьяне в Новоспасский через час",
+        "ru",
+        "Europe/Moscow",
+    )
+
+    assert intent.start_iso == "2026-08-13T12:37:19+03:00"
+    assert intent.event_start_iso is None
 
 
 def test_meeting_intent_becomes_calendar_payload():

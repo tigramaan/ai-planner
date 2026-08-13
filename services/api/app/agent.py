@@ -30,8 +30,9 @@ cancel_event, add_event_participants, send_email, search_email, unknown.
 For task changes, completion, reopening and deletion put the existing task name in event_query. For an updated
 task deadline use start_iso, for its description use body and for priority use priority. For timer
 changes or cancellation put its current name in event_query; use duration_minutes for a restart.
-For reminder changes or deletion put the existing reminder wording, including any remembered fragment,
-in event_query. Use start_iso for its new time. Put a new title in title only when the user explicitly
+For creating or changing a reminder always put its requested notification time in start_iso, never
+in event_start_iso. For reminder changes or deletion put the existing reminder wording, including
+any remembered fragment, in event_query. Put a new title in title only when the user explicitly
 renames the reminder; otherwise leave title null.
 For an existing calendar event, put any name, participant, description or approximate wording the
 user supplied in event_query. Put its current time in event_start_iso only when the user actually
@@ -132,7 +133,11 @@ async def extract_intent(
     except APIError as exc:
         raise RuntimeError("OpenAI could not process the command") from exc
     try:
-        return Intent.model_validate_json(response.output_text)
+        intent = Intent.model_validate_json(response.output_text)
+        if intent.intent == "create_reminder" and not intent.start_iso and intent.event_start_iso:
+            intent.start_iso = intent.event_start_iso
+            intent.event_start_iso = None
+        return intent
     except (ValidationError, json.JSONDecodeError) as exc:
         raise RuntimeError("AI returned an invalid structured command") from exc
 
