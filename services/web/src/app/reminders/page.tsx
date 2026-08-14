@@ -1,0 +1,19 @@
+"use client";
+import { FormEvent, useEffect, useState } from "react";
+import { Pause, PencilSimple, Play, Trash } from "@phosphor-icons/react";
+import { Shell } from "@/components/Shell";
+import { PlannerTabs } from "@/components/PlannerTabs";
+import { api } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
+
+type Reminder = { id: string; title: string; due_at: string; timezone: string; status: string; paused: boolean; recurrence_json?: { frequency: string; weekdays: number[] } | null };
+const inputTime = (value: string) => new Date(value).toISOString().slice(0, 16);
+export default function Reminders() {
+  const { locale, t } = useI18n(); const [items, setItems] = useState<Reminder[]>([]); const [editing, setEditing] = useState<Reminder | null>(null); const [error, setError] = useState("");
+  const load = () => api<Reminder[]>("/reminders").then((rows) => { setItems(rows); const id = new URLSearchParams(location.search).get("edit"); if (id) setEditing(rows.find((row) => row.id === id) ?? null); }).catch((e) => setError(e.message)); useEffect(() => { void load(); }, []);
+  async function toggle(row: Reminder) { await api(`/reminders/${row.id}?scope=series`, { method: "PUT", body: JSON.stringify({ paused: !row.paused }) }); load(); }
+  async function remove(row: Reminder) { if (!confirm(t(`Удалить «${row.title}»?`, `Delete “${row.title}”?`))) return; await api(`/reminders/${row.id}?scope=series`, { method: "DELETE" }); load(); }
+  async function save(event: FormEvent<HTMLFormElement>) { event.preventDefault(); if (!editing) return; const data = new FormData(event.currentTarget); await api(`/reminders/${editing.id}`, { method: "PUT", body: JSON.stringify({ title: data.get("title"), due_at: `${data.get("due_at")}:00Z` }) }); setEditing(null); load(); }
+  const schedule = (row: Reminder) => row.recurrence_json ? t(`Повтор: ${row.recurrence_json.frequency}`, `Repeats: ${row.recurrence_json.frequency}`) : t("Однократно", "One time");
+  return <Shell><PlannerTabs active="reminders" /><header className="pageHead"><div><h1>{t("Напоминания", "Reminders")}</h1><p className="muted">{t("Одноразовые напоминания и активные серии.", "One-time reminders and active series.")}</p></div><a className="button" href={`/?draft=${encodeURIComponent(t("Создай напоминание ", "Create a reminder "))}`}>{t("Создать в чате", "Create in chat")}</a></header>{error && <p className="error">{error}</p>}<div className="taskList">{items.length === 0 ? <div className="taskEmpty muted">{t("Напоминаний пока нет.", "No reminders yet.")}</div> : items.map((row) => <article className="taskItem" key={row.id}><div className="taskContent"><strong>{row.title}</strong><div className="taskMeta"><span>{new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: row.timezone }).format(new Date(row.due_at))}</span><span>{schedule(row)}</span><span>{row.paused ? t("На паузе", "Paused") : t("Активно", "Active")}</span></div></div><div className="taskActions"><button className="iconAction" onClick={() => toggle(row)} aria-label={row.paused ? t("Возобновить", "Resume") : t("Пауза", "Pause")}>{row.paused ? <Play /> : <Pause />}</button><button className="iconAction" onClick={() => setEditing(row)} aria-label={t("Изменить", "Edit")}><PencilSimple /></button><button className="iconAction danger" onClick={() => remove(row)} aria-label={t("Удалить", "Delete")}><Trash /></button></div>{editing?.id === row.id && <form className="taskEdit" onSubmit={save}><input className="field" name="title" defaultValue={row.title} required /><input className="field" name="due_at" type="datetime-local" defaultValue={inputTime(row.due_at)} required /><div className="taskEditActions"><button className="button">{t("Сохранить", "Save")}</button><button className="button secondary" type="button" onClick={() => setEditing(null)}>{t("Отмена", "Cancel")}</button></div></form>}</article>)}</div></Shell>;
+}

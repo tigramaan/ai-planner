@@ -34,6 +34,10 @@ For creating or changing a reminder always put its requested notification time i
 in event_start_iso. For reminder changes or deletion put the existing reminder wording, including
 any remembered fragment, in event_query. Put a new title in title only when the user explicitly
 renames the reminder; otherwise leave title null.
+For a repeating reminder set recurrence_frequency to daily, weekly or monthly. For selected weekdays
+set recurrence_weekdays using Monday=0 through Sunday=6. Put every explicitly requested local clock
+time in recurrence_times as HH:MM; never discard additional times. Leave recurrence fields empty for
+a one-time reminder. If recurrence is requested without enough scheduling detail, ask a clarification.
 For an existing calendar event, put any name, participant, description or approximate wording the
 user supplied in event_query. Put its current time in event_start_iso only when the user actually
 supplied or clearly referenced that time; never ask for the current time merely to identify it.

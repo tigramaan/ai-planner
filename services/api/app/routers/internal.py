@@ -3,12 +3,13 @@ from datetime import UTC, datetime, timedelta
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
-from sqlalchemy import or_, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
 
 from ..config import Settings, get_settings
 from ..database import get_db
 from ..models import AgentMessage, AuditLog, PushDelivery, PushSubscription, Reminder, Timer
+from ..reminder_recurrence import next_occurrence
 from ..schemas import ReminderDelivery
 from ..security import decrypt_json
 
@@ -32,6 +33,7 @@ def claim_reminders(db: Session = Depends(get_db)):
         select(Reminder)
         .where(
             Reminder.next_attempt_at <= now,
+            Reminder.paused.is_(False),
             or_(
                 Reminder.status.in_(["scheduled", "retry"]),
                 Reminder.status == "processing",
@@ -156,9 +158,17 @@ def complete_reminder(
             body.status = "failed"
             body.error = "no device accepted push"
     if body.status == "delivered":
-        reminder.status = "delivered"
         reminder.delivered_at = now
         reminder.last_error = None
+        if reminder.recurrence_json and not reminder.timer_id and not reminder.task_id:
+            following = next_occurrence(reminder.due_at, reminder.timezone, reminder.recurrence_json)
+            reminder.due_at = following
+            reminder.next_attempt_at = following
+            reminder.status = "scheduled"
+            reminder.attempts = 0
+            db.execute(delete(PushDelivery).where(PushDelivery.reminder_id == reminder.id))
+        else:
+            reminder.status = "delivered"
         if reminder.timer_id:
             timer = db.get(Timer, reminder.timer_id)
             if timer is not None:

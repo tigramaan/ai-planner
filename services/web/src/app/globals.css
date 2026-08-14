@@ -126,6 +126,11 @@ h1 { font-size:clamp(30px,4vw,46px); line-height:1.05; letter-spacing:-.045em; m
 .installOverlay { position:fixed; inset:0; z-index:20; display:grid; place-items:center; padding:20px; background:color-mix(in srgb,var(--bg) 78%,transparent); backdrop-filter:blur(8px); }
 .installDialog { width:min(480px,100%); display:grid; gap:14px; }
 .installDialog h2,.installDialog p { margin:0; }
+.moreOverlay { position:fixed; inset:0; z-index:30; display:grid; place-items:center; padding:20px; background:color-mix(in srgb,var(--bg) 70%,transparent); backdrop-filter:blur(6px); }
+.moreMenu { width:min(380px,100%); display:grid; gap:8px; }
+.plannerTabs,.segment { display:flex; gap:4px; width:max-content; max-width:100%; margin-bottom:22px; padding:4px; border:1px solid var(--line); border-radius:14px; background:var(--surface); }
+.plannerTabs a,.segment button { border:0; border-radius:10px; padding:9px 14px; background:transparent; color:var(--muted); cursor:pointer; }
+.plannerTabs .active,.segment .active { background:var(--accent); color:#fff; }
 .taskComposer { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px; }
 .taskForm { display:grid; grid-template-columns:minmax(0,2fr) minmax(190px,1fr) 150px auto; gap:14px; align-items:end; }
 .taskDescriptionField { grid-column:1/4; }
@@ -225,7 +230,7 @@ h1 { font-size:clamp(30px,4vw,46px); line-height:1.05; letter-spacing:-.045em; m
   .shell,.shell.navCollapsed { grid-template-columns:1fr; padding-bottom:74px; }
   .nav { z-index:2; position:fixed; inset:auto 0 0; width:100%; height:64px; border-right:0; border-top:1px solid var(--line); padding:7px 12px; }
   .navTop { display:none; }
-  .navlinks { grid-template-columns:repeat(7,1fr); }
+  .navlinks { grid-template-columns:repeat(5,1fr); }
   .navCollapsed .navlink,.navlink { flex-direction:column; justify-content:center; gap:2px; font-size:11px; padding:5px; }
   .navCollapsed .navlink span { display:inline; }
   .content { width:100%; padding:22px 16px; }

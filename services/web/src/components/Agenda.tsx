@@ -94,7 +94,7 @@ export function Agenda({
     setBusy(item.id);
     setError("");
     try {
-      await api<void>(`/tasks/${item.id}`, { method: "DELETE" });
+      await api<void>(`/${item.kind === "reminder" ? "reminders" : "tasks"}/${item.id}`, { method: "DELETE" });
       setRows((value) => value.filter((row) => row.id !== item.id));
       setNotice(t(`«${item.title}» удалено`, `“${item.title}” deleted`));
     } catch (value) {
@@ -252,6 +252,16 @@ export function Agenda({
                       >
                         <Trash size={18} />
                         {t("Удалить", "Delete")}
+                      </button>
+                    </>
+                  )}
+                  {item.kind === "reminder" && (
+                    <>
+                      <a className="button secondary" href={`/reminders?edit=${item.id}`}>
+                        <ChatCircleDots size={18} />{t("Изменить", "Change")}
+                      </a>
+                      <button className="button secondary danger" disabled={busy === item.id} onClick={() => removeLocal(item)}>
+                        <Trash size={18} />{t("Удалить", "Delete")}
                       </button>
                     </>
                   )}

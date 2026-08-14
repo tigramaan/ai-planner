@@ -6,7 +6,7 @@ import { ActionToast } from "@/components/ActionToast";
 import { TaskCollaboration, type SharedTask } from "@/components/TaskCollaboration";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
-
+import { PlannerTabs } from "@/components/PlannerTabs";
 type Status = "open" | "completed";
 type Priority = "low" | "normal" | "high";
 type Task = SharedTask & {
@@ -41,7 +41,6 @@ const localInput = (value: string | null) =>
         .replace(" ", "T")
     : "";
 const dueIso = (value: string) => (value ? `${value}:00+03:00` : null);
-
 export default function Tasks() {
   const { locale, t } = useI18n();
   const [items, setItems] = useState<Task[]>([]);
@@ -207,6 +206,7 @@ export default function Tasks() {
   return (
     <Shell>
       <ActionToast message={notice} onDismiss={() => setNotice("")} />
+      <PlannerTabs active="tasks" />
       <header className="pageHead">
         <div>
           <h1>{t("Задачи", "Tasks")}</h1>

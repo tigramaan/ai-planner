@@ -168,6 +168,9 @@ class Reminder(Base):
         ForeignKey("push_subscriptions.id", ondelete="SET NULL"), index=True
     )
     title: Mapped[str] = mapped_column(String(300))
+    series_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    recurrence_json: Mapped[dict | None] = mapped_column(JSON)
+    paused: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     timezone: Mapped[str] = mapped_column(String(64), default="Europe/Moscow")
     channel: Mapped[str] = mapped_column(String(16), default="push")

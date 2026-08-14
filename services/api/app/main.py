@@ -19,6 +19,7 @@ from .routers import (
     internal,
     local_items,
     planner,
+    reminders,
     task_collaboration,
 )
 
@@ -48,6 +49,7 @@ app.include_router(family.router)
 app.include_router(chat.router)
 app.include_router(integrations.router)
 app.include_router(planner.router)
+app.include_router(reminders.router)
 app.include_router(local_items.router)
 app.include_router(commitments.router)
 app.include_router(internal.router)

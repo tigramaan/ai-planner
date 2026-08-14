@@ -23,7 +23,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 
 ## Product
 
-- REQ-020: A responsive Web/PWA provides chat, voice capture with visible live recording feedback, Today, a seven-day agenda, tasks, timers, integration settings and audit. Voice upload supports browser-produced WebM and MP4/M4A variants.
+- REQ-020: A responsive Web/PWA provides chat, voice capture with visible live recording feedback, a combined Today/seven-day agenda, tasks, reminders, timers, integration settings and audit. Voice upload supports browser-produced WebM and MP4/M4A variants.
 - REQ-021: OpenAI performs transcription and structured intent extraction; secrets and OAuth tokens are never sent to the model. The default planner route uses `gpt-5.6-luna` with explicit low reasoning effort for latency-sensitive structured extraction.
 - REQ-022: Natural-language mail requests are translated into provider-native search filters, including unread state, local-day bounds, attachments and named senders; provider tokens remain outside the model.
 - REQ-023: On an explicit summary request, the first matching Gmail message and up to five supported attachments are fetched with bounded sizes, locally converted to text and summarized by the configured model with storage disabled and prompt-injection isolation. Supported attachment extraction includes text, HTML, CSV, PDF, DOCX and XLSX.
@@ -149,3 +149,10 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - Изменение, завершение и удаление задач, напоминаний, таймеров и календарных событий допускает запомнившийся фрагмент, другой порядок слов, близкую словоформу или небольшую опечатку вместо точного названия.
 - Слабое совпадение не выбирается автоматически. Несколько близких сильных совпадений возвращаются для уточнения и не вызывают мутацию.
 - Самостоятельные напоминания можно переносить, переименовывать и удалять через чат. Системные push-напоминания, связанные с задачей или таймером, изменяются только через родительскую сущность.
+
+### REQ-085 — Серии напоминаний и компактная навигация
+
+- Самостоятельное напоминание поддерживает одноразовый режим, ежедневный повтор, выбранные дни недели и ежемесячный повтор в исходной IANA timezone.
+- Одна серия может иметь несколько локальных времён; после доставки планируется следующее локальное срабатывание.
+- «Задачи» содержит вкладки «Задачи» и «Напоминания» с редактированием, паузой, возобновлением и удалением.
+- «Сегодня» и «Неделя» объединены в «Планы». Мобильное меню содержит Чат, Планы, Задачи, Контур и Ещё; Настройки, установка и выход находятся в «Ещё».

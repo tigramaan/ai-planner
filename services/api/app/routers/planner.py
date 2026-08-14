@@ -1,6 +1,5 @@
 import hashlib
 from datetime import UTC, datetime
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
@@ -38,7 +37,6 @@ from ..schemas import (
     PendingActionView,
     PushSubscriptionWrite,
     PushTestRequest,
-    ReminderCreate,
     UserPreferences,
 )
 from ..security import decrypt_json, encrypt_json
@@ -95,45 +93,6 @@ def update_preferences(
     )
     db.commit()
     return body
-
-
-@router.get("/reminders")
-def reminders(user: User = Depends(current_user), db: Session = Depends(get_db)):
-    return db.scalars(
-        select(Reminder)
-        .where(Reminder.user_id == user.id)
-        .order_by(Reminder.due_at.desc())
-        .limit(200)
-    ).all()
-
-
-@router.post("/reminders")
-def create_reminder(
-    body: ReminderCreate,
-    request: Request,
-    user: User = Depends(current_user),
-    db: Session = Depends(get_db),
-):
-    if body.due_at.tzinfo is None:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "due_at requires UTC offset")
-    try:
-        ZoneInfo(body.timezone)
-    except ZoneInfoNotFoundError as exc:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Unknown IANA timezone") from exc
-    due_at = body.due_at.astimezone(UTC)
-    reminder = Reminder(
-        user_id=user.id,
-        title=body.title,
-        due_at=due_at,
-        next_attempt_at=due_at,
-        timezone=body.timezone,
-        channel=body.channel,
-    )
-    db.add(reminder)
-    db.flush()
-    audit(db, user, request, "reminder.created", "reminder", reminder.id)
-    db.commit()
-    return reminder
 
 
 @router.get("/push/public-key")

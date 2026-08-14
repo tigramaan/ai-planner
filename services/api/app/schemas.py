@@ -120,6 +120,15 @@ class ReminderCreate(BaseModel):
     due_at: datetime
     timezone: str = Field(default="Europe/Moscow", max_length=64)
     channel: Literal["push", "in_app"] = "push"
+    recurrence: dict | None = None
+
+
+class ReminderUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=300)
+    due_at: datetime | None = None
+    timezone: str | None = Field(default=None, max_length=64)
+    recurrence: dict | None = None
+    paused: bool | None = None
 
 
 class PushSubscriptionWrite(BaseModel):
@@ -202,6 +211,9 @@ class Intent(BaseModel):
     start_iso: str | None = None
     timezone: str | None = None
     duration_minutes: int | None = Field(default=None, ge=1, le=1440)
+    recurrence_frequency: Literal["daily", "weekly", "monthly"] | None = None
+    recurrence_weekdays: list[int] | None = Field(default=None, max_length=7)
+    recurrence_times: list[str] | None = Field(default=None, max_length=12)
     priority: Literal["low", "normal", "high"] | None = None
     participants: list[str] = Field(default_factory=list, max_length=50)
     provider: Literal["google", "microsoft", "yandex", "local"] | None = None

@@ -97,7 +97,12 @@ def reminder_action(db: Session, user: User, intent: Intent, ru: bool) -> str:
         )
     if intent.intent == "delete_reminder":
         title = reminder.title
-        db.delete(reminder)
+        if reminder.series_id:
+            for row in rows:
+                if row.series_id == reminder.series_id:
+                    db.delete(row)
+        else:
+            db.delete(reminder)
         return f"Напоминание «{title}» удалено." if ru else f'Reminder "{title}" deleted.'
     if not intent.start_iso and not intent.title:
         return (
@@ -106,7 +111,9 @@ def reminder_action(db: Session, user: User, intent: Intent, ru: bool) -> str:
             else "Specify a new time or title for the reminder."
         )
     if intent.title:
-        reminder.title = intent.title
+        for row in rows:
+            if row.id == reminder.id or reminder.series_id and row.series_id == reminder.series_id:
+                row.title = intent.title
     if intent.start_iso:
         due_at = datetime.fromisoformat(intent.start_iso)
         if due_at.tzinfo is None:

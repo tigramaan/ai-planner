@@ -1,5 +1,6 @@
 import re
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from sqlalchemy import delete, select
@@ -24,10 +25,11 @@ from ..dependencies import current_user
 from ..local_chat_actions import LOCAL_INTENTS, LocalEntityAmbiguous, handle_local_intent
 from ..mail_chat import handle_mail_search
 from ..mail_queries import mail_send_access_granted
-from ..models import AgentMessage, PendingAction, Reminder, User
+from ..models import AgentMessage, PendingAction, User
 from ..policy import action_status, create_pending_action
 from ..recipient_aliases import remembered_recipient_request, save_recipient_alias
 from ..recipients import resolve_recipients
+from ..reminder_recurrence import build_intent_reminders
 from ..schemas import ChatRequest
 from ..security import decrypt_json
 from ..senior_agent import run_senior_agent
@@ -404,18 +406,16 @@ async def chat(
                 status.HTTP_422_UNPROCESSABLE_ENTITY,
                 "Reminder time requires UTC offset",
             )
-        reminder = Reminder(
-            user_id=user.id,
-            title=intent.title or body.text,
-            due_at=due_at,
-            next_attempt_at=due_at,
-            timezone=intent.timezone,
-        )
-        db.add(reminder)
+        try:
+            created, times = build_intent_reminders(db, user, intent, body.text)
+        except (ValueError, ZoneInfoNotFoundError) as exc:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Invalid reminder schedule") from exc
+        schedule = ", ".join(times)
         answer = (
-            f"Напоминание «{reminder.title}» запланировано."
-            if ru
-            else f'Reminder "{reminder.title}" scheduled.'
+            f"Напоминание «{created[0].title}» запланировано" +
+            (f" регулярно: {schedule}." if intent.recurrence_frequency else ".")
+            if ru else f'Reminder "{created[0].title}" scheduled' +
+            (f" repeatedly at {schedule}." if intent.recurrence_frequency else ".")
         )
     elif intent.intent == "show_today":
         answer = (

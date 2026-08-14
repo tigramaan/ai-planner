@@ -193,3 +193,14 @@ OAuth refresh recovery acceptance (2026-08-11): expire a provider access token a
 - Verify the relative time is stored as `start_iso`, even if the model initially returns it in the
   calendar-only `event_start_iso` field.
 - Verify the API creates one reminder instead of returning `422 Reminder requires time and timezone`.
+
+## REQ-085 — Повторяющиеся напоминания и навигация
+
+Локальная проверка (2026-08-14): полный API suite прошёл до выделения reminder router; после выделения целевые reminder/conversation tests прошли, worker 5/5, Web 23/23, Next production build и TypeScript успешны. Ruff, file-line guard и `git diff --check` прошли. SQLite не используется как migration-acceptance backend: существующая миграция `b18f4c92d701` требует PostgreSQL `ALTER COLUMN`; production migration проверяется PostgreSQL-контейнером при deploy.
+
+1. Создать ежедневное напоминание в 09:00, 12:00 и 17:00; проверить три строки с общим `series_id`, правилом `daily` и исходной timezone.
+2. Доставить одно срабатывание worker-ом: оно снова `scheduled` на следующий локальный день, attempts сброшен, старые per-device deliveries очищены.
+3. Проверить недельную серию для понедельника, среды и пятницы (0, 2, 4) и выбор ближайшего разрешённого дня.
+4. Во вкладке «Задачи → Напоминания» проверить переименование, перенос, паузу, возобновление и удаление. Связанные task/timer/test rows должны возвращать not-found.
+5. В «Планах» переключить «Сегодня»/«Неделя» и открыть редактор из карточки. `/today` и `/week` перенаправляют в `/agenda`.
+6. На 320, 360 и 390 px проверить пять нижних пунктов: Чат, Планы, Задачи, Контур, Ещё. В «Ещё» доступны Настройки, Установить и Выйти.
