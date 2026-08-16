@@ -204,3 +204,14 @@ OAuth refresh recovery acceptance (2026-08-11): expire a provider access token a
 4. Во вкладке «Задачи → Напоминания» проверить переименование, перенос, паузу, возобновление и удаление. Связанные task/timer/test rows должны возвращать not-found.
 5. В «Планах» переключить «Сегодня»/«Неделя» и открыть редактор из карточки. `/today` и `/week` перенаправляют в `/agenda`.
 6. На 320, 360 и 390 px проверить пять нижних пунктов: Чат, Планы, Задачи, Контур, Ещё. В «Ещё» доступны Настройки, Установить и Выйти.
+
+## REQ-086 — Восстановление после перезагрузки сервера
+
+Локальная и production-проверка (2026-08-16): причиной сбоя после reboot были ранний старт API до PostgreSQL и worker `PermissionError` из-за устаревшего `VAPID_FILE_GID`. API entrypoint теперь повторяет миграцию до готовности БД; worker копирует read-only source secret в ephemeral-файл `0400` до сброса привилегий. systemd-watchdog установлен, enabled/active. После контролируемой остановки worker watchdog пересоздал его, и heartbeat/health вернулись в `healthy`. Shell syntax, Compose config, Ruff, worker 5/5, line guard и diff check прошли.
+
+1. Проверить `sh -n` для обоих entrypoint и watchdog, `docker compose config`, Ruff/tests и file-line guard.
+2. Установить и включить `aiplanner.service`; проверить зависимости от `docker.service` и `network-online.target`.
+3. Перезагрузить сервер без ручного `docker compose up`. Дождаться, пока PostgreSQL/Redis, API, Web, worker и backup станут healthy.
+4. Проверить `alembic current`, Web/readiness через локальный Nginx и свежий `worker:heartbeat` в Redis.
+5. Временно пересоздать worker после изменения числового GID исходного VAPID-файла: worker обязан читать контейнерную копию и оставаться healthy.
+6. Остановить один прикладной контейнер и убедиться, что watchdog возвращает его в healthy без вмешательства оператора.

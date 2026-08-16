@@ -58,3 +58,4 @@
 | REQ-083 | Совместные задачи внутри одного сервера без назначения исполнителя | participant/checklist/activity models and API, task chat actions, Tasks UI, Today/Week | collaboration Web/chat permissions and isolation tests, API suite, Web tests/build |
 | REQ-084 | Консервативный нечёткий поиск задач, самостоятельных напоминаний, таймеров и событий | shared entity matcher, local chat actions and calendar actions | matcher, conversation and calendar-action tests plus full API suite |
 | REQ-085 | Серии напоминаний, управление, объединённая повестка и меню из пяти пунктов | recurrence model/API/worker, Tasks/Reminders tabs, Agenda switch and More menu | reminder delivery/CRUD tests, Web tests/build, migration and mobile acceptance |
+| REQ-086 | Автозапуск после reboot, ожидание БД, стабильный VAPID secret и self-healing сервисов | API/worker entrypoints and systemd Compose watchdog | shell/Compose validation, reboot drill, service health and worker heartbeat |

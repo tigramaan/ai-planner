@@ -20,6 +20,7 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-012: Every service exposes a health procedure, config schema, tests and deployment notes.
 - REQ-013: No source file exceeds 500 lines.
 - REQ-014: Production is deployable at `https://planner.umec.space`.
+- REQ-086: After a host reboot the production stack starts without operator action, waits for PostgreSQL before migration/API startup, copies the VAPID secret into a container-owned non-root-readable file without depending on a mutable host group ID, and continuously repairs missing, stopped or unhealthy Compose services.
 
 ## Product
 

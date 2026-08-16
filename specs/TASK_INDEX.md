@@ -17,3 +17,4 @@
 | AP-013 | Same-server shared tasks, checklist and activity | done |
 | AP-014 | Flexible task/reminder/timer/calendar lookup and reminder chat lifecycle | done |
 | AP-016 | Recurring reminders, reminder workspace and compact agenda navigation | implemented |
+| AP-017 | Reboot-safe production startup and service watchdog | implemented |

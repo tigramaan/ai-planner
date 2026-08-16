@@ -1,0 +1,16 @@
+[Unit]
+Description=AI Planner Docker Compose stack watchdog
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/repos/aiplanner
+ExecStart=/opt/repos/aiplanner/infra/systemd/aiplanner-watch.sh
+Restart=always
+RestartSec=10
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

@@ -29,11 +29,10 @@ services:
     env_file:
       - path: .env
         required: true
-    environment: ["REDIS_URL=redis://redis:6379/0", "API_INTERNAL_URL=http://api:8000", "VAPID_PRIVATE_KEY_PATH=/run/secrets/vapid_private.pem"]
-    group_add: ["${VAPID_FILE_GID:-0}"]
+    environment: ["REDIS_URL=redis://redis:6379/0", "API_INTERNAL_URL=http://api:8000", "VAPID_PRIVATE_KEY_PATH=/worker-secrets/vapid_private.pem"]
     secrets:
       - source: vapid_private
-        target: vapid_private.pem
+        target: vapid_private_source
     depends_on: {redis: {condition: service_healthy}, api: {condition: service_healthy}}
     healthcheck: {test: ["CMD", "python", "-c", "import os,time,redis; v=redis.from_url(os.environ['REDIS_URL']).get('worker:heartbeat'); assert v and time.time()-float(v)<60"], interval: 30s, timeout: 5s, retries: 3}
   backup:
