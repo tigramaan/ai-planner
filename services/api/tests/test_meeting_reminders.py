@@ -45,3 +45,33 @@ def test_meeting_follow_up_replaces_default_reminder_with_two_hours(logged_in, m
             get_settings(), action.payload_encrypted, f"pending:{action.id}:{action.payload_hash}"
         )
         assert payload["reminder_minutes"] == 120
+
+
+def test_client_join_link_is_preserved_in_pending_meeting(logged_in, monkeypatch):
+    async def intent(*args, **kwargs):
+        return Intent(
+            intent="create_meeting",
+            title="Онлайн-консультация",
+            start_iso="2026-08-18T10:00:00+03:00",
+            timezone="Europe/Moscow",
+        )
+
+    monkeypatch.setattr(chat_router, "extract_intent", intent)
+    response = logged_in.post(
+        "/api/v1/chat/messages",
+        json={
+            "text": (
+                "Создай мероприятие по приглашению: онлайн-консультация завтра в 10:00. "
+                "Откройте ссылку https://diagnostics.ktalk.ru/oqoq1ob080bm"
+            )
+        },
+    )
+    assert response.status_code == 200
+    assert "client link: https://diagnostics.ktalk.ru/oqoq1ob080bm" in response.json()["message"]
+    with SessionLocal() as db:
+        action = db.scalar(select(PendingAction).where(PendingAction.cancelled_at.is_(None)))
+        payload = decrypt_json(
+            get_settings(), action.payload_encrypted, f"pending:{action.id}:{action.payload_hash}"
+        )
+        assert payload["external_join_url"] == "https://diagnostics.ktalk.ru/oqoq1ob080bm"
+        assert payload["conference"] == "none"

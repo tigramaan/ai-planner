@@ -226,3 +226,9 @@ OAuth refresh recovery acceptance (2026-08-11): expire a provider access token a
 - Explicit lead times are converted to total minutes (`за 2 часа` -> `120`) and override the user's default for the pending meeting draft.
 - A follow-up correction to an unconfirmed meeting preserves the meeting fields and replaces the reminder lead time.
 - Regressions: `test_meeting_payload_keeps_explicit_reminder_lead_time`, `test_meeting_follow_up_replaces_default_reminder_with_two_hours`.
+
+# Client-provided meeting links
+
+- A client-provided HTTPS join link is preserved in `external_join_url`; no replacement conference is created.
+- The confirmation explicitly displays the link, and calendar adapters store it as the event location and description.
+- Regressions: `test_summary_shows_client_provided_join_link`, `test_client_join_link_is_preserved_in_pending_meeting`.

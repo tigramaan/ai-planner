@@ -72,7 +72,6 @@ TOOLS = [
                 "description": {"type": ["string", "null"], "maxLength": 4000},
                 "due_iso": {"type": ["string", "null"]},
                 "duration_minutes": {"type": ["integer", "null"], "minimum": 1, "maximum": 1440},
-                "reminder_minutes": {"type": ["integer", "null"], "minimum": 0, "maximum": 10080},
                 "priority": {"type": ["string", "null"], "enum": ["low", "normal", "high", None]},
             },
             "required": [
@@ -116,6 +115,7 @@ TOOLS = [
                 "event_start_iso": {"type": ["string", "null"]},
                 "start_iso": {"type": ["string", "null"]},
                 "duration_minutes": {"type": ["integer", "null"], "minimum": 1, "maximum": 1440},
+                "reminder_minutes": {"type": ["integer", "null"], "minimum": 0, "maximum": 10080},
                 "provider": {
                     "type": ["string", "null"],
                     "enum": ["google", "microsoft", "yandex", None],
@@ -124,6 +124,7 @@ TOOLS = [
                     "type": ["string", "null"],
                     "enum": ["google", "microsoft", "yandex", "zoom", "none", None],
                 },
+                "external_join_url": {"type": ["string", "null"], "maxLength": 2000},
             },
             "required": [
                 "operation",
@@ -137,6 +138,7 @@ TOOLS = [
                 "reminder_minutes",
                 "provider",
                 "conference_provider",
+                "external_join_url",
             ],
         },
     },
@@ -171,6 +173,7 @@ async def _prepare_external_action(
         provider=provider,
         conference_provider=conference,
         conference_requested=bool(conference and conference != "none"),
+        external_join_url=arguments.get("external_join_url"),
     )
     if operation in {"send_email", "create_meeting", "add_event_participants"}:
         resolution = await resolve_recipients(db, settings, user, intent.participants, provider)

@@ -24,7 +24,11 @@ def action_summary(action_type: str, payload: dict, locale: str) -> str:
         "Microsoft" if provider == "microsoft" else "Яндекс" if provider == "yandex" else "Google"
     )
     conference = payload.get("conference")
+    external_join_url = payload.get("external_join_url")
     conference_name = (
+        (f"ссылка клиента: {external_join_url}" if ru else f"client link: {external_join_url}")
+        if external_join_url
+        else
         "Microsoft Teams"
         if conference == "microsoft_teams"
         else "Google Meet"
@@ -60,7 +64,9 @@ def action_summary(action_type: str, payload: dict, locale: str) -> str:
                 f"Видеосвязь: {conference_name}.",
                 f"Напоминание: за {payload.get('reminder_minutes', 5)} мин.",
                 (
-                    "После подтверждения создам событие и отправлю календарные приглашения."
+                    "После подтверждения создам событие, сохраню ссылку подключения и отправлю календарные приглашения."
+                    if external_join_url
+                    else "После подтверждения создам событие и отправлю календарные приглашения."
                     if conference == "none"
                     else "После подтверждения создам событие и видеовстречу, затем отправлю календарные приглашения."
                 ),
@@ -75,7 +81,9 @@ def action_summary(action_type: str, payload: dict, locale: str) -> str:
                 f"Video service: {conference_name}.",
                 f"Reminder: {payload.get('reminder_minutes', 5)} min before.",
                 (
-                    "After confirmation I will create the event and send calendar invitations."
+                    "After confirmation I will create the event, save the join link, and send calendar invitations."
+                    if external_join_url
+                    else "After confirmation I will create the event and send calendar invitations."
                     if conference == "none"
                     else "After confirmation I will create the event and video meeting, then send invitations."
                 ),

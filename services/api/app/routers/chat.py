@@ -18,7 +18,7 @@ from ..agent import (
 from ..audit import audit
 from ..calendar_actions import EventAmbiguous, EventNotFound, prepare_calendar_action
 from ..chat_decisions import decision_without_active_draft
-from ..conference_intent import explicit_conference_provider
+from ..conference_intent import apply_explicit_conference
 from ..config import Settings, get_settings
 from ..database import get_db
 from ..dependencies import current_user
@@ -230,10 +230,8 @@ async def chat(
             model_tier = "senior"
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
-    explicit_conference = explicit_conference_provider(body.text)
-    if intent.intent in {"create_meeting", "update_event"} and explicit_conference:
-        intent.conference_requested = True
-        intent.conference_provider = explicit_conference
+    if intent.intent in {"create_meeting", "update_event"}:
+        apply_explicit_conference(intent, body.text)
     if intent.intent in {
         "create_meeting",
         "update_event",

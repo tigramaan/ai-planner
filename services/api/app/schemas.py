@@ -222,11 +222,22 @@ class Intent(BaseModel):
     mail_limit: int | None = Field(default=None, ge=1, le=20)
     conference_provider: Literal["google", "microsoft", "yandex", "zoom", "none"] | None = None
     conference_requested: bool = False
+    external_join_url: str | None = Field(default=None, max_length=2000)
     body: str | None = None
     requires_senior: bool = False
     route_reason: str | None = Field(default=None, max_length=300)
     requires_clarification: bool = False
     clarification_question: str | None = None
+
+    @field_validator("external_join_url")
+    @classmethod
+    def safe_external_join_url(cls, value: str | None):
+        if value is None:
+            return None
+        parsed = urlparse(value)
+        if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
+            raise ValueError("External meeting URL must be HTTPS without embedded credentials")
+        return value
 
 
 class OAuthStart(BaseModel):

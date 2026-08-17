@@ -51,6 +51,24 @@ def test_summary_distinguishes_google_calendar_from_teams_video():
     assert "Видеосвязь: Microsoft Teams" in summary
 
 
+def test_summary_shows_client_provided_join_link():
+    summary = action_summary(
+        "create_meeting",
+        {
+            "title": "Онлайн-консультация",
+            "start_iso": "2026-08-18T07:00:00+00:00",
+            "end_iso": "2026-08-18T07:30:00+00:00",
+            "timezone": "Europe/Moscow",
+            "provider": "google",
+            "conference": "none",
+            "external_join_url": "https://diagnostics.ktalk.ru/oqoq1ob080bm",
+        },
+        "ru",
+    )
+    assert "Видеосвязь: ссылка клиента: https://diagnostics.ktalk.ru/oqoq1ob080bm" in summary
+    assert "сохраню ссылку подключения" in summary
+
+
 def test_all_external_writes_require_confirmation():
     for name in (
         "create_meeting",
