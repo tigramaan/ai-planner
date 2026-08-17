@@ -220,3 +220,9 @@ OAuth refresh recovery acceptance (2026-08-11): expire a provider access token a
 - A terminal push failure affects only the current occurrence; the recurring series is advanced to its next future local-time slot.
 - After worker/server downtime, missed recurrence intervals are skipped without a stale-delivery burst and without leaving the series in `failed`.
 - Regression: `test_failed_recurring_occurrence_does_not_stop_series`.
+
+# Meeting reminder lead time
+
+- Explicit lead times are converted to total minutes (`за 2 часа` -> `120`) and override the user's default for the pending meeting draft.
+- A follow-up correction to an unconfirmed meeting preserves the meeting fields and replaces the reminder lead time.
+- Regressions: `test_meeting_payload_keeps_explicit_reminder_lead_time`, `test_meeting_follow_up_replaces_default_reminder_with_two_hours`.

@@ -72,6 +72,7 @@ TOOLS = [
                 "description": {"type": ["string", "null"], "maxLength": 4000},
                 "due_iso": {"type": ["string", "null"]},
                 "duration_minutes": {"type": ["integer", "null"], "minimum": 1, "maximum": 1440},
+                "reminder_minutes": {"type": ["integer", "null"], "minimum": 0, "maximum": 10080},
                 "priority": {"type": ["string", "null"], "enum": ["low", "normal", "high", None]},
             },
             "required": [
@@ -133,6 +134,7 @@ TOOLS = [
                 "event_start_iso",
                 "start_iso",
                 "duration_minutes",
+                "reminder_minutes",
                 "provider",
                 "conference_provider",
             ],
@@ -164,6 +166,7 @@ async def _prepare_external_action(
         event_start_iso=arguments.get("event_start_iso"),
         start_iso=arguments.get("start_iso"),
         duration_minutes=arguments.get("duration_minutes"),
+        reminder_minutes=arguments.get("reminder_minutes"),
         timezone=user.timezone,
         provider=provider,
         conference_provider=conference,
@@ -182,7 +185,11 @@ async def _prepare_external_action(
     else:
         payload = pending_payload(intent)
         if operation == "create_meeting":
-            payload["reminder_minutes"] = user.default_reminder_minutes
+            payload["reminder_minutes"] = (
+                intent.reminder_minutes
+                if intent.reminder_minutes is not None
+                else user.default_reminder_minutes
+            )
     summary = action_summary(operation, payload, locale)
     existing = db.scalars(select(PendingAction).where(PendingAction.user_id == user.id)).all()
     for action in existing:

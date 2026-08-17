@@ -77,6 +77,19 @@ def test_meeting_intent_becomes_calendar_payload():
     assert payload["conference"] == "none"
 
 
+def test_meeting_payload_keeps_explicit_reminder_lead_time():
+    payload = pending_payload(
+        Intent(
+            intent="create_meeting",
+            title="Компания wp group",
+            start_iso="2026-08-18T16:00:00+03:00",
+            timezone="Europe/Moscow",
+            reminder_minutes=120,
+        )
+    )
+    assert payload["reminder_minutes"] == 120
+
+
 def test_meeting_payload_rejects_time_without_offset():
     intent = Intent(
         intent="create_meeting",

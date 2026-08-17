@@ -211,6 +211,7 @@ class Intent(BaseModel):
     start_iso: str | None = None
     timezone: str | None = None
     duration_minutes: int | None = Field(default=None, ge=1, le=1440)
+    reminder_minutes: int | None = Field(default=None, ge=0, le=10080)
     recurrence_frequency: Literal["daily", "weekly", "monthly"] | None = None
     recurrence_weekdays: list[int] | None = Field(default=None, max_length=7)
     recurrence_times: list[str] | None = Field(default=None, max_length=12)

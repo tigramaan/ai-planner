@@ -362,7 +362,7 @@ async def chat(
         try:
             payload = prepared_payload or pending_payload(intent)
             if intent.intent == "create_meeting":
-                payload["reminder_minutes"] = user.default_reminder_minutes
+                payload["reminder_minutes"] = intent.reminder_minutes if intent.reminder_minutes is not None else user.default_reminder_minutes
         except (ValueError, TypeError) as exc:
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
         summary = action_summary(intent.intent, payload, locale)
