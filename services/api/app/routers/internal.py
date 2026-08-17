@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from ..config import Settings, get_settings
 from ..database import get_db
 from ..models import AgentMessage, AuditLog, PushDelivery, PushSubscription, Reminder, Timer
-from ..reminder_recurrence import next_occurrence
+from ..reminder_recurrence import next_future_occurrence
 from ..schemas import ReminderDelivery
 from ..security import decrypt_json
 
@@ -157,16 +157,12 @@ def complete_reminder(
         else:
             body.status = "failed"
             body.error = "no device accepted push"
+    recurring = bool(reminder.recurrence_json and not reminder.timer_id and not reminder.task_id)
     if body.status == "delivered":
         reminder.delivered_at = now
         reminder.last_error = None
-        if reminder.recurrence_json and not reminder.timer_id and not reminder.task_id:
-            following = next_occurrence(reminder.due_at, reminder.timezone, reminder.recurrence_json)
-            reminder.due_at = following
-            reminder.next_attempt_at = following
-            reminder.status = "scheduled"
-            reminder.attempts = 0
-            db.execute(delete(PushDelivery).where(PushDelivery.reminder_id == reminder.id))
+        if recurring:
+            _schedule_next_occurrence(db, reminder, now)
         else:
             reminder.status = "delivered"
         if reminder.timer_id:
@@ -185,6 +181,11 @@ def complete_reminder(
         reminder.status = "retry"
         reminder.next_attempt_at = now + timedelta(minutes=min(2**reminder.attempts, 30))
         reminder.last_error = body.error
+    elif recurring:
+        # A failed delivery is an occurrence failure, not a series failure.
+        # Keep the error for diagnostics and continue with the next future slot.
+        reminder.last_error = body.error
+        _schedule_next_occurrence(db, reminder, now)
     else:
         reminder.status = "failed"
         reminder.last_error = body.error
@@ -200,3 +201,14 @@ def complete_reminder(
         )
     )
     db.commit()
+
+
+def _schedule_next_occurrence(db: Session, reminder: Reminder, now: datetime) -> None:
+    following = next_future_occurrence(
+        reminder.due_at, now, reminder.timezone, reminder.recurrence_json
+    )
+    reminder.due_at = following
+    reminder.next_attempt_at = following
+    reminder.status = "scheduled"
+    reminder.attempts = 0
+    db.execute(delete(PushDelivery).where(PushDelivery.reminder_id == reminder.id))

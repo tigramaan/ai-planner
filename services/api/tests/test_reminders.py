@@ -116,6 +116,40 @@ def test_daily_reminder_is_rescheduled_after_delivery(logged_in):
         assert stored_due > due + timedelta(hours=23)
 
 
+def test_failed_recurring_occurrence_does_not_stop_series(logged_in):
+    due = datetime.now(UTC) - timedelta(days=3)
+    created = logged_in.post(
+        "/api/v1/reminders",
+        json={
+            "title": "Надёжная ежедневная серия",
+            "due_at": due.isoformat(),
+            "timezone": "Europe/Moscow",
+            "recurrence": {"frequency": "daily", "weekdays": []},
+        },
+    )
+    reminder_id = created.json()["id"]
+    logged_in.post("/internal/v1/reminders/claim", headers=WORKER_HEADERS)
+
+    completed = logged_in.post(
+        f"/internal/v1/reminders/{reminder_id}/complete",
+        headers=WORKER_HEADERS,
+        json={"status": "failed", "error": "push unavailable after reboot"},
+    )
+
+    assert completed.status_code == 204
+    with SessionLocal() as db:
+        reminder = db.get(Reminder, reminder_id)
+        stored_due = (
+            reminder.due_at.replace(tzinfo=UTC)
+            if reminder.due_at.tzinfo is None
+            else reminder.due_at
+        )
+        assert reminder.status == "scheduled"
+        assert reminder.attempts == 0
+        assert reminder.last_error == "push unavailable after reboot"
+        assert stored_due > datetime.now(UTC)
+
+
 def test_standalone_reminder_can_be_paused_edited_and_deleted(logged_in):
     created = logged_in.post(
         "/api/v1/reminders",

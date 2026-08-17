@@ -46,6 +46,21 @@ def next_occurrence(after: datetime, timezone: str, recurrence: dict) -> datetim
     return candidate.astimezone(UTC)
 
 
+def next_future_occurrence(
+    after: datetime, now: datetime, timezone: str, recurrence: dict
+) -> datetime:
+    """Return the first scheduled occurrence strictly after ``now``.
+
+    A worker can resume after a long outage. Advancing only once would leave the
+    reminder overdue and cause a burst of stale deliveries, so advance through
+    every missed slot while preserving the recurrence's local wall-clock time.
+    """
+    candidate = next_occurrence(after, timezone, recurrence)
+    while candidate <= now:
+        candidate = next_occurrence(candidate, timezone, recurrence)
+    return candidate
+
+
 def build_intent_reminders(db, user, intent, raw: str) -> tuple[list[Reminder], list[str]]:
     due = datetime.fromisoformat(intent.start_iso)
     recurrence = (

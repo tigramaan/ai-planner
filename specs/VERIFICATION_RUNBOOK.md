@@ -215,3 +215,8 @@ OAuth refresh recovery acceptance (2026-08-11): expire a provider access token a
 4. Проверить `alembic current`, Web/readiness через локальный Nginx и свежий `worker:heartbeat` в Redis.
 5. Временно пересоздать worker после изменения числового GID исходного VAPID-файла: worker обязан читать контейнерную копию и оставаться healthy.
 6. Остановить один прикладной контейнер и убедиться, что watchdog возвращает его в healthy без вмешательства оператора.
+# Recurring reminder outage recovery
+
+- A terminal push failure affects only the current occurrence; the recurring series is advanced to its next future local-time slot.
+- After worker/server downtime, missed recurrence intervals are skipped without a stale-delivery burst and without leaving the series in `failed`.
+- Regression: `test_failed_recurring_occurrence_does_not_stop_series`.
