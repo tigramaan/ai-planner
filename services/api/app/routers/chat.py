@@ -10,6 +10,7 @@ from ..action_summary import action_summary
 from ..adapters import ProviderError
 from ..agent import (
     extract_intent,
+    normalize_intent,
     openai_config,
     pending_payload,
     risk_for_intent,
@@ -230,6 +231,7 @@ async def chat(
             model_tier = "senior"
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+    intent = normalize_intent(intent)
     if intent.intent in {"create_meeting", "update_event"}:
         apply_explicit_conference(intent, body.text)
     if intent.intent in {

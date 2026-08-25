@@ -232,3 +232,10 @@ OAuth refresh recovery acceptance (2026-08-11): expire a provider access token a
 - A client-provided HTTPS join link is preserved in `external_join_url`; no replacement conference is created.
 - The confirmation explicitly displays the link, and calendar adapters store it as the event location and description.
 - Regressions: `test_summary_shows_client_provided_join_link`, `test_client_join_link_is_preserved_in_pending_meeting`.
+
+# Default meeting duration and duration follow-ups
+
+- A new meeting without an explicit duration defaults to 60 minutes and does not ask a clarification.
+- A create-meeting start accidentally returned in `event_start_iso` is normalized to `start_iso` before draft validation.
+- An explicit follow-up such as `180 минут` overrides the default and preserves the original meeting context.
+- Regressions: `test_meeting_without_duration_defaults_to_one_hour`, `test_explicit_180_minutes_replaces_default_duration`.

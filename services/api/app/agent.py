@@ -23,6 +23,8 @@ participants and do not ask for an email address. If a clarification follow-up e
 an email for a named recipient, replace that name with the supplied email in participants. Ask only
 when the human request itself is unclear.
 Do not use requires_clarification to ask for confirmation when all required details are present.
+New meetings default to 60 minutes when duration is omitted; do not ask for duration. An explicitly
+supplied duration overrides that default.
 Supported intents: show_today, create_task, update_task, complete_task, reopen_task, delete_task,
 create_reminder, update_reminder, delete_reminder, start_timer, update_timer, cancel_timer,
 create_meeting, update_event,
@@ -141,13 +143,24 @@ async def extract_intent(
     except APIError as exc:
         raise RuntimeError("OpenAI could not process the command") from exc
     try:
-        intent = Intent.model_validate_json(response.output_text)
-        if intent.intent == "create_reminder" and not intent.start_iso and intent.event_start_iso:
-            intent.start_iso = intent.event_start_iso
-            intent.event_start_iso = None
-        return intent
+        return normalize_intent(Intent.model_validate_json(response.output_text))
     except (ValidationError, json.JSONDecodeError) as exc:
         raise RuntimeError("AI returned an invalid structured command") from exc
+
+
+def normalize_intent(intent: Intent) -> Intent:
+    if (
+        intent.intent in {"create_reminder", "create_meeting"}
+        and not intent.start_iso
+        and intent.event_start_iso
+    ):
+        intent.start_iso, intent.event_start_iso = intent.event_start_iso, None
+    if intent.intent == "create_meeting":
+        intent.duration_minutes = intent.duration_minutes or 60
+        if intent.title and intent.start_iso and intent.timezone:
+            intent.requires_clarification = False
+            intent.clarification_question = None
+    return intent
 
 
 async def transcribe(api_key: str, model: str, filename: str, content: bytes) -> str:
