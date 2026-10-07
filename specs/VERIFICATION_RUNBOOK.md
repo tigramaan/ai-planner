@@ -269,3 +269,18 @@ AP-018 build security acceptance: Next 16.3.6 fixes the upstream GHSA-vcvr-r3jv-
   versioned PNG assets matched source bytes and MIME/dimensions; manifest passed.
 - Maskable 512px foreground: zero pixels outside the central 80% safe circle.
 - Work and checks ran on /opt/repos/aiplanner; no local project checkout was made.
+
+### AP-018 production delivery — 2026-10-07
+
+- Implementation commit: b3cba34, pushed to origin/main. Image tag:
+  aiplanner-web:calendar-ai-20261007.
+- Only Web was recreated. HTTPS /api/health/ready returned ready/database ok,
+  and Web health became healthy.
+- Production Chromium repeated the preview matrix (ru-RU/320, en-US/1440,
+  fr-FR/390), languagechange and locale-weight checks: no hydration/page/console
+  errors or horizontal overflow. All four public icon paths and manifest passed
+  exact-source/MIME/size checks.
+- The temporary preview container was stopped after successful production checks.
+- Rollback image is retained as aiplanner-web:before-calendar-ai-20261007.
+  To roll back Web: retag it as aiplanner-web:latest and run
+  docker compose up -d --no-deps --no-build web.

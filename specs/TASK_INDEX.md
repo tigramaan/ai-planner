@@ -18,5 +18,4 @@
 | AP-014 | Flexible task/reminder/timer/calendar lookup and reminder chat lifecycle | done |
 | AP-016 | Recurring reminders, reminder workspace and compact agenda navigation | implemented |
 | AP-017 | Reboot-safe production startup and service watchdog | implemented |
-
-| AP-018 | REQ-027, REQ-050: hydration-safe automatic browser locale and calendar AI application icon | in progress |
+| AP-018 | REQ-014, REQ-027, REQ-050, REQ-053: browser locale, calendar AI icon and locked patched Web deployment | done |
