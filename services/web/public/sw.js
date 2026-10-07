@@ -7,7 +7,7 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("push", (event) => {
   const payload = event.data ? event.data.json() : {};
   const data = payload.notification || payload;
-  event.waitUntil(self.registration.showNotification(data.title || "AI Planner", {body:data.body || "Новое напоминание", tag:data.tag, icon:"/icon.svg", data:{url:data.navigate || data.url || "/today"}}));
+  event.waitUntil(self.registration.showNotification(data.title || "AI Planner", {body:data.body || "Новое напоминание", tag:data.tag, icon:"/icon-192.png?v=calendar-ai-1", data:{url:data.navigate || data.url || "/today"}}));
 });
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();

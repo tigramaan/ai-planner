@@ -33,15 +33,15 @@ Self-hosted family command center for Russian and English text/voice commands. E
 - REQ-024: External writes require an immutable pending action and explicit confirmation by default.
 - REQ-025: Local tasks and timers can be created without external confirmation.
 - REQ-026: All external writes are idempotent and verified by reading the created, updated or deleted resource state.
-- REQ-027: The Web/PWA and assistant responses support Russian and English. Locale is derived only from browser language preferences; unsupported preferences fall back to English and no manual override is stored.
+- REQ-027: The Web/PWA and assistant responses support Russian and English. The first supported browser preference wins, with English for unsupported preferences and no stored override. Initial HTML and hydration use the request Accept-Language with descending nonzero quality weights; after hydration all views follow navigator.languages (navigator.language when the list is empty) and languagechange without hydration errors.
 - REQ-028: Existing Google/Microsoft events can be rescheduled, cancelled or extended with participants only after unique matching and explicit confirmation.
 - REQ-047: The seven-day agenda combines the current user's open local tasks, standalone reminders and available Google/Microsoft calendar events; unavailable providers degrade without blocking local data. Timers are chat-only and never appear in Today or Week.
 - REQ-048: Mail-provider authorization failures are converted into localized reconnect guidance and never expose raw upstream errors to the user.
 - REQ-049: Today and Week expose event start/end, participants, reminder offset, safe meeting link and provider edit link. Calendar events can open a prefilled chat correction.
-- REQ-050: The PWA exposes installation from the main screen and navigation, provides iOS/Android instructions, and ships branded manifest and Apple icons.
+- REQ-050: The PWA exposes installation from the main screen and navigation, provides iOS/Android instructions, and ships a blue calendar-sheet icon with an AI mark as SVG favicon, 180px Apple icon and 192/512px manifest icons. The maskable icon keeps its calendar and AI mark inside the central 80% safe circle; versioned asset references refresh previously cached icons.
 - REQ-051: The task workspace supports creation with description, Moscow due date and priority; search and status/date filters; completion and reopening; inline editing; confirmed deletion; and strict per-user ownership on every mutation.
 - REQ-052: Chat and voice intents support detailed task creation, task update/completion/reopening/deletion and timer restart/deletion. Today/Week expose guarded task actions and calendar change/cancel drafts. Explicit Telemost selection also replaces the video service while updating an existing event, using the encrypted permanent room when configured.
-- REQ-053: Command examples are diverse, categorized and clickable into the chat draft. Navigation and install icons use the supplied UMEC brand logo.
+- REQ-053: Command examples are diverse, categorized and clickable into the chat draft. Navigation uses the supplied UMEC brand logo; application/install icons use the calendar AI mark defined in REQ-050.
 
 ## Security
 

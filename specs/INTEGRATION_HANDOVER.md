@@ -24,3 +24,17 @@ Booking requires the owner's Google Calendar connection regardless of the genera
 The VAPID private key is mounted read-only as a source secret. The root-only worker entrypoint copies it to an ephemeral `0400` file owned by the non-root `planner` user before dropping privileges. Host group IDs are not part of the runtime contract. Keep the host source key private (`0640` or stricter). The worker validates readability before publishing its Redis heartbeat. After deployment, use the authenticated **Проверить уведомление** action rather than relying only on the browser permission toggle.
 
 Install `infra/systemd/aiplanner.service` as `/etc/systemd/system/aiplanner.service`, enable it and keep Docker enabled. Its watchdog reconciles the Compose project after boot and recreates missing, stopped or unhealthy services. The API entrypoint retries its PostgreSQL migration until the database is ready, so Docker's parallel restart order cannot leave the API permanently stopped.
+
+## Locale and icon upgrade (AP-018)
+
+Web keeps the existing first-supported-browser-language policy, public asset paths
+and API locale contract. Initial HTML is now request-localized and hydrates with
+the same locale. English placed before Russian in browser preferences still
+selects English. The request header never becomes a persisted user setting.
+
+Application icons use the calendar AI mark; the UMEC navigation logo is retained.
+Rebuild/deploy only Web; no schema migration is required. Previously installed
+PWAs can refresh their home-screen icon on the operating system's own schedule;
+new installations read the versioned manifest assets.
+
+Regenerate PNG assets after changing services/web/public/icon.svg with npm ci followed by node tools/branding/generate-icons.mjs; sharp 0.34.5 is a pinned development dependency.

@@ -13,3 +13,4 @@
 | AP-014 | `contracts/agent-service.md`, `contracts/planner-service.md` |
 | AP-016 | `contracts/agent-service.md`, `contracts/planner-service.md`, `contracts/web-service.md` |
 | AP-017 | `contracts/service-template.md`, `specs/INTEGRATION_HANDOVER.md` |
+| AP-018 | contracts/web-service.md locale and public icon v1 |

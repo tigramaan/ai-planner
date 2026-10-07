@@ -1,0 +1,12 @@
+**
+!package.json
+!package-lock.json
+!services
+!services/web
+!services/web/**
+services/web/.next
+services/web/node_modules
+services/web/coverage
+services/web/*.log
+services/web/tsconfig.tsbuildinfo
+services/web/.env*

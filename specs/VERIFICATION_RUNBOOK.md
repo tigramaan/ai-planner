@@ -239,3 +239,33 @@ OAuth refresh recovery acceptance (2026-08-11): expire a provider access token a
 - A create-meeting start accidentally returned in `event_start_iso` is normalized to `start_iso` before draft validation.
 - An explicit follow-up such as `180 минут` overrides the default and preserves the original meeting context.
 - Regressions: `test_meeting_without_duration_defaults_to_one_hour`, `test_explicit_180_minutes_replaces_default_duration`.
+
+## AP-018 — Locale and calendar AI icon acceptance
+
+- Web tests verify weighted Accept-Language, first-supported browser preference,
+  navigator.language fallback, matching server/client hydration and languagechange.
+- Russian/English /login requests must contain matching html.lang and translated
+  headings; Chromium must show no hydration/page errors at desktop/mobile sizes.
+- Versioned favicon/Apple/PWA/notification references must serve anonymously with
+  correct MIME types; PNG dimensions must be 180/192/512 with safe maskable art.
+- Run npm run web:test, Web lint/build, npm run guards and git diff --check.
+- Deploy only Web via docker compose up -d --no-deps web after successful build;
+  verify readiness, public localized pages, manifest and icon assets.
+
+AP-018 build security acceptance: Next 16.3.6 fixes the upstream GHSA-vcvr-r3jv-pc5j advisory affecting the deployed 16.3.1 package. Update only compatible nanoid/source-map-js transitive patches reported by the runtime audit; require npm audit --omit=dev to report zero runtime vulnerabilities before deploy. No exploitability of the site's unused framework endpoints is asserted.
+
+### AP-018 verification record — 2026-10-07
+
+- Before changes, Chromium ru-RU at the public login reproduced React hydration
+  error 418 even though the client eventually rendered Russian.
+- Web suite: 29/29 passed on locked Next 16.3.6; TypeScript, production Docker
+  build, Compose config, 500-line guard and git diff --check passed.
+- Runtime dependency audit: 0 vulnerabilities. Development-only build tooling
+  still reports four advisories; those tools are not executed in the runtime image.
+- Preview Chromium: ru-RU at 320px, en-US at 1440px and unsupported fr-FR at
+  390px all passed initial HTML, hydration, translated heading, lang and overflow
+  checks. Browser languagechange switched Russian to English without errors.
+- Weighted/disabled Accept-Language preferences passed. Public SVG and all three
+  versioned PNG assets matched source bytes and MIME/dimensions; manifest passed.
+- Maskable 512px foreground: zero pixels outside the central 80% safe circle.
+- Work and checks ran on /opt/repos/aiplanner; no local project checkout was made.

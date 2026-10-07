@@ -8,7 +8,9 @@ services:
     depends_on: [web]
     profiles: ["caddy"]
   web:
-    build: ./services/web
+    build:
+      context: .
+      dockerfile: services/web/Dockerfile
     restart: unless-stopped
     environment: ["API_INTERNAL_URL=http://api:8000", "HOSTNAME=0.0.0.0", "PORT=3000"]
     ports: ["127.0.0.1:18092:3000"]

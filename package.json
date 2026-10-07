@@ -4,11 +4,16 @@
   "license": "MIT",
   "private": true,
   "type": "module",
-  "workspaces": ["services/web"],
+  "workspaces": [
+    "services/web"
+  ],
   "scripts": {
     "guards": "node tools/guards/check-file-lines.mjs",
     "worker:test": "PYTHONPATH=services/worker .venv/bin/pytest services/worker/tests",
     "web:build": "npm --workspace services/web run build",
     "web:test": "npm --workspace services/web run test"
+  },
+  "devDependencies": {
+    "sharp": "0.34.5"
   }
 }

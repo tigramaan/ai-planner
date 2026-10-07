@@ -7,3 +7,5 @@
 | worker | Reminder/Web Push delivery and retry | `contracts/planner-service.md` internal worker contract | Redis heartbeat | MVP |
 
 Data ownership: API owns PostgreSQL records and external side effects. Web owns no business data. Worker consumes scheduled delivery work and does not accept public traffic.
+
+Web locale provider (internal): request-initialized ru/en state shared by all views, then browser languagechange; no stored preference. Public icons are SVG/180/192/512 calendar AI assets. Errors and verification: contracts/web-service.md, AP-018; REQ-027/REQ-050.
