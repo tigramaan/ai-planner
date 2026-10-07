@@ -15,3 +15,4 @@
 | AP-017 | `contracts/service-template.md`, `specs/INTEGRATION_HANDOVER.md` |
 | AP-018 | contracts/web-service.md locale and public icon v1 |
 | AP-019 | contracts/agent-service.md model defaults and existing v1 integration/Web model field |
+| AP-020 | `contracts/qa-resources.md`; local-only API test resource lifecycle |

@@ -1,9 +1,11 @@
 import base64
 import os
+from datetime import UTC, datetime, timedelta
+from uuid import uuid4
 
 os.environ.update(
     {
-        "DATABASE_URL": "sqlite:///./test-planner.db",
+        "DATABASE_URL": "sqlite://",
         "OWNER_EMAIL": "tigramaan@gmail.com",
         "OWNER_INITIAL_PASSWORD": "correct-horse-battery-staple",
         "INITIAL_SETUP_TOKEN": "test-initial-setup-token-that-is-long-enough",
@@ -18,17 +20,50 @@ os.environ.update(
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import close_all_sessions
+from sqlalchemy.pool import StaticPool
 
-from app.database import Base, engine
+from app import database as test_database
+
+# One shared connection keeps the in-memory database accessible to TestClient threads.
+# Rebind the existing session factory before importing application routers.
+test_database.engine.dispose()
+engine = create_engine(
+    "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+)
+engine.update_execution_options(
+    qa_resource={
+        "owner": "aiplanner",
+        "project": "aiplanner",
+        "run": os.environ.get("QA_RESOURCE_RUN", uuid4().hex),
+        "purpose": "api-tests",
+        "expiry": os.environ.get(
+            "QA_RESOURCE_EXPIRY", (datetime.now(UTC) + timedelta(minutes=15)).isoformat()
+        ),
+    }
+)
+test_database.engine = engine
+test_database.SessionLocal.configure(bind=engine)
+Base = test_database.Base
+
 from app.main import app
 
 
 @pytest.fixture(autouse=True)
 def database():
     Base.metadata.drop_all(engine)
-    Base.metadata.create_all(engine)
-    yield
-    Base.metadata.drop_all(engine)
+    try:
+        Base.metadata.create_all(engine)
+        yield
+    finally:
+        close_all_sessions()
+        Base.metadata.drop_all(engine)
+
+
+def pytest_sessionfinish(session, exitstatus):
+    close_all_sessions()
+    engine.dispose()
 
 
 @pytest.fixture

@@ -20,3 +20,4 @@
 | AP-017 | Reboot-safe production startup and service watchdog | implemented |
 | AP-018 | REQ-014, REQ-027, REQ-050, REQ-053: browser locale, calendar AI icon and locked patched Web deployment | done |
 | AP-019 | REQ-014, REQ-021, REQ-034, REQ-069–REQ-072: GPT-6 defaults, preserved tier routing and production migration | done |
+| AP-020 | Bounded disk/QA hygiene: process-owned in-memory test DB and teardown evidence; no production deployment | done |

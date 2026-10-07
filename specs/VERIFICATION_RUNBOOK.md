@@ -330,3 +330,45 @@ AP-018 build security acceptance: Next 16.3.6 fixes the upstream GHSA-vcvr-r3jv-
   .env, removing entries that were originally absent; preserve all other lines.
   Retag both rollback images as their corresponding latest tags, then run
   docker compose up -d --no-deps --no-build api web and verify readiness.
+
+## AP-020 — Bounded disk/QA hygiene (2026-10-07)
+
+Контракт: `contracts/qa-resources.md`. Проверен только локальный API harness;
+tracked disposable PostgreSQL/Compose harness не найден. Production, бот,
+PostgreSQL/Redis/Caddy, migration DB-файлы и бизнес-данные не изменялись.
+Новых deployment, live provider calls, timers или автоматизаций нет.
+
+Подтверждённый остаток: два ignored `test-planner.db` (корень и services/api),
+каждый 389120 bytes, 0 таблиц, 0 открытых дескрипторов перед удалением. Удалены
+точечно; освобождено 778240 bytes. Это пустые disposable файлы, не backup данных.
+Теперь SQLite shared in-memory, с owner/project/run/purpose/UTC expiry metadata;
+ОС освобождает БД даже после SIGKILL. Persistent QA ресурсов для expiry sweep нет.
+
+Воспроизведение из корня (без production side effects):
+
+```sh
+.venv/bin/python -B tools/qa/check_api_resources.py
+.venv/bin/python -B -m pytest services/api/tests -q -p no:cacheprovider
+.venv/bin/ruff check services/api/tests/conftest.py services/api/tests/qa_lifecycle_probe.py tools/qa/check_api_resources.py
+node tools/guards/check-file-lines.mjs
+git diff --check
+```
+
+Evidence manifest, final checker RC=0: success/failure/timeout/SIGINT/SIGTERM/
+SIGKILL/success-after-crash actual child RC = `0, 1, -15, 2, -15, -9, 0`
+(совпали с ожидаемыми). В каждом сценарии inventory volumes `32 -> 32`,
+containers `64 -> 64`, owned QA volumes/containers `0 -> 0`, новые DB-файлы `0`,
+orphan process groups `0`. Ready probe проверил реальные таблицы в памяти,
+StaticPool и ownership/expiry. Manifest только в stdout, child logs подавлены;
+pipe закрыт, disposable files/containers/volumes не создаются.
+
+Дополнительно: SIGINT и SIGTERM самому checker при активном child дали
+ожидаемый checker RC=1; в обоих случаях наблюдалась одна child process group,
+после выхода orphan groups=0. API dependency cone: 136 tests, suite RC=0;
+collection RC=0. Ruff, source-line guard и diff check RC=0.
+
+Первый расширенный замер дал RC=1 из-за параллельного изменения общего Docker
+inventory (32–34 volumes, 64–65 containers), без orphan QA процессов/файлов.
+Атрибуция исправлена: owner/project/run label filters отделяют owned allocations
+от изменений других проектов; чужие IDs/labels не выводятся и не удаляются.
+Предварительный пятисценарный замер и финальный семисценарный замер дали RC=0.
