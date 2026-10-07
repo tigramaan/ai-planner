@@ -31,3 +31,23 @@ log account data or create persistent preferences. The untrusted request header 
 limited to 4096 characters/32 ranges and maps only to the ru/en enum.
 
 Deployment prerequisite discovered during AP-018: the former service-only npm install ignored the workspace lock and drifted from installed/tested dependencies. Use an allowlisted root context and npm ci, pinning Next to security-patched 16.3.6 in the existing 16.3 minor line; rerun Web tests/build after dependency synchronization.
+
+## AP-019 — GPT-6 model upgrade (2026-10-07)
+
+1. Specify the default model migration and preserve two-tier semantic routing.
+2. Validate GPT-6.1 Sol with low and medium reasoning using the approved existing server key.
+3. Change planner/junior defaults to gpt-6.1-sol and senior to gpt-6.1-sol;
+   retain low/medium reasoning and all bounded execution/confirmation policies.
+4. Align new-key API payload and Web model-field defaults with the planner model.
+5. Run API route regressions, Web checks, source guard and controlled live Russian
+   structured-intent/function-call checks without business-data mutations.
+6. Change only model entries in server configuration, rebuild API/Web and verify
+   effective settings, readiness and live compatibility; retain rollback images.
+
+Observability: existing redacted tier audit remains authoritative; deployment
+checks expose only model IDs, efforts, status, latency and pass/fail. Never print
+keys, user messages or hidden reasoning. Authentication and per-user encryption
+remain unchanged. Explicit saved model preferences remain intact. Provider errors
+stay explicit, with existing bounded retries; no silent switch to Luna is added.
+Standard token costs increase; medium reasoning is reserved for senior work. No database
+schema migration, API version bump or dependency upgrade is required.

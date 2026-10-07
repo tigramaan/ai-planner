@@ -449,7 +449,7 @@ export default function Settings() {
               <input
                 className="field"
                 name="model"
-                defaultValue="gpt-5.6-luna"
+                defaultValue="gpt-6.1-sol"
                 required
               />
             </label>

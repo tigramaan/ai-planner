@@ -15,3 +15,19 @@ Every command first reaches the configured junior model. It completes clear sing
 An unknown or multi-tool senior request may enter a sequential Responses API loop capped at six rounds. Available tools expose bounded mail inspection, guarded local task/timer mutations and preparation of one email or calendar mutation. Tool results are returned to the model for the next decision; provider tokens and secrets are never tool arguments. The loop uses `store=false` and disables parallel calls. External-action preparation resolves recipients, validates permissions and calendar targets, then creates the same encrypted immutable pending action used by the ordinary intent path. The loop cannot confirm or execute that action.
 
 Commitment analysis is an explicit read-only operation over at most 15 incoming and 15 sent bounded mail-metadata rows plus bounded task/calendar titles. It uses `store=false`, treats every external field as untrusted data, rejects ungrounded source indexes, and returns only explicit commitments with medium or high confidence. No report content is persisted; only redacted input/result counts are audited. Suggested actions enter the ordinary chat draft and confirmation policy.
+
+## Model defaults — AP-019
+
+Current defaults: planner and junior gpt-6.1-sol, reasoning low; senior
+gpt-6.1-sol, reasoning medium. OPENAI_PLANNER_MODEL, OPENAI_JUNIOR_MODEL and
+OPENAI_SENIOR_MODEL remain explicit configuration points with separate efforts.
+The Responses API, strict intent schema and bounded sequential tool loop remain
+the integration boundary. These models support the existing low/medium efforts.
+
+New OpenAI-secret writes that omit model, and the Web configuration form, default
+to gpt-6.1-sol. Explicit saved model choices continue to control per-user mail
+analysis; chat tier models remain server-managed. Existing keys, transcription,
+pending-action confirmation, ownership and audit policy are preserved. Provider
+access/schema errors retain their existing explicit failure path and bounded
+retries; migration never silently falls back to a different model. Public v1
+request/response shapes remain compatible; only the documented default changes.

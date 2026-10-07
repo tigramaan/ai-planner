@@ -5,7 +5,7 @@
 | REQ-001..005 | auth routes, family invite, OAuth-compatible session cookies, user ownership | auth/isolation and cookie-attribute tests |
 | REQ-010..014 | service directories, contracts, Compose | file guard, health tests |
 | REQ-020 | web PWA | web build and browser tests |
-| REQ-021 | OpenAI adapter and agent route; explicit Luna low-reasoning request | agent and conversation unit tests |
+| REQ-021 | OpenAI adapter and agent route; GPT-6.1 Sol low / medium tier defaults (AP-019) | agent and conversation unit tests |
 | REQ-022 | Provider-native mail query builder and chat mail-search route | mail query unit tests; live Gmail acceptance |
 | REQ-023 | Gmail content adapters, bounded document extraction and non-stored AI summary service | mail document, summary and agent privacy tests |
 | REQ-022 | Google OAuth/adapter | OAuth state and mocked adapter tests |
@@ -39,7 +39,7 @@
 | REQ-067 | mobile-only chat viewport, hidden desktop guidance and internally scrolling message history | Web production build and phone-viewport visual acceptance |
 | REQ-068 | bounded non-stored mail metadata triage and grounded actionable response formatting | agent privacy, triage detection/formatting and chat route tests |
 | REQ-069 | schema-declared semantic strategy selection with deterministic execution boundaries | intent-schema, paraphrase strategy and policy tests |
-| REQ-070 | Luna junior routing with automatic Sol escalation and distinct reasoning effort | simple/complex route tests, config validation and audit inspection |
+| REQ-070 | Sol junior routing with automatic Sol medium escalation and distinct reasoning effort (AP-019) | simple/complex route tests, config validation and audit inspection |
 | REQ-071 | bounded senior Responses tool loop over mail and local planner contracts | multi-round output propagation, storage, call-limit and tool validation tests |
 | REQ-072 | senior external-action preparation routed into the existing encrypted confirmation boundary | senior pending-action propagation, conversation, policy, recipient and calendar-action tests |
 | REQ-073 | in-stream chat response status, explicit mail result limit and deterministic automated-mail exclusion | Chat component lifecycle test, intent-schema, mail-summary and mail-chat tests |

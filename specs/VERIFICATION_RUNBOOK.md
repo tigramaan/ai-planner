@@ -284,3 +284,49 @@ AP-018 build security acceptance: Next 16.3.6 fixes the upstream GHSA-vcvr-r3jv-
 - Rollback image is retained as aiplanner-web:before-calendar-ai-20261007.
   To roll back Web: retag it as aiplanner-web:latest and run
   docker compose up -d --no-deps --no-build web.
+
+## AP-019 — GPT-6 acceptance
+
+- Existing approved key must access gpt-6.1-sol and gpt-6.1-sol via Responses.
+- Exercise Russian strict-schema commands: direct operation, a context correction
+  and a multi-operation senior escalation. Validate fields and time offsets.
+- Validate Sol function-call output and continuation using read-only synthetic
+  data; create no real tasks, calendar events, email or pending actions.
+- API regressions must select Sol/low for simple requests and Sol/medium after
+  escalation; existing confirmation/ownership/loop-limit tests must pass.
+- Run full isolated API tests, scoped Ruff, Web tests/type/build, guards and diff.
+- Verify API/Web effective models, all Compose health states and public HTTPS
+  readiness after deployment. Log only models, efforts, status and check counts.
+- Preserve saved user model preferences and key bytes; rollback restores prior
+  images and model configuration values.
+
+### AP-019 production verification — 2026-10-07
+
+- Effective planner/junior/senior: gpt-6.1-sol only. Planner/junior reasoning low,
+  senior medium. Astra is excluded per owner instruction.
+- API full isolated suite: 136 passed. Final Sol routing/senior regressions:
+  4 passed. Web suite: 29 passed. Scoped Ruff, Web TypeScript, source-line guard,
+  git diff --check, Compose configuration and API/Web Docker builds passed.
+- Production strict-schema checks: direct task, default one-hour meeting with
+  120-minute reminder lead time, context correction to 180 minutes, semantic
+  escalation and senior extraction all passed. Senior function-call/continuation
+  with synthetic mail output passed; no business data or external actions created.
+- Six production model checks passed, measured 3.37–6.13 seconds in this sample.
+  This is compatibility evidence, not a general latency/quality benchmark.
+- Existing server key preserved byte-for-byte: only three model entries in .env
+  changed. No saved per-user OpenAI model overrides were present.
+- Only API and Web recreated; all six Compose services healthy. Public HTTPS
+  /api/health/ready returned ready/database ok.
+- Production Web chunks contain Sol and no legacy Luna/Astra model default.
+  RU/EN/unsupported-language mobile/desktop checks, languagechange, icon assets
+  and manifest passed with no hydration/page errors or horizontal overflow.
+- Work performed entirely in /opt/repos/aiplanner on the server.
+- New images: aiplanner-api:gpt6-sol-20261007 and
+  aiplanner-web:gpt6-sol-20261007. Rollback images:
+  aiplanner-api:before-gpt6-sol-20261007 and
+  aiplanner-web:before-gpt6-sol-20261007.
+- Rollback model-only backup: /tmp/aiplanner-models-before-gpt6-sol-20261007.json
+  (0600, contains only prior model lines). Restore each of its three entries to
+  .env, removing entries that were originally absent; preserve all other lines.
+  Retag both rollback images as their corresponding latest tags, then run
+  docker compose up -d --no-deps --no-build api web and verify readiness.

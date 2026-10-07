@@ -38,3 +38,17 @@ PWAs can refresh their home-screen icon on the operating system's own schedule;
 new installations read the versioned manifest assets.
 
 Regenerate PNG assets after changing services/web/public/icon.svg with npm ci followed by node tools/branding/generate-icons.mjs; sharp 0.34.5 is a pinned development dependency.
+
+## GPT-6 upgrade (AP-019)
+
+Use the existing OpenAI key. Set OPENAI_PLANNER_MODEL and OPENAI_JUNIOR_MODEL to
+gpt-6.1-sol, OPENAI_SENIOR_MODEL to gpt-6.1-sol; keep planner/junior low and senior
+medium. New-secret/Web defaults match Sol. Explicit per-user saved model settings
+are preserved, including mail-analysis overrides. Tiered chat ignores that model
+override and always uses the two server-configured tiers. No database migration
+or API-client migration is required.
+
+Rebuild API and Web, recreate those services and verify effective model fields
+without reading secrets. Keep prior image tags and record the previous model
+settings for rollback. Existing API timeouts/retries, six-round senior loop,
+pending-action confirmation and transcription are unchanged.

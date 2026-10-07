@@ -254,7 +254,7 @@ def test_complex_command_is_escalated_to_senior_model(logged_in, monkeypatch):
     )
 
     assert response.status_code == 200
-    assert calls == [("gpt-5.6-luna", "low"), ("gpt-5.6-sol", "medium")]
+    assert calls == [("gpt-6.1-sol", "low"), ("gpt-6.1-sol", "medium")]
 
 
 def test_simple_command_stays_on_junior_model(logged_in, monkeypatch):
@@ -268,7 +268,7 @@ def test_simple_command_stays_on_junior_model(logged_in, monkeypatch):
     response = logged_in.post("/api/v1/chat/messages", json={"text": "Что сегодня?"})
 
     assert response.status_code == 200
-    assert calls == [("gpt-5.6-luna", "low")]
+    assert calls == [("gpt-6.1-sol", "low")]
 
 
 def test_task_can_be_created_with_details_and_completed_through_chat(logged_in, monkeypatch):

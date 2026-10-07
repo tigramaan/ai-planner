@@ -22,10 +22,10 @@ class Settings(BaseSettings):
     access_token_minutes: int = Field(1440, ge=5, le=10080)
     refresh_token_days: int = Field(30, ge=1, le=90)
     openai_api_key: str = ""
-    openai_planner_model: str = "gpt-5.6-luna"
+    openai_planner_model: str = "gpt-6.1-sol"
     openai_reasoning_effort: str = "low"
-    openai_junior_model: str = "gpt-5.6-luna"
-    openai_senior_model: str = "gpt-5.6-sol"
+    openai_junior_model: str = "gpt-6.1-sol"
+    openai_senior_model: str = "gpt-6.1-sol"
     openai_junior_reasoning_effort: str = "low"
     openai_senior_reasoning_effort: str = "medium"
     openai_transcription_model: str = "whisper-1"
